@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "recipe_source_sha256": "8b54350a950ce7057e195abe51fa21a6c81281f1427d6cf9996531cef28e19d9",
+  "artifacts": [
+    {
+      "path": "docs/catalog/api-contract-review.md",
+      "sha256": "b02e6077f8b79ae260a4b74542c94ce674c9d6a34f6ce0508a5fdbbadcb84180"
+    },
+    {
+      "path": "docs/catalog/codebase-onboarding.md",
+      "sha256": "fc5fafab6b333343de53b7822da0224728bce5c29845832402957b9ddacfc45e"
+    },
+    {
+      "path": "docs/catalog/database-migration-review.md",
+      "sha256": "71a183e55e3f08f9143e3cf2783d7cc1b873e978d8dde0fae150a93c10350476"
+    },
+    {
+      "path": "docs/catalog/debug-failing-ci.md",
+      "sha256": "33988036fb0cd76da44197741ded4083802469c85859e998dce5e9a443e62ca7"
+    },
+    {
+      "path": "docs/catalog/dependency-audit.md",
+      "sha256": "add089cf79ff1a14732bff5c6249034e23f4adbf52ed066c7d28db357dde53c7"
+    },
+    {
+      "path": "docs/catalog/document-api.md",
+      "sha256": "985dc0ec89de7fab444b8cbf6829b327caa0c3423560cf070fc0e254eb2374b3"
+    },
+    {
+      "path": "docs/catalog/generate-adr.md",
+      "sha256": "5c627df49a1eafc78396e5f5500438502e7081ca2393ad19cbd1927ecf414e99"
+    },
+    {
+      "path": "docs/catalog/generate-tests.md",
+      "sha256": "17a06dc6180d832169c67bc23ae2b534f364c2ef4f52dd2c39daab9d1436b499"
+    },
+    {
+      "path": "docs/catalog/improve-type-safety.md",
+      "sha256": "2480daf16dc672fc901e7ac90879a0ba65b33244479a45313e79d88610e2e6f0"
+    },
+    {
+      "path": "docs/catalog/incident-postmortem.md",
+      "sha256": "2aed7bd3791bc40474e608793cd7114766aadace6672fa2501b02b227624a455"
+    },
+    {
+      "path": "docs/catalog/index.md",
+      "sha256": "871d8f55d2acdcfab25a9a4173129dce3f9ea2309b55d8e8b0e8200427a31535"
+    },
+    {
+      "path": "docs/catalog/migrate-framework.md",
+      "sha256": "79723c71069c724c4225d94294eb0ccb14c280cca4e0cda8502280301f9e65bf"
+    },
+    {
+      "path": "docs/catalog/profile-performance.md",
+      "sha256": "6cff71ede82bb30a2f06ad2631b6954e38c34ebbc882865931a99fcd9898ecff"
+    },
+    {
+      "path": "docs/catalog/refactor-large-module.md",
+      "sha256": "366c2b673cfd6f76fa9ef4bd3d46da9e5825d241f9a2bae108b33a9892b7f254"
+    },
+    {
+      "path": "docs/catalog/reproduce-bug.md",
+      "sha256": "1efa76c0a8141d6544514c8d485783b88d5afafeda373ed176c4b4b095a475af"
+    },
+    {
+      "path": "docs/catalog/review-pull-request.md",
+      "sha256": "73b373c514e223732cf9ea4071abb1268fda0d6decbc0e95f5a716d725d37254"
+    },
+    {
+      "path": "docs/catalog/security-review.md",
+      "sha256": "4ca0927c37272cf346e729b7b990b50ea3ccbea8343bac2abb1a8154d7faf8b7"
+    },
+    {
+      "path": "docs/catalog/synchronize-documentation.md",
+      "sha256": "10a8603186acf58ff1183b10b921a8eed249d285ccb073a91695989bc94a34ba"
+    },
+    {
+      "path": "docs/catalog/triage-issues.md",
+      "sha256": "1a2de0e36a02ac36d5f0660f5ede6039233e632ea21674564e07e2118b71454e"
+    },
+    {
+      "path": "docs/catalog/upgrade-dependencies.md",
+      "sha256": "6420abd69758f99e3444c7e33e2ea152dd2c1651926d363e4711f53a24e183bc"
+    },
+    {
+      "path": "docs/catalog/write-release-notes.md",
+      "sha256": "d69fdaa4fd58ea0803d233af399a086c5112317b9e1f6af245fc26abcb8b17ef"
+    },
+    {
+      "path": "docs/compatibility.md",
+      "sha256": "cb974559a7a86eb7e14b2a71f4993db9d7a0c105ea2cf15c440dd1291cf93e25"
+    },
+    {
+      "path": "generated/catalog.d.ts",
+      "sha256": "645973cd60dfa098998fe7ffb7c56defc7857711ce247b3bda820074938e6b5d"
+    },
+    {
+      "path": "generated/catalog.json",
+      "sha256": "dec5a027cde1b3a5846926bd77164f944fad56e54650a983d3f03d6d61ca194c"
+    },
+    {
+      "path": "generated/catalog.schema.json",
+      "sha256": "0a0a37ff7373fe2ba43117e0ba1da04b283a3e898f390166d0bbe9f0eed6c540"
+    },
+    {
+      "path": "generated/recipe.schema.json",
+      "sha256": "b1edc00b84e178211544666985a800ea08e55d8cfecc6a2ae4f1f21a3ecff950"
+    },
+    {
+      "path": "generated/verification.schema.json",
+      "sha256": "bfce9665c717224e9faa67d8bdc9012674571f7e3f3b5a49fd3852d5cb1dae8c"
+    },
+    {
+      "path": "verification/schema.json",
+      "sha256": "bfce9665c717224e9faa67d8bdc9012674571f7e3f3b5a49fd3852d5cb1dae8c"
+    }
+  ]
+}

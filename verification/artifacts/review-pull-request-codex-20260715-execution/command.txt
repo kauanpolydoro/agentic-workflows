@@ -1,0 +1,41 @@
+# Retained command log
+
+Repository revision: `e26ecf77fcd7ad3644db78b76c0cdba3f058550a`.
+
+## Installation
+
+Command:
+
+```text
+AWF_CATALOG_ROOT=<repository-root>/recipes NO_COLOR=1 node <repository-root>/packages/cli/dist/index.js --project-root <temporary-project> install review-pull-request --agent codex --target . --json
+```
+
+Started at `2026-07-15T20:20:12Z` and finished at `2026-07-15T20:20:12Z` with exit code `0`.
+
+Strict installation validation returned `valid: true`, `recipes: 0`, `installations: 1`, and `strict: true` with exit code `0`.
+
+## External execution
+
+Command:
+
+```text
+timeout 600 codex exec --sandbox read-only --ephemeral --ignore-user-config --skip-git-repo-check -C <temporary-project> -o <temporary-output>
+```
+
+The prompt explicitly invoked `$review-pull-request`, selected the installed synthetic example input, permitted read-only local shell inspection of the installed bundle, prohibited edits and network tools, and requested only the complete Markdown artifact.
+
+Started at `2026-07-15T20:20:12Z` and finished at `2026-07-15T20:20:40Z` with exit code `0`.
+
+Agent version: `codex-cli 0.144.4`.
+
+The source output-contract validator returned zero issues.
+
+The produced artifact SHA-256 was `ff71cfa41edcdc9aac9f75f72c96f1ccc27a6d219ef23aead6e00a579259c671`, exactly equal to the installed `examples/expected-output.md` SHA-256.
+
+Because the prompt allowed reading all example assets, this attempt demonstrates parsing and contract-compatible replay but is classified as execution failing for independent-workflow verification.
+
+This attempt is superseded by `review-pull-request-codex-20260715-independent-execution`.
+
+The retained stderr replaces only the ephemeral run identifier with an explicit redaction marker.
+
+No human outcome review was performed.

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-workflows.dev/output-contracts/migrate-framework/1.0.0",
+  "title": "Framework migration output contract",
+  "description": "Validates the compatibility register, ordered slices, implementation contract, validation and traffic records, rollback dossier, gates, residual risk, and traceability in the reference Markdown output.",
+  "type": "string",
+  "contentMediaType": "text/markdown",
+  "x-awf-output-contract": {
+    "container": "document",
+    "artifacts": [
+      {
+        "path": "framework-migration-dossier.md",
+        "audience": "Repository maintainers, service owners, and release managers",
+        "requires_title": true,
+        "required_headings": [
+          "Dossier state and boundary",
+          "Compatibility-gap register",
+          "Ordered vertical-slice map",
+          "Incremental validation record",
+          "Staging traffic and observation",
+          "Rollback dossier",
+          "Approval and retirement gates",
+          "Residual risks, ownership, and closing criteria",
+          "Traceability summary"
+        ],
+        "required_literals": [
+          "| Surface | Local use | Disposition | Required evidence before migration | Owner role | Evidence |",
+          "| Order | Slice | Observable flow | State | Dependency or exit condition | Evidence |",
+          "implementation contract",
+          "| Check | Required result | Observed result | Disposition | Evidence |",
+          "| Risk or limitation | Current consequence | Owner role | Closing criterion | Evidence |"
+        ],
+        "evidence_references": "required",
+        "minimum_distinct_evidence_references": 2
+      }
+    ]
+  }
+}

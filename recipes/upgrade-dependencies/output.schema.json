@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-workflows.dev/output-contracts/upgrade-dependencies/1.0.0",
+  "title": "Dependency upgrade output contract",
+  "description": "Validates the dependency diff, breaking-change mapping, isolated implementation, supported-environment validation, approvals, rollback, limitations, and traceability in the reference Markdown output.",
+  "type": "string",
+  "contentMediaType": "text/markdown",
+  "x-awf-output-contract": {
+    "container": "document",
+    "artifacts": [
+      {
+        "path": "dependency-upgrade-record.md",
+        "audience": "Repository maintainers and dependency reviewers",
+        "requires_title": true,
+        "required_headings": [
+          "Status, scope, and provenance",
+          "Direct and transitive dependency diff",
+          "Breaking-change and local-usage register",
+          "Implemented change",
+          "Supported-environment validation",
+          "Approval and policy disposition",
+          "Rollback record",
+          "Residual risks and limitations",
+          "Traceability summary"
+        ],
+        "required_literals": [
+          "| Disposition | Package | Before | After | Source and policy result | Evidence |",
+          "| Vendor change | Local observation | Disposition | Verification | Evidence |",
+          "| Limitation | Impact | Owner role | Exit condition | Evidence |"
+        ],
+        "evidence_references": "required",
+        "minimum_distinct_evidence_references": 2
+      }
+    ]
+  }
+}

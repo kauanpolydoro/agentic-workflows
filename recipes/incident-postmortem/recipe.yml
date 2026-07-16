@@ -1,0 +1,102 @@
+schema_version: 3
+id: incident-postmortem
+title: Produce an evidence-linked blameless incident postmortem
+summary: Produce a bounded incident learning record with impact, timeline,
+  causal confidence, organizational conditions, and verifiable corrective actions.
+version: 1.2.0
+category: operations
+difficulty: advanced
+risk_level: high
+estimated_duration: 2h
+tags:
+  - incident
+  - postmortem
+  - reliability
+inputs:
+  required:
+    - incident identifier, affected service, severity basis, UTC window, audience, and evidence cutoff
+    - timestamped alert, change, response, mitigation, and recovery records with provenance
+    - impact numerator, denominator, duration, calculation method, and uncertainty
+  optional:
+    - sanitized logs, alerts, and change records
+    - sanitized stakeholder observations
+outputs:
+  - evidence-linked blameless postmortem with a factual executive summary
+  - corrective-action register with owner roles, dependencies, exit criteria, and verification signals
+  - uncertainty and open-question register
+prerequisites:
+  - the incident commander confirms the incident is contained or stable
+  - UTC conversion, evidence retention, intended audience, and sensitive-data handling are approved
+safety:
+  destructive: false
+  requires_human_approval:
+    - publishing the postmortem
+    - assigning owners and dates
+    - distributing the postmortem outside the approved audience
+  forbidden_actions:
+    - naming individual blame
+    - inventing timestamps
+    - including secrets or customer-identifying data
+    - stating causality without supporting evidence
+effects:
+  writes_code: false
+  writes_configuration: false
+  writes_documentation: false
+  changes_dependencies: false
+  changes_database: false
+  changes_issue_tracker: false
+  changes_production_traffic: false
+  deletes_state: false
+  publishes_artifacts: true
+agent_requirements:
+  capabilities:
+    - repository-read
+    - network
+  manual_invocation_required: true
+output_contract:
+  schema: output.schema.json
+canonical:
+  file: workflow.md
+agents:
+  generic:
+    bundle_compatibility: compatible
+    capability_status: not-applicable
+    limitations:
+      - Generic Markdown provides no agent execution capability assessment.
+  claude-code:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  codex:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  cursor:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  gemini-cli:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  opencode:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+verification:
+  structural:
+    status: derived
+  installation:
+    status: untested
+  execution:
+    status: untested
+  outcome:
+    status: untested
+maintainers:
+  - project-maintainers
+license: MIT

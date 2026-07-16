@@ -1,0 +1,109 @@
+schema_version: 3
+id: migrate-framework
+title: Migrate a framework through controlled vertical slices
+summary: Move a versioned application to a supported framework through coexistence, contract checkpoints, measured traffic stages, and retained rollback.
+version: 1.2.0
+category: migration
+difficulty: advanced
+risk_level: high
+estimated_duration: 8h
+tags:
+  - framework
+  - migration
+  - compatibility
+  - rollout
+inputs:
+  required:
+    - immutable application revision with exact current target framework runtime and coupled dependency versions
+    - public behavior contract route or component inventory and reproducible characterization baseline
+    - official migration guidance with a local compatibility disposition for every framework-coupled surface
+    - coexistence traffic checkpoint observation approval and rollback controls
+  optional:
+    - comparable latency error-rate and resource measurements by migration slice
+    - consumer inventory and deprecation communication constraints
+outputs:
+  - compatibility-gap register and ordered vertical-slice migration map
+  - per-slice implementation contract and incremental validation record
+  - traffic checkpoint observation approval rollback and residual-risk dossier
+prerequisites:
+  - target framework and every integration required by the selected slice have attributable support for the retained runtime
+  - current-path contract tests pass or every baseline failure has an owner and disposition
+  - old and new paths can coexist for the selected slice and traffic can return to the old path
+  - monitoring and abort signals use comparable methods before any traffic change
+safety:
+  destructive: false
+  requires_human_approval:
+    - release manager approval before switching any production traffic
+    - repository maintainer approval before removing the old framework path
+    - service owner approval before accepting a checkpoint threshold exception
+  forbidden_actions:
+    - performing a big-bang framework replacement without independently recoverable slices
+    - claiming framework or integration compatibility without attributable support and contract evidence
+    - deleting the old path rollback control or baseline telemetry before the observation gate closes
+effects:
+  writes_code: true
+  writes_configuration: true
+  writes_documentation: false
+  changes_dependencies: true
+  changes_database: false
+  changes_issue_tracker: false
+  changes_production_traffic: true
+  deletes_state: false
+  publishes_artifacts: false
+agent_requirements:
+  capabilities:
+    - repository-read
+    - repository-write
+    - shell
+    - git
+    - network
+    - test-execution
+    - production-access
+  manual_invocation_required: true
+output_contract:
+  schema: output.schema.json
+canonical:
+  file: workflow.md
+agents:
+  generic:
+    bundle_compatibility: compatible
+    capability_status: not-applicable
+    limitations:
+      - Generic Markdown provides no agent execution capability assessment.
+  claude-code:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  codex:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  cursor:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  gemini-cli:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  opencode:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+verification:
+  structural:
+    status: derived
+  installation:
+    status: untested
+  execution:
+    status: untested
+  outcome:
+    status: untested
+maintainers:
+  - project-maintainers
+license: MIT

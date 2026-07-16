@@ -1,0 +1,56 @@
+schema_version: 2
+id: review-pull-request-claude-code-20260715-execution
+supersedes: null
+recipe: review-pull-request
+recipe_version: 1.2.0
+recipe_content_sha256: a388414a4065acbbb4fd1e8715fd1070a0fe298bdf697a6ea001cadf17c22ad9
+agent: claude-code
+adapter_version: 1.0.0
+agent_version: 2.1.209 (Claude Code)
+fixture: recipes/review-pull-request/examples/input.md
+command: timeout 600 claude --print --output-format text --permission-mode plan --tools Read,Glob,Grep,Skill --allowedTools Read,Glob,Grep,Skill --setting-sources project --no-session-persistence --max-turns 8
+exit_code: 0
+started_at: 2026-07-15T20:16:52Z
+finished_at: 2026-07-15T20:18:12Z
+environment:
+  runner_image: local WSL2 host; no container image
+  os: Ubuntu 24.04.4 LTS on WSL2 kernel 5.15.167.4
+  node_version: 24.13.1
+  pnpm_version: 10.28.2
+source:
+  repository_revision: e26ecf77fcd7ad3644db78b76c0cdba3f058550a
+  workflow_run_url: null
+  runner: local Codex orchestration on WSL2
+installation:
+  status: passing
+execution:
+  status: passing
+outcome:
+  status: untested
+evidence:
+  command_log:
+    path: verification/artifacts/review-pull-request-claude-code-20260715-execution/command.txt
+    sha256: 02d88da4c7e86de92f2be10767d8459d251b2cf946c8447b95de5a666ea33f60
+  stdout:
+    path: verification/artifacts/review-pull-request-claude-code-20260715-execution/stdout.txt
+    sha256: 95d52e0b7e94eee4233bae83708be20e1d4d009418756192e77f47a2abda0a77
+  stderr:
+    path: verification/artifacts/review-pull-request-claude-code-20260715-execution/stderr.txt
+    sha256: 1b14f1f117e1e43de5f9b37802d0ea4687e037ebc687c1ce4324d26d5600d5ee
+  installation_artifact:
+    path: verification/artifacts/review-pull-request-claude-code-20260715-execution/installation-manifest.yml
+    sha256: e11fe71dfdfb893c4ed1df264cf73216dc7c270108bf88289cc616b45af38ef3
+  input_file:
+    path: verification/artifacts/review-pull-request-claude-code-20260715-execution/input.md
+    sha256: d256e21e30d30076d8925bb7512bcdc3499e1dffdf19d3a953bbb1f8d729bc85
+  output_file:
+    path: verification/artifacts/review-pull-request-claude-code-20260715-execution/output.md
+    sha256: 95d52e0b7e94eee4233bae83708be20e1d4d009418756192e77f47a2abda0a77
+  outcome_review: null
+reviewer: null
+reviewed_at: null
+criteria: []
+notes:
+  - The external agent was invoked explicitly in a fresh temporary project with plan-only read tools.
+  - The produced artifact passed the deterministic output contract with zero issues.
+  - Deterministic contract validation is not a human outcome review.

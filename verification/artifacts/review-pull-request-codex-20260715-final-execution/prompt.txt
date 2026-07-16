@@ -1,0 +1,20 @@
+Use the installed `$review-pull-request` skill explicitly.
+
+Work only in this temporary project under the read-only sandbox.
+You may use read-only local shell commands only to inspect these installed files:
+
+- `.agents/skills/review-pull-request/SKILL.md`
+- `.agents/skills/review-pull-request/checklist.md`
+- `.agents/skills/review-pull-request/recipe.yml`
+- `.agents/skills/review-pull-request/output.schema.json`
+- `.agents/skills/review-pull-request/agents/openai.yaml`
+- `.agents/skills/review-pull-request/examples/input.md`
+
+Do not read `.agents/skills/review-pull-request/examples/expected-output.md`.
+Do not inspect any other file, edit files, execute mutating commands, or access the network.
+Use no facts outside the supplied synthetic evidence.
+
+Produce a newly reasoned, complete Markdown pull-request review artifact that follows the installed workflow and output contract.
+Separate observations from inferences, trace every material claim to supplied evidence IDs, preserve approval boundaries, and state limitations.
+Use ordinary hyphens and do not use em dashes.
+Return only the artifact Markdown, with no preamble or commentary.

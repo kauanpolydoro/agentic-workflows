@@ -1,0 +1,57 @@
+schema_version: 2
+id: review-pull-request-codex-20260715-restricted
+supersedes: null
+recipe: review-pull-request
+recipe_version: 1.2.0
+recipe_content_sha256: a388414a4065acbbb4fd1e8715fd1070a0fe298bdf697a6ea001cadf17c22ad9
+agent: codex
+adapter_version: 1.0.0
+agent_version: codex-cli 0.144.4
+fixture: recipes/review-pull-request/examples/input.md
+command: timeout 600 codex exec --sandbox read-only --ephemeral --ignore-user-config --skip-git-repo-check -C <temporary-project> -o <temporary-output>
+exit_code: 0
+started_at: 2026-07-15T20:18:56Z
+finished_at: 2026-07-15T20:19:29Z
+environment:
+  runner_image: local WSL2 host; no container image
+  os: Ubuntu 24.04.4 LTS on WSL2 kernel 5.15.167.4
+  node_version: 24.13.1
+  pnpm_version: 10.28.2
+source:
+  repository_revision: e26ecf77fcd7ad3644db78b76c0cdba3f058550a
+  workflow_run_url: null
+  runner: local Codex orchestration on WSL2
+installation:
+  status: passing
+execution:
+  status: failing
+outcome:
+  status: untested
+evidence:
+  command_log:
+    path: verification/artifacts/review-pull-request-codex-20260715-restricted/command.txt
+    sha256: f13cb33a938fa520a86e73d68728abf9e6d21012eddfd77e4d890174331ec0e2
+  stdout:
+    path: verification/artifacts/review-pull-request-codex-20260715-restricted/stdout.txt
+    sha256: f83860b7e67fa27cee4cdb453fc22dc0d02b08a50ff1e299434a11906deab0a8
+  stderr:
+    path: verification/artifacts/review-pull-request-codex-20260715-restricted/stderr.txt
+    sha256: 8d296e4c6f7272499cf57129d8de3061c6135d31af546d4fb14c0852c86d06b9
+  installation_artifact:
+    path: verification/artifacts/review-pull-request-codex-20260715-restricted/installation-manifest.yml
+    sha256: 3b8213c8368a7babdfe46e056f88de7af18c283ab648c573cb3b7ca9dcebb904
+  input_file:
+    path: verification/artifacts/review-pull-request-codex-20260715-restricted/input.md
+    sha256: d256e21e30d30076d8925bb7512bcdc3499e1dffdf19d3a953bbb1f8d729bc85
+  output_file:
+    path: verification/artifacts/review-pull-request-codex-20260715-restricted/output.md
+    sha256: f83860b7e67fa27cee4cdb453fc22dc0d02b08a50ff1e299434a11906deab0a8
+  outcome_review: null
+reviewer: null
+reviewed_at: null
+criteria: []
+notes:
+  - The first Codex prompt prohibited the local read mechanism needed to inspect the referenced input.
+  - The agent followed the documented recovery path, but its output failed the deterministic contract with 12 issues.
+  - Trailing Markdown whitespace was normalized before retention; semantic content was not changed.
+  - The attempt is retained and superseded rather than hidden.

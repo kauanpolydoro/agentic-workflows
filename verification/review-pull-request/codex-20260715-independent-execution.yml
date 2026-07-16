@@ -1,0 +1,56 @@
+schema_version: 2
+id: review-pull-request-codex-20260715-independent-execution
+supersedes: review-pull-request-codex-20260715-reference-readable
+recipe: review-pull-request
+recipe_version: 1.2.0
+recipe_content_sha256: a388414a4065acbbb4fd1e8715fd1070a0fe298bdf697a6ea001cadf17c22ad9
+agent: codex
+adapter_version: 1.0.0
+agent_version: codex-cli 0.144.4
+fixture: recipes/review-pull-request/examples/input.md
+command: timeout 600 codex exec --sandbox read-only --ephemeral --ignore-user-config --skip-git-repo-check -C <temporary-project> -o <temporary-output>
+exit_code: 0
+started_at: 2026-07-15T20:24:17Z
+finished_at: 2026-07-15T20:25:10Z
+environment:
+  runner_image: local WSL2 host; no container image
+  os: Ubuntu 24.04.4 LTS on WSL2 kernel 5.15.167.4
+  node_version: 24.13.1
+  pnpm_version: 10.28.2
+source:
+  repository_revision: e26ecf77fcd7ad3644db78b76c0cdba3f058550a
+  workflow_run_url: null
+  runner: local Codex orchestration on WSL2
+installation:
+  status: passing
+execution:
+  status: passing
+outcome:
+  status: untested
+evidence:
+  command_log:
+    path: verification/artifacts/review-pull-request-codex-20260715-independent-execution/command.txt
+    sha256: 69748004fd20aec8331280e4b3c4143c150e15c1494d8b2ed56d41197cc0def4
+  stdout:
+    path: verification/artifacts/review-pull-request-codex-20260715-independent-execution/stdout.txt
+    sha256: 4b73b6d5aba6e770e6aeb49077e154361152117ef898247f94e6ce00f68d77f9
+  stderr:
+    path: verification/artifacts/review-pull-request-codex-20260715-independent-execution/stderr.txt
+    sha256: 52d8324a2f1ea3648f33c98ca893ffd1b10164411703698ec0d775864a0e7670
+  installation_artifact:
+    path: verification/artifacts/review-pull-request-codex-20260715-independent-execution/installation-manifest.yml
+    sha256: c3913413c6940e7dda87514a31e18ef030a13e7dae898813a791f90b78575d3d
+  input_file:
+    path: verification/artifacts/review-pull-request-codex-20260715-independent-execution/input.md
+    sha256: d256e21e30d30076d8925bb7512bcdc3499e1dffdf19d3a953bbb1f8d729bc85
+  output_file:
+    path: verification/artifacts/review-pull-request-codex-20260715-independent-execution/output.md
+    sha256: 4b73b6d5aba6e770e6aeb49077e154361152117ef898247f94e6ce00f68d77f9
+  outcome_review: null
+reviewer: null
+reviewed_at: null
+criteria: []
+notes:
+  - The third Codex run used a fresh session and explicitly prohibited access to the installed reference output.
+  - The produced artifact was distinct from the reference output and passed the deterministic output contract with zero issues.
+  - Deterministic contract validation is not a human outcome review.

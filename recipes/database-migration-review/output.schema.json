@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-workflows.dev/output-contracts/database-migration-review/1.0.0",
+  "title": "Database migration review output contract",
+  "description": "Validates the migration verdict, risk and compatibility analysis, staged rollout, recovery controls, approvals, and traceability in the reference Markdown output.",
+  "type": "string",
+  "contentMediaType": "text/markdown",
+  "x-awf-output-contract": {
+    "container": "document",
+    "artifacts": [
+      {
+        "path": "database-migration-review.md",
+        "audience": "Database owners, release managers, and data owners",
+        "requires_title": true,
+        "required_headings": [
+          "Verdict",
+          "Risk register",
+          "Compatibility assessment",
+          "Proposed rollout",
+          "Abort and recovery",
+          "Approval package",
+          "Assumptions and limitations",
+          "Traceability"
+        ],
+        "required_literals": [
+          "| Severity | Confidence | Finding | Evidence | Impact | Recommendation | Verification | Disposition |",
+          "| Phase | Old readers | Old writers | New readers | New writers | Gate |",
+          "| Phase | Abort or failure trigger | Immediate containment and state check | Resume or recovery gate |",
+          "| Material conclusion | Evidence |"
+        ],
+        "evidence_references": "required",
+        "minimum_distinct_evidence_references": 2
+      }
+    ]
+  }
+}

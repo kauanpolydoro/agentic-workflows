@@ -1,0 +1,104 @@
+schema_version: 3
+id: refactor-large-module
+title: Refactor a large module through reversible slices
+summary: Decompose one change-coupled module into cohesive boundaries while preserving its evidenced public contract at every independently reversible checkpoint.
+version: 1.2.0
+category: refactoring
+difficulty: advanced
+risk_level: high
+estimated_duration: 8h
+tags:
+  - refactoring
+  - architecture
+  - compatibility
+  - characterization
+inputs:
+  required:
+    - immutable revision and exact approved and final path inventories with explicit exclusions
+    - public exports callers side effects invariants and compatibility constraints
+    - baseline and per-checkpoint characterization commands with recorded results
+    - proposed responsibility boundaries dependency direction approval state and rollback units
+  optional:
+    - comparable performance measurements for latency-sensitive behavior
+    - ownership notes for the proposed module boundaries
+outputs:
+  - Markdown refactor delivery record with immutable checkpoint identities exact changed paths contract verification rollback approval and residual risk
+prerequisites:
+  - the scoped revision resolves to an immutable commit and the starting working tree is recorded
+  - every public export and known in-repository caller has been inventoried
+  - characterization tests pass or every baseline failure has an owner and disposition
+  - each proposed checkpoint can be reverted without depending on a later checkpoint
+safety:
+  destructive: false
+  requires_human_approval:
+    - repository maintainer approval before changing any public contract
+    - service owner approval before accepting a measured performance regression
+  forbidden_actions:
+    - performing a big-bang rewrite that cannot be verified or reverted by checkpoint
+    - changing public exports outputs errors or side effects without explicit approval
+    - deleting characterization tests because implementation code moved
+effects:
+  writes_code: true
+  writes_configuration: false
+  writes_documentation: false
+  changes_dependencies: false
+  changes_database: false
+  changes_issue_tracker: false
+  changes_production_traffic: false
+  deletes_state: false
+  publishes_artifacts: false
+agent_requirements:
+  capabilities:
+    - repository-read
+    - repository-write
+    - shell
+    - git
+    - test-execution
+  manual_invocation_required: true
+output_contract:
+  schema: output.schema.json
+canonical:
+  file: workflow.md
+agents:
+  generic:
+    bundle_compatibility: compatible
+    capability_status: not-applicable
+    limitations:
+      - Generic Markdown provides no agent execution capability assessment.
+  claude-code:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  codex:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  cursor:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  gemini-cli:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  opencode:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+verification:
+  structural:
+    status: derived
+  installation:
+    status: untested
+  execution:
+    status: untested
+  outcome:
+    status: untested
+maintainers:
+  - project-maintainers
+license: MIT

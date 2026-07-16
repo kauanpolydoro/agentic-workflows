@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title desc">
+  <title id="title">Agentic Workflows logo</title><desc id="desc">Two interlocking angular workflow paths.</desc>
+  <rect width="160" height="160" rx="20" fill="#101b18"/>
+  <path d="M26 49h48l18 18-18 18H48v26h39" fill="none" stroke="#63d6b4" stroke-width="14" stroke-linecap="square" stroke-linejoin="miter"/>
+  <path d="M134 111H86L68 93l18-18h26V49H73" fill="none" stroke="#e36f3d" stroke-width="14" stroke-linecap="square" stroke-linejoin="miter"/>
+</svg>

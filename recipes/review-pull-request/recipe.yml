@@ -1,0 +1,102 @@
+schema_version: 3
+id: review-pull-request
+title: Review a pull request
+summary: Produce an evidence-linked pull request review with prioritized findings, executed checks, and a defensible merge verdict.
+version: 1.2.0
+category: code-review
+difficulty: intermediate
+risk_level: medium
+estimated_duration: 30m
+tags:
+  - pull-request
+  - review
+  - quality
+inputs:
+  required:
+    - immutable base revision head revision and merge base
+    - complete unified diff and changed-file inventory for the recorded head
+    - pull request intent acceptance criteria and applicable repository instructions
+  optional:
+    - CI run IDs commands logs and test results for the recorded head
+    - architecture decisions and public compatibility contracts
+outputs:
+  - evidence-linked pull request review report
+  - prioritized finding register with dispositions
+  - verification record and merge recommendation
+prerequisites:
+  - base head and merge-base revisions resolve to immutable commits
+  - supplied diff and changed-file inventory match the recorded head
+  - repository instructions for every changed path are available
+safety:
+  destructive: false
+  requires_human_approval:
+    - submitting the final review
+  forbidden_actions:
+    - changing unrelated files
+    - exposing secrets
+    - approving a change with unverified blocking behavior
+effects:
+  writes_code: false
+  writes_configuration: false
+  writes_documentation: false
+  changes_dependencies: false
+  changes_database: false
+  changes_issue_tracker: false
+  changes_production_traffic: false
+  deletes_state: false
+  publishes_artifacts: false
+agent_requirements:
+  capabilities:
+    - repository-read
+    - shell
+    - git
+    - github
+    - test-execution
+  manual_invocation_required: true
+output_contract:
+  schema: output.schema.json
+canonical:
+  file: workflow.md
+agents:
+  generic:
+    bundle_compatibility: compatible
+    capability_status: not-applicable
+    limitations:
+      - Generic Markdown provides no agent execution capability assessment.
+  claude-code:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  codex:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  cursor:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  gemini-cli:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  opencode:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+verification:
+  structural:
+    status: derived
+  installation:
+    status: untested
+  execution:
+    status: untested
+  outcome:
+    status: untested
+maintainers:
+  - project-maintainers
+license: MIT

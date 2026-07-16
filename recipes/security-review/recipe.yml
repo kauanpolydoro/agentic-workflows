@@ -1,0 +1,110 @@
+schema_version: 3
+id: security-review
+title: Perform a defensive security review
+summary: Produce an authorized defensive security assessment with evidence-ranked findings, remediation, and residual risk.
+version: 1.2.1
+category: security
+difficulty: advanced
+risk_level: high
+estimated_duration: 2h
+tags:
+  - security
+  - defensive
+  - review
+inputs:
+  required:
+    - written authorization immutable review revision and explicit exclusions
+    - trust boundaries protected assets data classifications and attacker capabilities
+    - complete security-relevant source configuration route and test inventory
+  optional:
+    - approved threat model and security control requirements
+    - safe local validation commands and retained results
+outputs:
+  - authorized defensive security assessment
+  - prioritized security finding register with dispositions
+  - remediation verification and residual-risk plan
+prerequisites:
+  - security owner authorization identifies allowed artifacts techniques and exclusions
+  - review artifacts belong to one immutable revision
+  - analysis and approved validation can remain inside the authorized environment
+safety:
+  destructive: false
+  requires_human_approval:
+    - any active testing including local fixtures
+    - disclosing findings outside the authorized team
+  forbidden_actions:
+    - credential theft
+    - persistence or evasion
+    - attacking real systems
+    - publishing secrets
+effects:
+  writes_code: false
+  writes_configuration: false
+  writes_documentation: false
+  changes_dependencies: false
+  changes_database: false
+  changes_issue_tracker: false
+  changes_production_traffic: false
+  deletes_state: false
+  publishes_artifacts: false
+agent_requirements:
+  capabilities:
+    - repository-read
+    - shell
+    - git
+    - test-execution
+  manual_invocation_required: true
+output_contract:
+  schema: output.schema.json
+canonical:
+  file: workflow.md
+agents:
+  generic:
+    bundle_compatibility: compatible
+    capability_status: not-applicable
+    limitations:
+      - Generic Markdown provides no agent execution capability assessment.
+      - External disclosure is outside this recipe's execution contract and requires a separately authorized publication flow.
+  claude-code:
+    bundle_compatibility: limited
+    capability_status: unknown
+    limitations:
+      - The /security-review command name collides with Claude Code's bundled security-review skill, so invocation resolution must be verified in the target installation.
+      - Required capabilities and target-environment permissions have not been verified.
+      - External disclosure is outside this recipe's execution contract and requires a separately authorized publication flow.
+  codex:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+      - External disclosure is outside this recipe's execution contract and requires a separately authorized publication flow.
+  cursor:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+      - External disclosure is outside this recipe's execution contract and requires a separately authorized publication flow.
+  gemini-cli:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+      - External disclosure is outside this recipe's execution contract and requires a separately authorized publication flow.
+  opencode:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+      - External disclosure is outside this recipe's execution contract and requires a separately authorized publication flow.
+verification:
+  structural:
+    status: derived
+  installation:
+    status: untested
+  execution:
+    status: untested
+  outcome:
+    status: untested
+maintainers:
+  - project-maintainers
+license: MIT

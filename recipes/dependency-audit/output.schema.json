@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-workflows.dev/output-contracts/dependency-audit/1.0.0",
+  "title": "Dependency audit output contract",
+  "description": "Validates the resolved inventory, evidence-ranked findings, bounded action plan, proposed commands, approvals, limitations, and traceability in the reference Markdown output.",
+  "type": "string",
+  "contentMediaType": "text/markdown",
+  "x-awf-output-contract": {
+    "container": "document",
+    "artifacts": [
+      {
+        "path": "dependency-audit.md",
+        "audience": "Repository maintainers and security owners",
+        "requires_title": true,
+        "required_headings": [
+          "Scope",
+          "Inventory",
+          "Findings",
+          "Action plan",
+          "Proposed command sequence",
+          "Approval and decision record",
+          "Limitations",
+          "Traceability"
+        ],
+        "required_literals": [
+          "| Package | Relationship | Resolved version | Integrity | Runtime and package status | Advisory status | Evidence |",
+          "| Severity | Confidence | Reachability | Finding | Evidence | Impact | Recommendation | Verification | Disposition |",
+          "| Order | Proposed action | Owner | Dependency and approval | Exit evidence | Recovery |",
+          "| Material conclusion | Evidence |"
+        ],
+        "evidence_references": "required",
+        "minimum_distinct_evidence_references": 2
+      }
+    ]
+  }
+}

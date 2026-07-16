@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-workflows.dev/output-contracts/reproduce-bug/1.0.0",
+  "title": "Bug reproduction output contract",
+  "description": "Validates the disputed behavior, minimized trigger, clean-state protocol, retained regression test, diagnostic boundary, safety, uncertainty, and traceability in the reference Markdown output.",
+  "type": "string",
+  "contentMediaType": "text/markdown",
+  "x-awf-output-contract": {
+    "container": "document",
+    "artifacts": [
+      {
+        "path": "bug-reproduction-record.md",
+        "audience": "Repository maintainers and bug investigators",
+        "requires_title": true,
+        "required_headings": [
+          "Reproduction status",
+          "Facts",
+          "Trigger hypothesis and minimization experiment",
+          "Clean-state reproduction protocol",
+          "Retained regression test",
+          "Diagnostic boundary and recommendation",
+          "Validation and safety",
+          "Boundary and residual uncertainty",
+          "Traceability"
+        ],
+        "required_literals": ["| Control | Result | Evidence |", "| Material claim | Evidence |"],
+        "evidence_references": "required",
+        "minimum_distinct_evidence_references": 2
+      }
+    ]
+  }
+}

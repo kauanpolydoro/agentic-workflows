@@ -1,0 +1,102 @@
+schema_version: 3
+id: api-contract-review
+title: Review an API contract change
+summary: Produce a wire-level compatibility matrix, client-impact register, and evidence-based API rollout decision.
+version: 1.2.1
+category: api
+difficulty: intermediate
+risk_level: high
+estimated_duration: 1h
+tags:
+  - api
+  - contract
+  - compatibility
+inputs:
+  required:
+    - immutable released and proposed wire contracts with protocol revisions
+    - handler serializer default error and routing implementation evidence plus runtime observations when claimed
+    - applicable compatibility deprecation and severity policy
+  optional:
+    - known-client parser contract inventory ownership and executed parser-test results
+    - per-change sanitized monitoring metrics rollout capability and rollback evidence
+outputs:
+  - bidirectional API compatibility report and finding register
+  - observed and unknown client-impact register
+  - versioning deprecation rollout monitoring and rollback plan
+prerequisites:
+  - released and proposed contracts are immutable parseable and protocol-complete
+  - candidate implementation behavior can be reconciled with the proposed contract
+  - compatibility and deprecation policies identify the reviewed API surface
+safety:
+  destructive: false
+  requires_human_approval:
+    - shipping a breaking change
+    - removing a deprecated field
+  forbidden_actions:
+    - assuming generated schemas cover runtime behavior
+    - silently changing defaults
+    - exposing internal errors
+effects:
+  writes_code: false
+  writes_configuration: false
+  writes_documentation: false
+  changes_dependencies: false
+  changes_database: false
+  changes_issue_tracker: false
+  changes_production_traffic: false
+  deletes_state: false
+  publishes_artifacts: false
+agent_requirements:
+  capabilities:
+    - repository-read
+    - shell
+    - git
+    - test-execution
+  manual_invocation_required: true
+output_contract:
+  schema: output.schema.json
+canonical:
+  file: workflow.md
+agents:
+  generic:
+    bundle_compatibility: compatible
+    capability_status: not-applicable
+    limitations:
+      - Generic Markdown provides no agent execution capability assessment.
+  claude-code:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  codex:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  cursor:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  gemini-cli:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  opencode:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+verification:
+  structural:
+    status: derived
+  installation:
+    status: untested
+  execution:
+    status: untested
+  outcome:
+    status: untested
+maintainers:
+  - project-maintainers
+license: MIT

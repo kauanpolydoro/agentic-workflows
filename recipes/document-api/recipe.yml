@@ -1,0 +1,102 @@
+schema_version: 3
+id: document-api
+title: Produce an evidence-backed API reference
+summary: Produce a versioned API reference, executable-example status, and
+  discrepancy register from a fixed public contract and matching evidence.
+version: 1.2.0
+category: documentation
+difficulty: intermediate
+risk_level: medium
+estimated_duration: 1h
+tags:
+  - api
+  - documentation
+  - reference
+inputs:
+  required:
+    - immutable public API contract revision and exact operation identifiers
+    - matching handler, validator, and contract-test evidence
+    - supported API version, base URL shape, and intended audience
+  optional:
+    - sanitized version-matched client examples
+    - sanitized error observations
+outputs:
+  - versioned API reference
+  - example execution report
+  - contract discrepancy and evidence traceability register
+prerequisites:
+  - contract, handler, validator, and tests resolve to one immutable revision
+  - request examples can use synthetic values in an isolated non-production target
+safety:
+  destructive: false
+  requires_human_approval:
+    - publishing new or expanded public API behavior
+  forbidden_actions:
+    - copying secrets
+    - inventing response fields
+    - presenting internal stack traces as API errors
+effects:
+  writes_code: false
+  writes_configuration: false
+  writes_documentation: true
+  changes_dependencies: false
+  changes_database: false
+  changes_issue_tracker: false
+  changes_production_traffic: false
+  deletes_state: false
+  publishes_artifacts: false
+agent_requirements:
+  capabilities:
+    - repository-read
+    - repository-write
+    - shell
+    - git
+    - test-execution
+  manual_invocation_required: true
+output_contract:
+  schema: output.schema.json
+canonical:
+  file: workflow.md
+agents:
+  generic:
+    bundle_compatibility: compatible
+    capability_status: not-applicable
+    limitations:
+      - Generic Markdown provides no agent execution capability assessment.
+  claude-code:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  codex:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  cursor:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  gemini-cli:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  opencode:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+verification:
+  structural:
+    status: derived
+  installation:
+    status: untested
+  execution:
+    status: untested
+  outcome:
+    status: untested
+maintainers:
+  - project-maintainers
+license: MIT

@@ -1,0 +1,17 @@
+node_modules/
+packages/cli/catalog/
+packages/cli/catalog.json
+packages/cli/docs/
+packages/cli/LICENSE
+packages/core/LICENSE
+dist/
+coverage/
+.cache/
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+.DS_Store
+*.log
+__pycache__/
+*.py[cod]
+.env*
+!.env.example

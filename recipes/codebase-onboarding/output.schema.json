@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-workflows.dev/output-contracts/codebase-onboarding/1.0.0",
+  "title": "Codebase onboarding output contract",
+  "description": "Validates the contributor guide, verified setup, architecture map, starter task, troubleshooting, and evidence traceability in the reference Markdown output.",
+  "type": "string",
+  "contentMediaType": "text/markdown",
+  "x-awf-output-contract": {
+    "container": "document",
+    "artifacts": [
+      {
+        "path": "codebase-onboarding-guide.md",
+        "audience": "New contributors and repository maintainers",
+        "requires_title": true,
+        "required_headings": [
+          "Audience, revision, and first outcome",
+          "Prerequisites and access boundary",
+          "Verified clean-clone setup",
+          "Architecture and ownership map",
+          "Source and generated boundaries",
+          "Daily validation loop",
+          "Required behavior",
+          "Allowed files",
+          "Implementation and review sequence",
+          "Closing criteria",
+          "Troubleshooting",
+          "Verification, approvals, and limitations",
+          "Evidence traceability"
+        ],
+        "required_literals": [
+          "| Boundary | Role in the system | Dependency rule | Responsible reviewer role | Evidence |",
+          "Representative flow:"
+        ],
+        "evidence_references": "required",
+        "minimum_distinct_evidence_references": 2
+      }
+    ]
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-workflows.dev/output-contracts/profile-performance/1.0.0",
+  "title": "Performance profiling output contract",
+  "description": "Validates either a final recalculable performance assessment or an explicit evidence-gap handoff with protocol, retained observations, profile evidence state, controlled experiment, decision limits, recovery actions, uncertainty, and traceability.",
+  "type": "string",
+  "contentMediaType": "text/markdown",
+  "x-awf-output-contract": {
+    "container": "document",
+    "artifacts": [
+      {
+        "path": "performance-assessment.md",
+        "audience": "Repository maintainers and service owners",
+        "requires_title": true,
+        "required_headings": [
+          "Status and decision",
+          "Reproduction protocol",
+          "Baseline facts",
+          "Profile observation and hypothesis",
+          "Experiment results",
+          "Causal assessment",
+          "Correctness, tradeoff, and approval",
+          "Recommendation and next action",
+          "Residual uncertainty",
+          "Traceability"
+        ],
+        "required_literals": [
+          "| Metric | Baseline | Candidate | Difference | Decision rule | Classification |",
+          "| Material claim or decision | Evidence |"
+        ],
+        "evidence_references": "required",
+        "minimum_distinct_evidence_references": 2
+      }
+    ]
+  }
+}

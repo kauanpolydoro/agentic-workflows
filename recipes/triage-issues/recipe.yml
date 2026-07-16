@@ -1,0 +1,100 @@
+schema_version: 3
+id: triage-issues
+title: Triage a bounded repository issue queue
+summary: Produce policy-linked issue dispositions, duplicate evidence, proposed
+  responses, and closure criteria from an immutable queue snapshot.
+version: 1.2.0
+category: maintenance
+difficulty: intermediate
+risk_level: medium
+estimated_duration: 1h
+tags:
+  - issues
+  - triage
+  - maintenance
+inputs:
+  required:
+    - immutable issue snapshot with bodies, comments, labels, states, environments, and attachment inventory
+    - versioned owner-approved triage policy with labels, states, duplicate rules, and escalation routes
+  optional:
+    - approved roadmap priorities
+    - versioned support matrix
+outputs:
+  - issue disposition register
+  - duplicate evidence map
+  - proposed responses, owned next actions, and closure criteria
+prerequisites:
+  - every issue in the bounded snapshot is readable and unchanged during triage
+  - labels, states, duplicate threshold, mutation authority, and private security route are defined
+safety:
+  destructive: false
+  requires_human_approval:
+    - closing or publicly responding to issues
+    - changing priority commitments
+    - routing a suspected security report
+  forbidden_actions:
+    - posting secrets from reports
+    - promising dates without owner approval
+    - mass-closing low-information reports
+    - mutating the issue tracker without approval
+effects:
+  writes_code: false
+  writes_configuration: false
+  writes_documentation: false
+  changes_dependencies: false
+  changes_database: false
+  changes_issue_tracker: false
+  changes_production_traffic: false
+  deletes_state: false
+  publishes_artifacts: false
+agent_requirements:
+  capabilities:
+    - repository-read
+  manual_invocation_required: true
+output_contract:
+  schema: output.schema.json
+canonical:
+  file: workflow.md
+agents:
+  generic:
+    bundle_compatibility: compatible
+    capability_status: not-applicable
+    limitations:
+      - Generic Markdown provides no agent execution capability assessment.
+  claude-code:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  codex:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  cursor:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  gemini-cli:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  opencode:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+verification:
+  structural:
+    status: derived
+  installation:
+    status: untested
+  execution:
+    status: untested
+  outcome:
+    status: untested
+maintainers:
+  - project-maintainers
+license: MIT

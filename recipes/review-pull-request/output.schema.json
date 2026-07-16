@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-workflows.dev/output-contracts/review-pull-request/1.0.0",
+  "title": "Pull request review output contract",
+  "description": "Validates the immutable review scope, evidence-ranked findings, executed and proposed checks, coverage disposition, limitations, approval gate, and traceability in the reference Markdown output.",
+  "type": "string",
+  "contentMediaType": "text/markdown",
+  "x-awf-output-contract": {
+    "container": "document",
+    "artifacts": [
+      {
+        "path": "pull-request-review.md",
+        "audience": "Pull request authors and repository maintainers",
+        "requires_title": true,
+        "required_headings": [
+          "Scope and verdict",
+          "Findings",
+          "Checks",
+          "Executed",
+          "Proposed",
+          "Coverage disposition",
+          "Assumptions and limitations",
+          "Approval and next decision",
+          "Traceability"
+        ],
+        "required_literals": [
+          "| Severity | Confidence | Finding | Evidence | Impact | Recommendation | Verification | Disposition |",
+          "| Changed file | Reviewed behavior | Evidence | Disposition |",
+          "| Material conclusion | Evidence |"
+        ],
+        "evidence_references": "required",
+        "minimum_distinct_evidence_references": 2
+      }
+    ]
+  }
+}

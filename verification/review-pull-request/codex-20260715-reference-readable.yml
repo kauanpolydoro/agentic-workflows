@@ -1,0 +1,56 @@
+schema_version: 2
+id: review-pull-request-codex-20260715-reference-readable
+supersedes: review-pull-request-codex-20260715-restricted
+recipe: review-pull-request
+recipe_version: 1.2.0
+recipe_content_sha256: a388414a4065acbbb4fd1e8715fd1070a0fe298bdf697a6ea001cadf17c22ad9
+agent: codex
+adapter_version: 1.0.0
+agent_version: codex-cli 0.144.4
+fixture: recipes/review-pull-request/examples/input.md
+command: timeout 600 codex exec --sandbox read-only --ephemeral --ignore-user-config --skip-git-repo-check -C <temporary-project> -o <temporary-output>
+exit_code: 0
+started_at: 2026-07-15T20:20:12Z
+finished_at: 2026-07-15T20:20:40Z
+environment:
+  runner_image: local WSL2 host; no container image
+  os: Ubuntu 24.04.4 LTS on WSL2 kernel 5.15.167.4
+  node_version: 24.13.1
+  pnpm_version: 10.28.2
+source:
+  repository_revision: e26ecf77fcd7ad3644db78b76c0cdba3f058550a
+  workflow_run_url: null
+  runner: local Codex orchestration on WSL2
+installation:
+  status: passing
+execution:
+  status: failing
+outcome:
+  status: untested
+evidence:
+  command_log:
+    path: verification/artifacts/review-pull-request-codex-20260715-execution/command.txt
+    sha256: 32cc3d83e78d9323125561d19594aeed431b9c17c2bd3575dbdb7adbf10b8eda
+  stdout:
+    path: verification/artifacts/review-pull-request-codex-20260715-execution/stdout.txt
+    sha256: ff71cfa41edcdc9aac9f75f72c96f1ccc27a6d219ef23aead6e00a579259c671
+  stderr:
+    path: verification/artifacts/review-pull-request-codex-20260715-execution/stderr.txt
+    sha256: 7017912711b0fbbe39775ee8ccc20f174e9dc9bfabceef6d6a881e14504fdc64
+  installation_artifact:
+    path: verification/artifacts/review-pull-request-codex-20260715-execution/installation-manifest.yml
+    sha256: 98a477d1d905672f7c3094b9edbc3070e4e039ba0be9d4c3a87bb6b68bd45249
+  input_file:
+    path: verification/artifacts/review-pull-request-codex-20260715-execution/input.md
+    sha256: d256e21e30d30076d8925bb7512bcdc3499e1dffdf19d3a953bbb1f8d729bc85
+  output_file:
+    path: verification/artifacts/review-pull-request-codex-20260715-execution/output.md
+    sha256: ff71cfa41edcdc9aac9f75f72c96f1ccc27a6d219ef23aead6e00a579259c671
+  outcome_review: null
+reviewer: null
+reviewed_at: null
+criteria: []
+notes:
+  - The second Codex prompt allowed reading every installed example asset.
+  - The output passed the deterministic contract but exactly matched the installed reference output hash.
+  - The attempt is classified as failing independent verification and is superseded by a reference-isolated run.

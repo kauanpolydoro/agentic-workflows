@@ -1,0 +1,5 @@
+schema_version: 1
+
+# Add a review only when a comparison reaches the report threshold.
+# Every review must include recipes, surface, disposition, rationale, reviewer, reviewed_at, and the exact content_sha256 emitted by the current report row.
+reviews: []

@@ -1,0 +1,105 @@
+schema_version: 3
+id: debug-failing-ci
+title: Diagnose and correct a failing CI job
+summary: Produce an evidence-backed CI diagnosis, minimal causal patch, and verification matrix without weakening the failed control.
+version: 1.2.0
+category: debugging
+difficulty: intermediate
+risk_level: medium
+estimated_duration: 1h
+tags:
+  - ci
+  - debugging
+  - root-cause-analysis
+inputs:
+  required:
+    - immutable CI run ID attempt job name and commit SHA
+    - complete sanitized first-failure log with command and exit code
+    - CI workflow file runner image runtime dependency and cache definitions
+    - clean reproduction command and environment comparison
+  optional:
+    - immutable last-passing run with comparable environment
+    - generated-artifact and cache inventories
+outputs:
+  - evidence-backed CI diagnosis record
+  - minimal causal patch at a named path
+  - local and external CI verification matrix
+prerequisites:
+  - the failing revision resolves to an immutable commit
+  - the first failing command and complete relevant log are available
+  - diagnostic commands can run in an isolated non-production environment
+safety:
+  destructive: false
+  requires_human_approval:
+    - pushing a CI workflow or release-behavior change
+    - running repeated paid or resource-intensive CI experiments
+  forbidden_actions:
+    - disabling required checks
+    - deleting valid assertions
+    - exposing CI secrets
+effects:
+  writes_code: true
+  writes_configuration: true
+  writes_documentation: false
+  changes_dependencies: false
+  changes_database: false
+  changes_issue_tracker: false
+  changes_production_traffic: false
+  deletes_state: false
+  publishes_artifacts: false
+agent_requirements:
+  capabilities:
+    - repository-read
+    - repository-write
+    - shell
+    - git
+    - network
+    - test-execution
+  manual_invocation_required: true
+output_contract:
+  schema: output.schema.json
+canonical:
+  file: workflow.md
+agents:
+  generic:
+    bundle_compatibility: compatible
+    capability_status: not-applicable
+    limitations:
+      - Generic Markdown provides no agent execution capability assessment.
+  claude-code:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  codex:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  cursor:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  gemini-cli:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  opencode:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+verification:
+  structural:
+    status: derived
+  installation:
+    status: untested
+  execution:
+    status: untested
+  outcome:
+    status: untested
+maintainers:
+  - project-maintainers
+license: MIT

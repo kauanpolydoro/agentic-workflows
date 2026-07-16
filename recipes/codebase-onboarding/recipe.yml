@@ -1,0 +1,108 @@
+schema_version: 3
+id: codebase-onboarding
+title: Build an evidence-based codebase onboarding guide
+summary: Produce a role-specific guide from an immutable repository snapshot with verified setup, traced architecture, safe edit boundaries, and a bounded first contribution.
+version: 1.2.0
+category: documentation
+difficulty: intermediate
+risk_level: low
+estimated_duration: 2h
+tags:
+  - onboarding
+  - architecture
+  - contribution
+  - documentation
+inputs:
+  required:
+    - immutable repository revision starting working-tree state and applicable instruction files
+    - target contributor role access boundary prerequisites and expected first contribution
+    - manifests entry points package boundaries ownership records and source generated file inventory
+    - exact setup validation and representative-flow evidence with executed or blocked status
+  optional:
+    - owner-approved team review release and communication conventions
+    - maintainer-curated starter tasks with current scope and acceptance evidence
+outputs:
+  - role-specific contributor orientation guide with verified setup and daily commands
+  - evidence-linked architecture ownership user-flow and source-generated boundary map
+  - bounded first-contribution brief with validation review safety and closing criteria
+prerequisites:
+  - the repository revision resolves and is inspectable without exposing secret values
+  - applicable repository instructions and tool manifests are discoverable
+  - setup and at least one focused validation can run in isolation or be recorded as externally blocked
+  - architecture ownership and starter-task claims have an accountable reviewer role
+safety:
+  destructive: false
+  requires_human_approval:
+    - repository maintainer approval before publishing architecture ownership or setup guidance
+    - service owner approval before documenting any privileged access procedure
+    - responsible code owner approval before designating a starter contribution
+  forbidden_actions:
+    - exposing credentials environment secrets customer data or private service endpoints
+    - inventing architecture ownership commands access or validation results
+    - recommending destructive setup production access or direct edits to generated artifacts
+effects:
+  writes_code: false
+  writes_configuration: false
+  writes_documentation: true
+  changes_dependencies: false
+  changes_database: false
+  changes_issue_tracker: false
+  changes_production_traffic: false
+  deletes_state: false
+  publishes_artifacts: false
+agent_requirements:
+  capabilities:
+    - repository-read
+    - repository-write
+    - shell
+    - git
+    - network
+    - test-execution
+  manual_invocation_required: true
+output_contract:
+  schema: output.schema.json
+canonical:
+  file: workflow.md
+agents:
+  generic:
+    bundle_compatibility: compatible
+    capability_status: not-applicable
+    limitations:
+      - Generic Markdown provides no agent execution capability assessment.
+  claude-code:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  codex:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  cursor:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  gemini-cli:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  opencode:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+verification:
+  structural:
+    status: derived
+  installation:
+    status: untested
+  execution:
+    status: untested
+  outcome:
+    status: untested
+maintainers:
+  - project-maintainers
+license: MIT

@@ -1,0 +1,107 @@
+schema_version: 3
+id: write-release-notes
+title: Produce evidence-backed release notes
+summary: Produce public Markdown release notes and a separate internal evidence package from an immutable, reviewed release evidence set.
+version: 1.2.0
+category: release
+difficulty: intermediate
+risk_level: medium
+estimated_duration: 1h
+tags:
+  - release
+  - changelog
+  - traceability
+  - communication
+inputs:
+  required:
+    - release identity with version, previous version, draft or final status, audience, and responsible roles
+    - immutable base and release revisions with a verified ancestry relationship
+    - candidate change ledger with merge references, range membership, shipping disposition, category, and user impact
+    - verification and documentation evidence for every included material change plus approved migration evidence for required actions
+    - built artifact inventory with checksums and embedded source revision
+    - reviewed breaking changes, required actions, deprecations, known limitations, security disposition, and approval state
+  optional:
+    - verified contributor identities covered by the repository attribution policy
+    - publication channel constraints and an approved long-form migration guide
+outputs:
+  - public release-notes.md with visible status, reader-relevant changes, limitations, and approved upgrade actions
+  - internal release-evidence.md with immutable boundary, artifact verification, exclusions, approvals, and claim traceability
+prerequisites:
+  - both release boundary revisions resolve to immutable commits and the base is an ancestor of the release revision
+  - every candidate change is classified as included, excluded, reverted, or unresolved
+  - every publishable artifact identifies the proposed release revision
+  - security disclosure and final publication approval states are recorded explicitly
+safety:
+  destructive: false
+  requires_human_approval:
+    - repository maintainer approval for required upgrade instructions
+    - security owner approval before any security-sensitive public wording
+    - release manager approval before a draft becomes final
+  forbidden_actions:
+    - inventing shipped changes, contributors, commands, measurements, compatibility, or verification results
+    - describing excluded, reverted, out-of-range, or unresolved work as shipped
+    - exposing secrets, private repository data, exploit instructions, or embargoed security details
+    - changing tags, artifacts, release state, or publication systems while drafting notes
+effects:
+  writes_code: false
+  writes_configuration: false
+  writes_documentation: false
+  changes_dependencies: false
+  changes_database: false
+  changes_issue_tracker: false
+  changes_production_traffic: false
+  deletes_state: false
+  publishes_artifacts: false
+agent_requirements:
+  capabilities:
+    - repository-read
+    - shell
+    - git
+  manual_invocation_required: true
+output_contract:
+  schema: output.schema.json
+canonical:
+  file: workflow.md
+agents:
+  generic:
+    bundle_compatibility: compatible
+    capability_status: not-applicable
+    limitations:
+      - Generic Markdown provides no agent execution capability assessment.
+  claude-code:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  codex:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  cursor:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  gemini-cli:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  opencode:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+verification:
+  structural:
+    status: derived
+  installation:
+    status: untested
+  execution:
+    status: untested
+  outcome:
+    status: untested
+maintainers:
+  - project-maintainers
+license: MIT

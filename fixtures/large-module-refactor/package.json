@@ -1,0 +1,8 @@
+{
+  "name": "awf-fixture-large-module-refactor",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}

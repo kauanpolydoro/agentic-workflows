@@ -1,0 +1,4591 @@
+[
+  {
+    "schema_version": 3,
+    "id": "api-contract-review",
+    "title": "Review an API contract change",
+    "summary": "Produce a wire-level compatibility matrix, client-impact register, and evidence-based API rollout decision.",
+    "version": "1.2.1",
+    "category": "api",
+    "difficulty": "intermediate",
+    "risk_level": "high",
+    "estimated_duration": "1h",
+    "tags": ["api", "contract", "compatibility"],
+    "inputs": {
+      "required": [
+        "immutable released and proposed wire contracts with protocol revisions",
+        "handler serializer default error and routing implementation evidence plus runtime observations when claimed",
+        "applicable compatibility deprecation and severity policy"
+      ],
+      "optional": [
+        "known-client parser contract inventory ownership and executed parser-test results",
+        "per-change sanitized monitoring metrics rollout capability and rollback evidence"
+      ]
+    },
+    "outputs": [
+      "bidirectional API compatibility report and finding register",
+      "observed and unknown client-impact register",
+      "versioning deprecation rollout monitoring and rollback plan"
+    ],
+    "prerequisites": [
+      "released and proposed contracts are immutable parseable and protocol-complete",
+      "candidate implementation behavior can be reconciled with the proposed contract",
+      "compatibility and deprecation policies identify the reviewed API surface"
+    ],
+    "safety": {
+      "destructive": false,
+      "requires_human_approval": ["shipping a breaking change", "removing a deprecated field"],
+      "forbidden_actions": [
+        "assuming generated schemas cover runtime behavior",
+        "silently changing defaults",
+        "exposing internal errors"
+      ]
+    },
+    "effects": {
+      "writes_code": false,
+      "writes_configuration": false,
+      "writes_documentation": false,
+      "changes_dependencies": false,
+      "changes_database": false,
+      "changes_issue_tracker": false,
+      "changes_production_traffic": false,
+      "deletes_state": false,
+      "publishes_artifacts": false
+    },
+    "agent_requirements": {
+      "capabilities": ["repository-read", "shell", "git", "test-execution"],
+      "manual_invocation_required": true
+    },
+    "output_contract": {
+      "schema": "output.schema.json"
+    },
+    "canonical": {
+      "file": "workflow.md"
+    },
+    "agents": {
+      "generic": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "not-applicable",
+        "limitations": ["Generic Markdown provides no agent execution capability assessment."],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "claude-code": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "codex": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "cursor": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "gemini-cli": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "opencode": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      }
+    },
+    "verification": {
+      "structural": {
+        "status": "passing",
+        "source": "derived",
+        "checks": [
+          "schema",
+          "required-files",
+          "content",
+          "evidence-ids",
+          "relative-links",
+          "output-contract"
+        ],
+        "recipe_content_sha256": "0723f7cd75b4c8152fba1c29d021953416204d5ed8ef7e175ef6a5fa68598698"
+      }
+    },
+    "maintainers": ["project-maintainers"],
+    "license": "MIT"
+  },
+  {
+    "schema_version": 3,
+    "id": "codebase-onboarding",
+    "title": "Build an evidence-based codebase onboarding guide",
+    "summary": "Produce a role-specific guide from an immutable repository snapshot with verified setup, traced architecture, safe edit boundaries, and a bounded first contribution.",
+    "version": "1.2.0",
+    "category": "documentation",
+    "difficulty": "intermediate",
+    "risk_level": "low",
+    "estimated_duration": "2h",
+    "tags": ["onboarding", "architecture", "contribution", "documentation"],
+    "inputs": {
+      "required": [
+        "immutable repository revision starting working-tree state and applicable instruction files",
+        "target contributor role access boundary prerequisites and expected first contribution",
+        "manifests entry points package boundaries ownership records and source generated file inventory",
+        "exact setup validation and representative-flow evidence with executed or blocked status"
+      ],
+      "optional": [
+        "owner-approved team review release and communication conventions",
+        "maintainer-curated starter tasks with current scope and acceptance evidence"
+      ]
+    },
+    "outputs": [
+      "role-specific contributor orientation guide with verified setup and daily commands",
+      "evidence-linked architecture ownership user-flow and source-generated boundary map",
+      "bounded first-contribution brief with validation review safety and closing criteria"
+    ],
+    "prerequisites": [
+      "the repository revision resolves and is inspectable without exposing secret values",
+      "applicable repository instructions and tool manifests are discoverable",
+      "setup and at least one focused validation can run in isolation or be recorded as externally blocked",
+      "architecture ownership and starter-task claims have an accountable reviewer role"
+    ],
+    "safety": {
+      "destructive": false,
+      "requires_human_approval": [
+        "repository maintainer approval before publishing architecture ownership or setup guidance",
+        "service owner approval before documenting any privileged access procedure",
+        "responsible code owner approval before designating a starter contribution"
+      ],
+      "forbidden_actions": [
+        "exposing credentials environment secrets customer data or private service endpoints",
+        "inventing architecture ownership commands access or validation results",
+        "recommending destructive setup production access or direct edits to generated artifacts"
+      ]
+    },
+    "effects": {
+      "writes_code": false,
+      "writes_configuration": false,
+      "writes_documentation": true,
+      "changes_dependencies": false,
+      "changes_database": false,
+      "changes_issue_tracker": false,
+      "changes_production_traffic": false,
+      "deletes_state": false,
+      "publishes_artifacts": false
+    },
+    "agent_requirements": {
+      "capabilities": [
+        "repository-read",
+        "repository-write",
+        "shell",
+        "git",
+        "network",
+        "test-execution"
+      ],
+      "manual_invocation_required": true
+    },
+    "output_contract": {
+      "schema": "output.schema.json"
+    },
+    "canonical": {
+      "file": "workflow.md"
+    },
+    "agents": {
+      "generic": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "not-applicable",
+        "limitations": ["Generic Markdown provides no agent execution capability assessment."],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "claude-code": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "codex": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "cursor": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "gemini-cli": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "opencode": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      }
+    },
+    "verification": {
+      "structural": {
+        "status": "passing",
+        "source": "derived",
+        "checks": [
+          "schema",
+          "required-files",
+          "content",
+          "evidence-ids",
+          "relative-links",
+          "output-contract"
+        ],
+        "recipe_content_sha256": "5b1c72ff703db8edf9cd29a0336e511e46dbd0111a53545ad650818694bda1a4"
+      }
+    },
+    "maintainers": ["project-maintainers"],
+    "license": "MIT"
+  },
+  {
+    "schema_version": 3,
+    "id": "database-migration-review",
+    "title": "Review a database migration",
+    "summary": "Produce an engine-specific migration risk assessment, staged rollout, approval package, and recovery guidance.",
+    "version": "1.2.1",
+    "category": "database",
+    "difficulty": "advanced",
+    "risk_level": "critical",
+    "estimated_duration": "2h",
+    "tags": ["database", "migration", "deployment"],
+    "inputs": {
+      "required": [
+        "complete ordered migration SQL current schema and affected invariants",
+        "target database engine exact version environment and engine-behavior evidence",
+        "table size row count write rate traffic window and approved abort thresholds",
+        "old and new application behavior with mixed-version deployment sequence"
+      ],
+      "optional": [
+        "representative rehearsal timings lock observations and query plans",
+        "backup restore RTO RPO and prior recovery evidence"
+      ]
+    },
+    "outputs": [
+      "statement-level migration risk and compatibility assessment",
+      "staged rollout with checkpoints monitoring owners and approvals",
+      "rollback or roll-forward recovery package"
+    ],
+    "prerequisites": [
+      "engine version target environment SQL and current schema are identified",
+      "workload and mixed-version application behavior are measured or explicitly unavailable",
+      "review and rehearsal cannot execute against production"
+    ],
+    "safety": {
+      "destructive": false,
+      "requires_human_approval": [
+        "production execution",
+        "irreversible data transformation",
+        "contracting old columns"
+      ],
+      "forbidden_actions": [
+        "running migration or destructive SQL against production during review",
+        "running destructive rehearsal SQL outside an approved disposable database",
+        "assuming rollback is lossless",
+        "ignoring mixed-version deployment"
+      ]
+    },
+    "effects": {
+      "writes_code": false,
+      "writes_configuration": false,
+      "writes_documentation": false,
+      "changes_dependencies": false,
+      "changes_database": true,
+      "changes_issue_tracker": false,
+      "changes_production_traffic": false,
+      "deletes_state": false,
+      "publishes_artifacts": false
+    },
+    "agent_requirements": {
+      "capabilities": ["repository-read", "shell", "git", "test-execution", "database"],
+      "manual_invocation_required": true
+    },
+    "output_contract": {
+      "schema": "output.schema.json"
+    },
+    "canonical": {
+      "file": "workflow.md"
+    },
+    "agents": {
+      "generic": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "not-applicable",
+        "limitations": ["Generic Markdown provides no agent execution capability assessment."],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "claude-code": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "codex": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "cursor": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "gemini-cli": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "opencode": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      }
+    },
+    "verification": {
+      "structural": {
+        "status": "passing",
+        "source": "derived",
+        "checks": [
+          "schema",
+          "required-files",
+          "content",
+          "evidence-ids",
+          "relative-links",
+          "output-contract"
+        ],
+        "recipe_content_sha256": "0c7c5e1310c8de971d7cd67e0d3659057bf5605ece6583b4b05ddf5204209307"
+      }
+    },
+    "maintainers": ["project-maintainers"],
+    "license": "MIT"
+  },
+  {
+    "schema_version": 3,
+    "id": "debug-failing-ci",
+    "title": "Diagnose and correct a failing CI job",
+    "summary": "Produce an evidence-backed CI diagnosis, minimal causal patch, and verification matrix without weakening the failed control.",
+    "version": "1.2.0",
+    "category": "debugging",
+    "difficulty": "intermediate",
+    "risk_level": "medium",
+    "estimated_duration": "1h",
+    "tags": ["ci", "debugging", "root-cause-analysis"],
+    "inputs": {
+      "required": [
+        "immutable CI run ID attempt job name and commit SHA",
+        "complete sanitized first-failure log with command and exit code",
+        "CI workflow file runner image runtime dependency and cache definitions",
+        "clean reproduction command and environment comparison"
+      ],
+      "optional": [
+        "immutable last-passing run with comparable environment",
+        "generated-artifact and cache inventories"
+      ]
+    },
+    "outputs": [
+      "evidence-backed CI diagnosis record",
+      "minimal causal patch at a named path",
+      "local and external CI verification matrix"
+    ],
+    "prerequisites": [
+      "the failing revision resolves to an immutable commit",
+      "the first failing command and complete relevant log are available",
+      "diagnostic commands can run in an isolated non-production environment"
+    ],
+    "safety": {
+      "destructive": false,
+      "requires_human_approval": [
+        "pushing a CI workflow or release-behavior change",
+        "running repeated paid or resource-intensive CI experiments"
+      ],
+      "forbidden_actions": [
+        "disabling required checks",
+        "deleting valid assertions",
+        "exposing CI secrets"
+      ]
+    },
+    "effects": {
+      "writes_code": true,
+      "writes_configuration": true,
+      "writes_documentation": false,
+      "changes_dependencies": false,
+      "changes_database": false,
+      "changes_issue_tracker": false,
+      "changes_production_traffic": false,
+      "deletes_state": false,
+      "publishes_artifacts": false
+    },
+    "agent_requirements": {
+      "capabilities": [
+        "repository-read",
+        "repository-write",
+        "shell",
+        "git",
+        "network",
+        "test-execution"
+      ],
+      "manual_invocation_required": true
+    },
+    "output_contract": {
+      "schema": "output.schema.json"
+    },
+    "canonical": {
+      "file": "workflow.md"
+    },
+    "agents": {
+      "generic": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "not-applicable",
+        "limitations": ["Generic Markdown provides no agent execution capability assessment."],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "claude-code": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "codex": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "cursor": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "gemini-cli": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "opencode": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      }
+    },
+    "verification": {
+      "structural": {
+        "status": "passing",
+        "source": "derived",
+        "checks": [
+          "schema",
+          "required-files",
+          "content",
+          "evidence-ids",
+          "relative-links",
+          "output-contract"
+        ],
+        "recipe_content_sha256": "5310d64afcf74dcf0bd0456db85dfc55c991e6d9f75faab4d0a102ca5ba08834"
+      }
+    },
+    "maintainers": ["project-maintainers"],
+    "license": "MIT"
+  },
+  {
+    "schema_version": 3,
+    "id": "dependency-audit",
+    "title": "Audit dependency risk",
+    "summary": "Produce a reproducible dependency inventory and risk plan separating affected versions from application reachability.",
+    "version": "1.2.1",
+    "category": "security",
+    "difficulty": "intermediate",
+    "risk_level": "medium",
+    "estimated_duration": "1h",
+    "tags": ["dependencies", "security", "supply-chain"],
+    "inputs": {
+      "required": [
+        "immutable revision dependency manifests and dependency-group policy",
+        "matching lockfiles with complete resolved graph versions and integrity records",
+        "dated advisory records with affected ranges conditions and source identity"
+      ],
+      "optional": [
+        "runtime import call-site and packaged-artifact inventory",
+        "software bill of materials license policy and provenance records"
+      ]
+    },
+    "outputs": [
+      "reproducible dependency inventory and audit scope",
+      "risk-ranked dependency finding register with reachability dispositions",
+      "removal upgrade monitoring or acceptance plan"
+    ],
+    "prerequisites": [
+      "manifest and lockfile belong to the same immutable revision",
+      "direct transitive production and development dependencies are distinguishable",
+      "audit can avoid untrusted lifecycle scripts and secret disclosure"
+    ],
+    "safety": {
+      "destructive": false,
+      "requires_human_approval": [
+        "removing a public runtime capability",
+        "accepting a vulnerable dependency temporarily"
+      ],
+      "forbidden_actions": [
+        "running install scripts from unknown packages",
+        "claiming exploitability without reachability evidence",
+        "printing registry tokens"
+      ]
+    },
+    "effects": {
+      "writes_code": false,
+      "writes_configuration": false,
+      "writes_documentation": false,
+      "changes_dependencies": false,
+      "changes_database": false,
+      "changes_issue_tracker": false,
+      "changes_production_traffic": false,
+      "deletes_state": false,
+      "publishes_artifacts": false
+    },
+    "agent_requirements": {
+      "capabilities": ["repository-read", "shell", "git"],
+      "manual_invocation_required": true
+    },
+    "output_contract": {
+      "schema": "output.schema.json"
+    },
+    "canonical": {
+      "file": "workflow.md"
+    },
+    "agents": {
+      "generic": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "not-applicable",
+        "limitations": ["Generic Markdown provides no agent execution capability assessment."],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "claude-code": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "codex": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "cursor": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "gemini-cli": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "opencode": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      }
+    },
+    "verification": {
+      "structural": {
+        "status": "passing",
+        "source": "derived",
+        "checks": [
+          "schema",
+          "required-files",
+          "content",
+          "evidence-ids",
+          "relative-links",
+          "output-contract"
+        ],
+        "recipe_content_sha256": "9a337c62b1c87ddcb0b140a94f22e5ec75eceee043636cd9c0bbabd4fb9d7c8f"
+      }
+    },
+    "maintainers": ["project-maintainers"],
+    "license": "MIT"
+  },
+  {
+    "schema_version": 3,
+    "id": "document-api",
+    "title": "Produce an evidence-backed API reference",
+    "summary": "Produce a versioned API reference, executable-example status, and discrepancy register from a fixed public contract and matching evidence.",
+    "version": "1.2.0",
+    "category": "documentation",
+    "difficulty": "intermediate",
+    "risk_level": "medium",
+    "estimated_duration": "1h",
+    "tags": ["api", "documentation", "reference"],
+    "inputs": {
+      "required": [
+        "immutable public API contract revision and exact operation identifiers",
+        "matching handler, validator, and contract-test evidence",
+        "supported API version, base URL shape, and intended audience"
+      ],
+      "optional": ["sanitized version-matched client examples", "sanitized error observations"]
+    },
+    "outputs": [
+      "versioned API reference",
+      "example execution report",
+      "contract discrepancy and evidence traceability register"
+    ],
+    "prerequisites": [
+      "contract, handler, validator, and tests resolve to one immutable revision",
+      "request examples can use synthetic values in an isolated non-production target"
+    ],
+    "safety": {
+      "destructive": false,
+      "requires_human_approval": ["publishing new or expanded public API behavior"],
+      "forbidden_actions": [
+        "copying secrets",
+        "inventing response fields",
+        "presenting internal stack traces as API errors"
+      ]
+    },
+    "effects": {
+      "writes_code": false,
+      "writes_configuration": false,
+      "writes_documentation": true,
+      "changes_dependencies": false,
+      "changes_database": false,
+      "changes_issue_tracker": false,
+      "changes_production_traffic": false,
+      "deletes_state": false,
+      "publishes_artifacts": false
+    },
+    "agent_requirements": {
+      "capabilities": ["repository-read", "repository-write", "shell", "git", "test-execution"],
+      "manual_invocation_required": true
+    },
+    "output_contract": {
+      "schema": "output.schema.json"
+    },
+    "canonical": {
+      "file": "workflow.md"
+    },
+    "agents": {
+      "generic": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "not-applicable",
+        "limitations": ["Generic Markdown provides no agent execution capability assessment."],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "claude-code": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "codex": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "cursor": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "gemini-cli": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "opencode": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      }
+    },
+    "verification": {
+      "structural": {
+        "status": "passing",
+        "source": "derived",
+        "checks": [
+          "schema",
+          "required-files",
+          "content",
+          "evidence-ids",
+          "relative-links",
+          "output-contract"
+        ],
+        "recipe_content_sha256": "df5c6549de5cc5e8931065ca25cc4ccc0015d141889d3a1f2a7842804fd487a0"
+      }
+    },
+    "maintainers": ["project-maintainers"],
+    "license": "MIT"
+  },
+  {
+    "schema_version": 3,
+    "id": "generate-adr",
+    "title": "Record an evidence-backed architecture decision",
+    "summary": "Produce a reviewable ADR that separates facts from assumptions, compares viable options consistently, records accountable approval, and defines consequences and revisit triggers.",
+    "version": "1.2.0",
+    "category": "architecture",
+    "difficulty": "intermediate",
+    "risk_level": "medium",
+    "estimated_duration": "2h",
+    "tags": ["architecture", "adr", "decision", "governance"],
+    "inputs": {
+      "required": [
+        "stable decision boundary affected systems current state and explicit exclusions",
+        "attributable facts constraints assumptions open questions and decision drivers",
+        "viable alternatives evaluated against common criteria with concrete disadvantages",
+        "accountable decision owner approval state related decisions and supersession relationship"
+      ],
+      "optional": [
+        "reproducible benchmark incident or cost evidence with method and provenance",
+        "implementation sequencing migration constraints and reversible experiment results"
+      ]
+    },
+    "outputs": [
+      "complete proposed accepted rejected or superseded architecture decision record",
+      "common-criteria alternatives comparison with evidence uncertainty and disposition",
+      "consequence action ownership approval and revisit record"
+    ],
+    "prerequisites": [
+      "one accountable architecture decision owner role is identified",
+      "the decision boundary is stable enough to compare at least two viable alternatives",
+      "evidence assumptions preferences and unknowns can be distinguished",
+      "existing related decisions have been searched and their relationship is known"
+    ],
+    "safety": {
+      "destructive": false,
+      "requires_human_approval": [
+        "architecture owner approval before marking the ADR accepted or rejected",
+        "architecture owner approval before superseding an existing decision"
+      ],
+      "forbidden_actions": [
+        "fabricating measurements dates consensus implementation status or approval",
+        "hiding material disadvantages uncertainty or a viable alternative to favor one option",
+        "marking an ADR accepted rejected or superseded without retained owner evidence"
+      ]
+    },
+    "effects": {
+      "writes_code": false,
+      "writes_configuration": false,
+      "writes_documentation": true,
+      "changes_dependencies": false,
+      "changes_database": false,
+      "changes_issue_tracker": false,
+      "changes_production_traffic": false,
+      "deletes_state": false,
+      "publishes_artifacts": false
+    },
+    "agent_requirements": {
+      "capabilities": ["repository-read", "repository-write", "git"],
+      "manual_invocation_required": true
+    },
+    "output_contract": {
+      "schema": "output.schema.json"
+    },
+    "canonical": {
+      "file": "workflow.md"
+    },
+    "agents": {
+      "generic": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "not-applicable",
+        "limitations": ["Generic Markdown provides no agent execution capability assessment."],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "claude-code": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "codex": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "cursor": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "gemini-cli": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "opencode": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      }
+    },
+    "verification": {
+      "structural": {
+        "status": "passing",
+        "source": "derived",
+        "checks": [
+          "schema",
+          "required-files",
+          "content",
+          "evidence-ids",
+          "relative-links",
+          "output-contract"
+        ],
+        "recipe_content_sha256": "6ed8f8f08528d645ef02f5ef83a8919f6ec278eff29a7dbd23cddb7f50537ebc"
+      }
+    },
+    "maintainers": ["project-maintainers"],
+    "license": "MIT"
+  },
+  {
+    "schema_version": 3,
+    "id": "generate-tests",
+    "title": "Add behavior-focused regression tests",
+    "summary": "Implement risk-ranked tests at observable boundaries and prove that each test detects its intended regression without coupling to private implementation.",
+    "version": "1.2.0",
+    "category": "testing",
+    "difficulty": "intermediate",
+    "risk_level": "low",
+    "estimated_duration": "1h",
+    "tags": ["testing", "regression", "mutation-check"],
+    "inputs": {
+      "required": [
+        "attributable behavior contract with inputs outputs invariants boundaries and errors",
+        "named target code paths public test seam framework and deterministic dependencies",
+        "focused and project test commands with immutable baseline results",
+        "ranked regression risks and existing coverage inventory"
+      ],
+      "optional": [
+        "coverage report tied to the target revision",
+        "incident defect and mutation history"
+      ]
+    },
+    "outputs": [
+      "risk-to-test traceability matrix",
+      "implemented test changes at named paths",
+      "focused project and mutation-validation record"
+    ],
+    "prerequisites": [
+      "expected behavior has an attributable source or approval",
+      "the test runner completes in the target environment",
+      "mutable state and external side effects can be isolated"
+    ],
+    "safety": {
+      "destructive": false,
+      "requires_human_approval": [
+        "encoding behavior not established by the supplied contract",
+        "adding destructive or externally billed test setup"
+      ],
+      "forbidden_actions": [
+        "mocking the unit under test",
+        "asserting private call order without contractual value",
+        "inflating coverage with duplicate cases"
+      ]
+    },
+    "effects": {
+      "writes_code": true,
+      "writes_configuration": false,
+      "writes_documentation": false,
+      "changes_dependencies": false,
+      "changes_database": false,
+      "changes_issue_tracker": false,
+      "changes_production_traffic": false,
+      "deletes_state": false,
+      "publishes_artifacts": false
+    },
+    "agent_requirements": {
+      "capabilities": ["repository-read", "repository-write", "shell", "git", "test-execution"],
+      "manual_invocation_required": true
+    },
+    "output_contract": {
+      "schema": "output.schema.json"
+    },
+    "canonical": {
+      "file": "workflow.md"
+    },
+    "agents": {
+      "generic": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "not-applicable",
+        "limitations": ["Generic Markdown provides no agent execution capability assessment."],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "claude-code": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "codex": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "cursor": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "gemini-cli": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "opencode": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      }
+    },
+    "verification": {
+      "structural": {
+        "status": "passing",
+        "source": "derived",
+        "checks": [
+          "schema",
+          "required-files",
+          "content",
+          "evidence-ids",
+          "relative-links",
+          "output-contract"
+        ],
+        "recipe_content_sha256": "1cd6b7c9fbfe972d5be3a84a8e7351880831f83d0fdd0651d7eff8416cd6af72"
+      }
+    },
+    "maintainers": ["project-maintainers"],
+    "license": "MIT"
+  },
+  {
+    "schema_version": 3,
+    "id": "improve-type-safety",
+    "title": "Harden an untrusted TypeScript boundary",
+    "summary": "Replace unchecked type assumptions with runtime narrowing and verified state models while preserving documented public behavior and compatibility.",
+    "version": "1.2.0",
+    "category": "refactoring",
+    "difficulty": "intermediate",
+    "risk_level": "medium",
+    "estimated_duration": "1h",
+    "tags": ["typescript", "type-safety", "boundary-validation"],
+    "inputs": {
+      "required": [
+        "immutable target revision named files symbols and unsafe-construct inventory",
+        "runtime input contract with accepted invalid and error-precedence cases",
+        "public signatures consumer inventory and compatibility boundary",
+        "baseline typecheck behavior-test and unsafe-search commands with results"
+      ],
+      "optional": [
+        "authoritative runtime schema and sanitized boundary fixtures",
+        "third-party declaration source and observed runtime mismatch"
+      ]
+    },
+    "outputs": [
+      "implemented boundary-narrowing patch at named paths",
+      "before-and-after unsafe-construct and compatibility report",
+      "typecheck behavior and negative-case validation record"
+    ],
+    "prerequisites": [
+      "runtime input shapes and error behavior have attributable evidence",
+      "baseline compiler and behavior results are recorded",
+      "public consumers and file scope are identified"
+    ],
+    "safety": {
+      "destructive": false,
+      "requires_human_approval": [
+        "changing a public type or accepted runtime shape",
+        "changing documented public error behavior"
+      ],
+      "forbidden_actions": [
+        "introducing explicit or implicit any",
+        "using double casts non-null assertions or suppression comments to hide uncertainty",
+        "changing runtime behavior silently"
+      ]
+    },
+    "effects": {
+      "writes_code": true,
+      "writes_configuration": false,
+      "writes_documentation": false,
+      "changes_dependencies": false,
+      "changes_database": false,
+      "changes_issue_tracker": false,
+      "changes_production_traffic": false,
+      "deletes_state": false,
+      "publishes_artifacts": false
+    },
+    "agent_requirements": {
+      "capabilities": ["repository-read", "repository-write", "shell", "git", "test-execution"],
+      "manual_invocation_required": true
+    },
+    "output_contract": {
+      "schema": "output.schema.json"
+    },
+    "canonical": {
+      "file": "workflow.md"
+    },
+    "agents": {
+      "generic": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "not-applicable",
+        "limitations": ["Generic Markdown provides no agent execution capability assessment."],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "claude-code": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "codex": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "cursor": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "gemini-cli": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "opencode": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      }
+    },
+    "verification": {
+      "structural": {
+        "status": "passing",
+        "source": "derived",
+        "checks": [
+          "schema",
+          "required-files",
+          "content",
+          "evidence-ids",
+          "relative-links",
+          "output-contract"
+        ],
+        "recipe_content_sha256": "7b04010b2d7ebf4e3b388babac12b860453913c8a6254f29a36107848867dc94"
+      }
+    },
+    "maintainers": ["project-maintainers"],
+    "license": "MIT"
+  },
+  {
+    "schema_version": 3,
+    "id": "incident-postmortem",
+    "title": "Produce an evidence-linked blameless incident postmortem",
+    "summary": "Produce a bounded incident learning record with impact, timeline, causal confidence, organizational conditions, and verifiable corrective actions.",
+    "version": "1.2.0",
+    "category": "operations",
+    "difficulty": "advanced",
+    "risk_level": "high",
+    "estimated_duration": "2h",
+    "tags": ["incident", "postmortem", "reliability"],
+    "inputs": {
+      "required": [
+        "incident identifier, affected service, severity basis, UTC window, audience, and evidence cutoff",
+        "timestamped alert, change, response, mitigation, and recovery records with provenance",
+        "impact numerator, denominator, duration, calculation method, and uncertainty"
+      ],
+      "optional": [
+        "sanitized logs, alerts, and change records",
+        "sanitized stakeholder observations"
+      ]
+    },
+    "outputs": [
+      "evidence-linked blameless postmortem with a factual executive summary",
+      "corrective-action register with owner roles, dependencies, exit criteria, and verification signals",
+      "uncertainty and open-question register"
+    ],
+    "prerequisites": [
+      "the incident commander confirms the incident is contained or stable",
+      "UTC conversion, evidence retention, intended audience, and sensitive-data handling are approved"
+    ],
+    "safety": {
+      "destructive": false,
+      "requires_human_approval": [
+        "publishing the postmortem",
+        "assigning owners and dates",
+        "distributing the postmortem outside the approved audience"
+      ],
+      "forbidden_actions": [
+        "naming individual blame",
+        "inventing timestamps",
+        "including secrets or customer-identifying data",
+        "stating causality without supporting evidence"
+      ]
+    },
+    "effects": {
+      "writes_code": false,
+      "writes_configuration": false,
+      "writes_documentation": false,
+      "changes_dependencies": false,
+      "changes_database": false,
+      "changes_issue_tracker": false,
+      "changes_production_traffic": false,
+      "deletes_state": false,
+      "publishes_artifacts": true
+    },
+    "agent_requirements": {
+      "capabilities": ["repository-read", "network"],
+      "manual_invocation_required": true
+    },
+    "output_contract": {
+      "schema": "output.schema.json"
+    },
+    "canonical": {
+      "file": "workflow.md"
+    },
+    "agents": {
+      "generic": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "not-applicable",
+        "limitations": ["Generic Markdown provides no agent execution capability assessment."],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "claude-code": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "codex": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "cursor": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "gemini-cli": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "opencode": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      }
+    },
+    "verification": {
+      "structural": {
+        "status": "passing",
+        "source": "derived",
+        "checks": [
+          "schema",
+          "required-files",
+          "content",
+          "evidence-ids",
+          "relative-links",
+          "output-contract"
+        ],
+        "recipe_content_sha256": "e4a9c9ab606cdc3f6b6415863e20e64b16111530ec4b0c6b7d8fd2c93587f111"
+      }
+    },
+    "maintainers": ["project-maintainers"],
+    "license": "MIT"
+  },
+  {
+    "schema_version": 3,
+    "id": "migrate-framework",
+    "title": "Migrate a framework through controlled vertical slices",
+    "summary": "Move a versioned application to a supported framework through coexistence, contract checkpoints, measured traffic stages, and retained rollback.",
+    "version": "1.2.0",
+    "category": "migration",
+    "difficulty": "advanced",
+    "risk_level": "high",
+    "estimated_duration": "8h",
+    "tags": ["framework", "migration", "compatibility", "rollout"],
+    "inputs": {
+      "required": [
+        "immutable application revision with exact current target framework runtime and coupled dependency versions",
+        "public behavior contract route or component inventory and reproducible characterization baseline",
+        "official migration guidance with a local compatibility disposition for every framework-coupled surface",
+        "coexistence traffic checkpoint observation approval and rollback controls"
+      ],
+      "optional": [
+        "comparable latency error-rate and resource measurements by migration slice",
+        "consumer inventory and deprecation communication constraints"
+      ]
+    },
+    "outputs": [
+      "compatibility-gap register and ordered vertical-slice migration map",
+      "per-slice implementation contract and incremental validation record",
+      "traffic checkpoint observation approval rollback and residual-risk dossier"
+    ],
+    "prerequisites": [
+      "target framework and every integration required by the selected slice have attributable support for the retained runtime",
+      "current-path contract tests pass or every baseline failure has an owner and disposition",
+      "old and new paths can coexist for the selected slice and traffic can return to the old path",
+      "monitoring and abort signals use comparable methods before any traffic change"
+    ],
+    "safety": {
+      "destructive": false,
+      "requires_human_approval": [
+        "release manager approval before switching any production traffic",
+        "repository maintainer approval before removing the old framework path",
+        "service owner approval before accepting a checkpoint threshold exception"
+      ],
+      "forbidden_actions": [
+        "performing a big-bang framework replacement without independently recoverable slices",
+        "claiming framework or integration compatibility without attributable support and contract evidence",
+        "deleting the old path rollback control or baseline telemetry before the observation gate closes"
+      ]
+    },
+    "effects": {
+      "writes_code": true,
+      "writes_configuration": true,
+      "writes_documentation": false,
+      "changes_dependencies": true,
+      "changes_database": false,
+      "changes_issue_tracker": false,
+      "changes_production_traffic": true,
+      "deletes_state": false,
+      "publishes_artifacts": false
+    },
+    "agent_requirements": {
+      "capabilities": [
+        "repository-read",
+        "repository-write",
+        "shell",
+        "git",
+        "network",
+        "test-execution",
+        "production-access"
+      ],
+      "manual_invocation_required": true
+    },
+    "output_contract": {
+      "schema": "output.schema.json"
+    },
+    "canonical": {
+      "file": "workflow.md"
+    },
+    "agents": {
+      "generic": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "not-applicable",
+        "limitations": ["Generic Markdown provides no agent execution capability assessment."],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "claude-code": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "codex": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "cursor": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "gemini-cli": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "opencode": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      }
+    },
+    "verification": {
+      "structural": {
+        "status": "passing",
+        "source": "derived",
+        "checks": [
+          "schema",
+          "required-files",
+          "content",
+          "evidence-ids",
+          "relative-links",
+          "output-contract"
+        ],
+        "recipe_content_sha256": "46698c3ca273dae24c2a95ba60a93fc8524e6acede6d2d755d3727b6fea243a0"
+      }
+    },
+    "maintainers": ["project-maintainers"],
+    "license": "MIT"
+  },
+  {
+    "schema_version": 3,
+    "id": "profile-performance",
+    "title": "Measure and assess a performance change",
+    "summary": "Produce a reproducible performance assessment when evidence is complete or an explicit blocked handoff when required measurement or profile records are missing.",
+    "version": "1.2.0",
+    "category": "performance",
+    "difficulty": "advanced",
+    "risk_level": "medium",
+    "estimated_duration": "2h",
+    "tags": ["performance", "profiling", "benchmarking"],
+    "inputs": {
+      "required": [
+        "immutable baseline revision benchmark target workload fixture and code scope",
+        "controlled environment command warm-up sample-count and statistics protocol",
+        "numeric success noise and resource thresholds or explicit not-applicable dispositions",
+        "correctness oracle with baseline result",
+        "retained evidence inventory identifying every available and unavailable raw measurement and profile artifact"
+      ],
+      "optional": [
+        "sanitized production profile tied to an identified workload",
+        "immutable known-good revision and regression range"
+      ]
+    },
+    "outputs": [
+      "final recalculable performance assessment or explicit evidence-gap handoff",
+      "retained observations missing-artifact inventory decision limits and recovery criteria"
+    ],
+    "prerequisites": [
+      "the benchmark protocol and evidence availability can be evaluated against the declared noise threshold",
+      "baseline and candidate behavior can be checked by the same correctness oracle",
+      "measurement runs are authorized in an isolated environment"
+    ],
+    "safety": {
+      "destructive": false,
+      "requires_human_approval": [
+        "accepting a memory infrastructure-cost or latency tradeoff",
+        "changing user-visible behavior for performance",
+        "running load against a production environment"
+      ],
+      "forbidden_actions": [
+        "cherry-picking fastest benchmark runs",
+        "removing or weakening correctness checks",
+        "claiming production impact from an unrepresentative benchmark"
+      ]
+    },
+    "effects": {
+      "writes_code": true,
+      "writes_configuration": false,
+      "writes_documentation": false,
+      "changes_dependencies": false,
+      "changes_database": false,
+      "changes_issue_tracker": false,
+      "changes_production_traffic": false,
+      "deletes_state": false,
+      "publishes_artifacts": false
+    },
+    "agent_requirements": {
+      "capabilities": ["repository-read", "repository-write", "shell", "git", "test-execution"],
+      "manual_invocation_required": true
+    },
+    "output_contract": {
+      "schema": "output.schema.json"
+    },
+    "canonical": {
+      "file": "workflow.md"
+    },
+    "agents": {
+      "generic": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "not-applicable",
+        "limitations": ["Generic Markdown provides no agent execution capability assessment."],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "claude-code": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "codex": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "cursor": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "gemini-cli": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "opencode": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      }
+    },
+    "verification": {
+      "structural": {
+        "status": "passing",
+        "source": "derived",
+        "checks": [
+          "schema",
+          "required-files",
+          "content",
+          "evidence-ids",
+          "relative-links",
+          "output-contract"
+        ],
+        "recipe_content_sha256": "b678e229740d735e82c85cfa8380465ebce81eec7c31bfa880123b383cbe2fed"
+      }
+    },
+    "maintainers": ["project-maintainers"],
+    "license": "MIT"
+  },
+  {
+    "schema_version": 3,
+    "id": "refactor-large-module",
+    "title": "Refactor a large module through reversible slices",
+    "summary": "Decompose one change-coupled module into cohesive boundaries while preserving its evidenced public contract at every independently reversible checkpoint.",
+    "version": "1.2.0",
+    "category": "refactoring",
+    "difficulty": "advanced",
+    "risk_level": "high",
+    "estimated_duration": "8h",
+    "tags": ["refactoring", "architecture", "compatibility", "characterization"],
+    "inputs": {
+      "required": [
+        "immutable revision and exact approved and final path inventories with explicit exclusions",
+        "public exports callers side effects invariants and compatibility constraints",
+        "baseline and per-checkpoint characterization commands with recorded results",
+        "proposed responsibility boundaries dependency direction approval state and rollback units"
+      ],
+      "optional": [
+        "comparable performance measurements for latency-sensitive behavior",
+        "ownership notes for the proposed module boundaries"
+      ]
+    },
+    "outputs": [
+      "Markdown refactor delivery record with immutable checkpoint identities exact changed paths contract verification rollback approval and residual risk"
+    ],
+    "prerequisites": [
+      "the scoped revision resolves to an immutable commit and the starting working tree is recorded",
+      "every public export and known in-repository caller has been inventoried",
+      "characterization tests pass or every baseline failure has an owner and disposition",
+      "each proposed checkpoint can be reverted without depending on a later checkpoint"
+    ],
+    "safety": {
+      "destructive": false,
+      "requires_human_approval": [
+        "repository maintainer approval before changing any public contract",
+        "service owner approval before accepting a measured performance regression"
+      ],
+      "forbidden_actions": [
+        "performing a big-bang rewrite that cannot be verified or reverted by checkpoint",
+        "changing public exports outputs errors or side effects without explicit approval",
+        "deleting characterization tests because implementation code moved"
+      ]
+    },
+    "effects": {
+      "writes_code": true,
+      "writes_configuration": false,
+      "writes_documentation": false,
+      "changes_dependencies": false,
+      "changes_database": false,
+      "changes_issue_tracker": false,
+      "changes_production_traffic": false,
+      "deletes_state": false,
+      "publishes_artifacts": false
+    },
+    "agent_requirements": {
+      "capabilities": ["repository-read", "repository-write", "shell", "git", "test-execution"],
+      "manual_invocation_required": true
+    },
+    "output_contract": {
+      "schema": "output.schema.json"
+    },
+    "canonical": {
+      "file": "workflow.md"
+    },
+    "agents": {
+      "generic": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "not-applicable",
+        "limitations": ["Generic Markdown provides no agent execution capability assessment."],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "claude-code": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "codex": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "cursor": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "gemini-cli": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "opencode": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      }
+    },
+    "verification": {
+      "structural": {
+        "status": "passing",
+        "source": "derived",
+        "checks": [
+          "schema",
+          "required-files",
+          "content",
+          "evidence-ids",
+          "relative-links",
+          "output-contract"
+        ],
+        "recipe_content_sha256": "2490d3202fd47cbccd773b60b120fa71e3f6a26df3ce40498b46ef318530b894"
+      }
+    },
+    "maintainers": ["project-maintainers"],
+    "license": "MIT"
+  },
+  {
+    "schema_version": 3,
+    "id": "reproduce-bug",
+    "title": "Build a bounded bug reproduction",
+    "summary": "Produce a sanitized repository-bound reproducer, behavior-specific failing regression test, and repeatability record without changing product behavior.",
+    "version": "1.2.0",
+    "category": "debugging",
+    "difficulty": "intermediate",
+    "risk_level": "low",
+    "estimated_duration": "45m",
+    "tags": ["bug", "reproduction", "regression-test"],
+    "inputs": {
+      "required": [
+        "approved expected behavior and exact observed behavior",
+        "immutable affected revision runtime dependency and operating-system versions",
+        "sanitized triggering input setup command and state-reset procedure",
+        "repeated reproduction results at the closest authorized user boundary"
+      ],
+      "optional": [
+        "immutable known-good revision with comparable environment",
+        "sanitized logs traces screenshots and minimization history"
+      ]
+    },
+    "outputs": [
+      "repository-bound minimal reproduction record with explicit setup dependencies",
+      "behavior-specific failing regression test at a named path",
+      "repeatability boundary and residual-uncertainty record"
+    ],
+    "prerequisites": [
+      "expected behavior has an attributable contract or approval",
+      "the affected revision and required dependencies are available",
+      "the reproduction environment is isolated from production state"
+    ],
+    "safety": {
+      "destructive": false,
+      "requires_human_approval": [
+        "accepting clarified expected behavior before encoding a regression test"
+      ],
+      "forbidden_actions": [
+        "using production credentials or unsanitized customer data",
+        "changing product behavior before capturing the failure",
+        "accepting a regression test that fails for an unrelated reason"
+      ]
+    },
+    "effects": {
+      "writes_code": true,
+      "writes_configuration": false,
+      "writes_documentation": false,
+      "changes_dependencies": false,
+      "changes_database": false,
+      "changes_issue_tracker": false,
+      "changes_production_traffic": false,
+      "deletes_state": false,
+      "publishes_artifacts": false
+    },
+    "agent_requirements": {
+      "capabilities": ["repository-read", "repository-write", "shell", "git", "test-execution"],
+      "manual_invocation_required": true
+    },
+    "output_contract": {
+      "schema": "output.schema.json"
+    },
+    "canonical": {
+      "file": "workflow.md"
+    },
+    "agents": {
+      "generic": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "not-applicable",
+        "limitations": ["Generic Markdown provides no agent execution capability assessment."],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "claude-code": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "codex": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "cursor": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "gemini-cli": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "opencode": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      }
+    },
+    "verification": {
+      "structural": {
+        "status": "passing",
+        "source": "derived",
+        "checks": [
+          "schema",
+          "required-files",
+          "content",
+          "evidence-ids",
+          "relative-links",
+          "output-contract"
+        ],
+        "recipe_content_sha256": "c4ecdd5b271381f5a08145ce14858be8e199ab5de11a85f6353852c4d0521f7b"
+      }
+    },
+    "maintainers": ["project-maintainers"],
+    "license": "MIT"
+  },
+  {
+    "schema_version": 3,
+    "id": "review-pull-request",
+    "title": "Review a pull request",
+    "summary": "Produce an evidence-linked pull request review with prioritized findings, executed checks, and a defensible merge verdict.",
+    "version": "1.2.0",
+    "category": "code-review",
+    "difficulty": "intermediate",
+    "risk_level": "medium",
+    "estimated_duration": "30m",
+    "tags": ["pull-request", "review", "quality"],
+    "inputs": {
+      "required": [
+        "immutable base revision head revision and merge base",
+        "complete unified diff and changed-file inventory for the recorded head",
+        "pull request intent acceptance criteria and applicable repository instructions"
+      ],
+      "optional": [
+        "CI run IDs commands logs and test results for the recorded head",
+        "architecture decisions and public compatibility contracts"
+      ]
+    },
+    "outputs": [
+      "evidence-linked pull request review report",
+      "prioritized finding register with dispositions",
+      "verification record and merge recommendation"
+    ],
+    "prerequisites": [
+      "base head and merge-base revisions resolve to immutable commits",
+      "supplied diff and changed-file inventory match the recorded head",
+      "repository instructions for every changed path are available"
+    ],
+    "safety": {
+      "destructive": false,
+      "requires_human_approval": ["submitting the final review"],
+      "forbidden_actions": [
+        "changing unrelated files",
+        "exposing secrets",
+        "approving a change with unverified blocking behavior"
+      ]
+    },
+    "effects": {
+      "writes_code": false,
+      "writes_configuration": false,
+      "writes_documentation": false,
+      "changes_dependencies": false,
+      "changes_database": false,
+      "changes_issue_tracker": false,
+      "changes_production_traffic": false,
+      "deletes_state": false,
+      "publishes_artifacts": false
+    },
+    "agent_requirements": {
+      "capabilities": ["repository-read", "shell", "git", "github", "test-execution"],
+      "manual_invocation_required": true
+    },
+    "output_contract": {
+      "schema": "output.schema.json"
+    },
+    "canonical": {
+      "file": "workflow.md"
+    },
+    "agents": {
+      "generic": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "not-applicable",
+        "limitations": ["Generic Markdown provides no agent execution capability assessment."],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "claude-code": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "passing",
+            "evidence": [
+              "verification/review-pull-request/claude-code-20260715-final-execution.yml"
+            ],
+            "stale_records": 1
+          },
+          "execution": {
+            "status": "passing",
+            "evidence": [
+              "verification/review-pull-request/claude-code-20260715-final-execution.yml"
+            ],
+            "stale_records": 1
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [
+              "verification/review-pull-request/claude-code-20260715-final-execution.yml"
+            ],
+            "stale_records": 1
+          }
+        }
+      },
+      "codex": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "passing",
+            "evidence": ["verification/review-pull-request/codex-20260715-final-execution.yml"],
+            "stale_records": 3
+          },
+          "execution": {
+            "status": "passing",
+            "evidence": ["verification/review-pull-request/codex-20260715-final-execution.yml"],
+            "stale_records": 3
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": ["verification/review-pull-request/codex-20260715-final-execution.yml"],
+            "stale_records": 3
+          }
+        }
+      },
+      "cursor": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "gemini-cli": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "opencode": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      }
+    },
+    "verification": {
+      "structural": {
+        "status": "passing",
+        "source": "derived",
+        "checks": [
+          "schema",
+          "required-files",
+          "content",
+          "evidence-ids",
+          "relative-links",
+          "output-contract"
+        ],
+        "recipe_content_sha256": "296903ad63d3f64b52ae2a39d2f784939aa2196b49085dd3639317162511f7cf"
+      }
+    },
+    "maintainers": ["project-maintainers"],
+    "license": "MIT"
+  },
+  {
+    "schema_version": 3,
+    "id": "security-review",
+    "title": "Perform a defensive security review",
+    "summary": "Produce an authorized defensive security assessment with evidence-ranked findings, remediation, and residual risk.",
+    "version": "1.2.1",
+    "category": "security",
+    "difficulty": "advanced",
+    "risk_level": "high",
+    "estimated_duration": "2h",
+    "tags": ["security", "defensive", "review"],
+    "inputs": {
+      "required": [
+        "written authorization immutable review revision and explicit exclusions",
+        "trust boundaries protected assets data classifications and attacker capabilities",
+        "complete security-relevant source configuration route and test inventory"
+      ],
+      "optional": [
+        "approved threat model and security control requirements",
+        "safe local validation commands and retained results"
+      ]
+    },
+    "outputs": [
+      "authorized defensive security assessment",
+      "prioritized security finding register with dispositions",
+      "remediation verification and residual-risk plan"
+    ],
+    "prerequisites": [
+      "security owner authorization identifies allowed artifacts techniques and exclusions",
+      "review artifacts belong to one immutable revision",
+      "analysis and approved validation can remain inside the authorized environment"
+    ],
+    "safety": {
+      "destructive": false,
+      "requires_human_approval": [
+        "any active testing including local fixtures",
+        "disclosing findings outside the authorized team"
+      ],
+      "forbidden_actions": [
+        "credential theft",
+        "persistence or evasion",
+        "attacking real systems",
+        "publishing secrets"
+      ]
+    },
+    "effects": {
+      "writes_code": false,
+      "writes_configuration": false,
+      "writes_documentation": false,
+      "changes_dependencies": false,
+      "changes_database": false,
+      "changes_issue_tracker": false,
+      "changes_production_traffic": false,
+      "deletes_state": false,
+      "publishes_artifacts": false
+    },
+    "agent_requirements": {
+      "capabilities": ["repository-read", "shell", "git", "test-execution"],
+      "manual_invocation_required": true
+    },
+    "output_contract": {
+      "schema": "output.schema.json"
+    },
+    "canonical": {
+      "file": "workflow.md"
+    },
+    "agents": {
+      "generic": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "not-applicable",
+        "limitations": [
+          "Generic Markdown provides no agent execution capability assessment.",
+          "External disclosure is outside this recipe's execution contract and requires a separately authorized publication flow."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "claude-code": {
+        "bundle_compatibility": "limited",
+        "capability_status": "unknown",
+        "limitations": [
+          "The /security-review command name collides with Claude Code's bundled security-review skill, so invocation resolution must be verified in the target installation.",
+          "Required capabilities and target-environment permissions have not been verified.",
+          "External disclosure is outside this recipe's execution contract and requires a separately authorized publication flow."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "codex": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified.",
+          "External disclosure is outside this recipe's execution contract and requires a separately authorized publication flow."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "cursor": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified.",
+          "External disclosure is outside this recipe's execution contract and requires a separately authorized publication flow."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "gemini-cli": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified.",
+          "External disclosure is outside this recipe's execution contract and requires a separately authorized publication flow."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "opencode": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified.",
+          "External disclosure is outside this recipe's execution contract and requires a separately authorized publication flow."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      }
+    },
+    "verification": {
+      "structural": {
+        "status": "passing",
+        "source": "derived",
+        "checks": [
+          "schema",
+          "required-files",
+          "content",
+          "evidence-ids",
+          "relative-links",
+          "output-contract"
+        ],
+        "recipe_content_sha256": "158c6fff9763f4df4848f0cea056175e3a4d0dee3774ca1fe612e002c648e067"
+      }
+    },
+    "maintainers": ["project-maintainers"],
+    "license": "MIT"
+  },
+  {
+    "schema_version": 3,
+    "id": "synchronize-documentation",
+    "title": "Synchronize documentation with verified behavior",
+    "summary": "Produce a bounded documentation patch and claim-to-evidence register for behavior that changed at an immutable revision.",
+    "version": "1.2.0",
+    "category": "documentation",
+    "difficulty": "intermediate",
+    "risk_level": "medium",
+    "estimated_duration": "45m",
+    "tags": ["documentation", "drift", "traceability"],
+    "inputs": {
+      "required": [
+        "exact documentation file paths and immutable source revision",
+        "authoritative source, configuration, command, or test evidence for every scoped claim"
+      ],
+      "optional": [
+        "approved release records for the immutable revision",
+        "sanitized support reports with provenance and redaction status"
+      ]
+    },
+    "outputs": [
+      "bounded documentation patch",
+      "claim-to-evidence drift register",
+      "verification report with executed and unexecuted checks"
+    ],
+    "prerequisites": [
+      "every scoped path exists at the recorded immutable revision",
+      "any command selected for execution is safe in an isolated non-production environment"
+    ],
+    "safety": {
+      "destructive": false,
+      "requires_human_approval": ["publishing a change to a documented public commitment"],
+      "forbidden_actions": [
+        "inventing commands",
+        "using fake URLs",
+        "claiming an example was run when it was not"
+      ]
+    },
+    "effects": {
+      "writes_code": false,
+      "writes_configuration": false,
+      "writes_documentation": true,
+      "changes_dependencies": false,
+      "changes_database": false,
+      "changes_issue_tracker": false,
+      "changes_production_traffic": false,
+      "deletes_state": false,
+      "publishes_artifacts": false
+    },
+    "agent_requirements": {
+      "capabilities": ["repository-read", "repository-write", "shell", "git", "test-execution"],
+      "manual_invocation_required": true
+    },
+    "output_contract": {
+      "schema": "output.schema.json"
+    },
+    "canonical": {
+      "file": "workflow.md"
+    },
+    "agents": {
+      "generic": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "not-applicable",
+        "limitations": ["Generic Markdown provides no agent execution capability assessment."],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "claude-code": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "codex": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "cursor": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "gemini-cli": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "opencode": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      }
+    },
+    "verification": {
+      "structural": {
+        "status": "passing",
+        "source": "derived",
+        "checks": [
+          "schema",
+          "required-files",
+          "content",
+          "evidence-ids",
+          "relative-links",
+          "output-contract"
+        ],
+        "recipe_content_sha256": "9277817a71f0f5a9dc4374c1f1387ef72c24e8d5ac0a3e6256bef89a286d56bb"
+      }
+    },
+    "maintainers": ["project-maintainers"],
+    "license": "MIT"
+  },
+  {
+    "schema_version": 3,
+    "id": "triage-issues",
+    "title": "Triage a bounded repository issue queue",
+    "summary": "Produce policy-linked issue dispositions, duplicate evidence, proposed responses, and closure criteria from an immutable queue snapshot.",
+    "version": "1.2.0",
+    "category": "maintenance",
+    "difficulty": "intermediate",
+    "risk_level": "medium",
+    "estimated_duration": "1h",
+    "tags": ["issues", "triage", "maintenance"],
+    "inputs": {
+      "required": [
+        "immutable issue snapshot with bodies, comments, labels, states, environments, and attachment inventory",
+        "versioned owner-approved triage policy with labels, states, duplicate rules, and escalation routes"
+      ],
+      "optional": ["approved roadmap priorities", "versioned support matrix"]
+    },
+    "outputs": [
+      "issue disposition register",
+      "duplicate evidence map",
+      "proposed responses, owned next actions, and closure criteria"
+    ],
+    "prerequisites": [
+      "every issue in the bounded snapshot is readable and unchanged during triage",
+      "labels, states, duplicate threshold, mutation authority, and private security route are defined"
+    ],
+    "safety": {
+      "destructive": false,
+      "requires_human_approval": [
+        "closing or publicly responding to issues",
+        "changing priority commitments",
+        "routing a suspected security report"
+      ],
+      "forbidden_actions": [
+        "posting secrets from reports",
+        "promising dates without owner approval",
+        "mass-closing low-information reports",
+        "mutating the issue tracker without approval"
+      ]
+    },
+    "effects": {
+      "writes_code": false,
+      "writes_configuration": false,
+      "writes_documentation": false,
+      "changes_dependencies": false,
+      "changes_database": false,
+      "changes_issue_tracker": false,
+      "changes_production_traffic": false,
+      "deletes_state": false,
+      "publishes_artifacts": false
+    },
+    "agent_requirements": {
+      "capabilities": ["repository-read"],
+      "manual_invocation_required": true
+    },
+    "output_contract": {
+      "schema": "output.schema.json"
+    },
+    "canonical": {
+      "file": "workflow.md"
+    },
+    "agents": {
+      "generic": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "not-applicable",
+        "limitations": ["Generic Markdown provides no agent execution capability assessment."],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "claude-code": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "codex": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "cursor": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "gemini-cli": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "opencode": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      }
+    },
+    "verification": {
+      "structural": {
+        "status": "passing",
+        "source": "derived",
+        "checks": [
+          "schema",
+          "required-files",
+          "content",
+          "evidence-ids",
+          "relative-links",
+          "output-contract"
+        ],
+        "recipe_content_sha256": "33dfba03d31e97f559c20fa02899c5ae8521b1773ea89d52d01cee5b58274d03"
+      }
+    },
+    "maintainers": ["project-maintainers"],
+    "license": "MIT"
+  },
+  {
+    "schema_version": 3,
+    "id": "upgrade-dependencies",
+    "title": "Upgrade dependencies with provenance and rollback",
+    "summary": "Deliver a scoped dependency upgrade with a reviewed version-range contract, deterministic lockfile diff, supported-environment results, and exercised rollback.",
+    "version": "1.2.0",
+    "category": "maintenance",
+    "difficulty": "intermediate",
+    "risk_level": "high",
+    "estimated_duration": "4h",
+    "tags": ["dependencies", "supply-chain", "compatibility", "rollback"],
+    "inputs": {
+      "required": [
+        "immutable manifest and lockfile with package manager registry integrity and exact resolved versions",
+        "exact target versions with complete official release migration runtime security and license evidence",
+        "repository usage inventory public behavior contract supported environment matrix and exact changed-file boundary",
+        "reproducible baseline commands approval state and executable rollback pin"
+      ],
+      "optional": [
+        "applicable vulnerability advisory with affected and fixed version boundaries",
+        "software composition policy and deployment observation signals"
+      ]
+    },
+    "outputs": [
+      "direct and transitive dependency lockfile diff with provenance review",
+      "breaking-change usage compatibility and license disposition register",
+      "implementation validation approval rollback and residual-risk record"
+    ],
+    "prerequisites": [
+      "current dependencies install reproducibly from approved sources at the immutable revision",
+      "baseline build type test and public behavior checks pass or have explicit dispositions",
+      "the complete current-to-target vendor guidance is retained and attributable",
+      "the previous manifest and lockfile can be restored in an isolated environment"
+    ],
+    "safety": {
+      "destructive": false,
+      "requires_human_approval": [
+        "repository maintainer approval before any major-version implementation",
+        "platform owner approval before changing supported runtime or platform requirements",
+        "legal or compliance owner approval before accepting a new dependency license"
+      ],
+      "forbidden_actions": [
+        "using an untrusted registry or accepting unexplained source and integrity changes",
+        "hand-editing resolved lockfile data or omitting the complete lockfile diff",
+        "disabling install script audit type test signature or security checks to obtain a passing result"
+      ]
+    },
+    "effects": {
+      "writes_code": true,
+      "writes_configuration": true,
+      "writes_documentation": false,
+      "changes_dependencies": true,
+      "changes_database": false,
+      "changes_issue_tracker": false,
+      "changes_production_traffic": false,
+      "deletes_state": false,
+      "publishes_artifacts": false
+    },
+    "agent_requirements": {
+      "capabilities": [
+        "repository-read",
+        "repository-write",
+        "shell",
+        "git",
+        "network",
+        "test-execution"
+      ],
+      "manual_invocation_required": true
+    },
+    "output_contract": {
+      "schema": "output.schema.json"
+    },
+    "canonical": {
+      "file": "workflow.md"
+    },
+    "agents": {
+      "generic": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "not-applicable",
+        "limitations": ["Generic Markdown provides no agent execution capability assessment."],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "claude-code": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "codex": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "cursor": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "gemini-cli": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "opencode": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      }
+    },
+    "verification": {
+      "structural": {
+        "status": "passing",
+        "source": "derived",
+        "checks": [
+          "schema",
+          "required-files",
+          "content",
+          "evidence-ids",
+          "relative-links",
+          "output-contract"
+        ],
+        "recipe_content_sha256": "47e0f68d6e2f6a6a25f5793ad7e28f156dd91fbd0623f142e356faeac98fbf2f"
+      }
+    },
+    "maintainers": ["project-maintainers"],
+    "license": "MIT"
+  },
+  {
+    "schema_version": 3,
+    "id": "write-release-notes",
+    "title": "Produce evidence-backed release notes",
+    "summary": "Produce public Markdown release notes and a separate internal evidence package from an immutable, reviewed release evidence set.",
+    "version": "1.2.0",
+    "category": "release",
+    "difficulty": "intermediate",
+    "risk_level": "medium",
+    "estimated_duration": "1h",
+    "tags": ["release", "changelog", "traceability", "communication"],
+    "inputs": {
+      "required": [
+        "release identity with version, previous version, draft or final status, audience, and responsible roles",
+        "immutable base and release revisions with a verified ancestry relationship",
+        "candidate change ledger with merge references, range membership, shipping disposition, category, and user impact",
+        "verification and documentation evidence for every included material change plus approved migration evidence for required actions",
+        "built artifact inventory with checksums and embedded source revision",
+        "reviewed breaking changes, required actions, deprecations, known limitations, security disposition, and approval state"
+      ],
+      "optional": [
+        "verified contributor identities covered by the repository attribution policy",
+        "publication channel constraints and an approved long-form migration guide"
+      ]
+    },
+    "outputs": [
+      "public release-notes.md with visible status, reader-relevant changes, limitations, and approved upgrade actions",
+      "internal release-evidence.md with immutable boundary, artifact verification, exclusions, approvals, and claim traceability"
+    ],
+    "prerequisites": [
+      "both release boundary revisions resolve to immutable commits and the base is an ancestor of the release revision",
+      "every candidate change is classified as included, excluded, reverted, or unresolved",
+      "every publishable artifact identifies the proposed release revision",
+      "security disclosure and final publication approval states are recorded explicitly"
+    ],
+    "safety": {
+      "destructive": false,
+      "requires_human_approval": [
+        "repository maintainer approval for required upgrade instructions",
+        "security owner approval before any security-sensitive public wording",
+        "release manager approval before a draft becomes final"
+      ],
+      "forbidden_actions": [
+        "inventing shipped changes, contributors, commands, measurements, compatibility, or verification results",
+        "describing excluded, reverted, out-of-range, or unresolved work as shipped",
+        "exposing secrets, private repository data, exploit instructions, or embargoed security details",
+        "changing tags, artifacts, release state, or publication systems while drafting notes"
+      ]
+    },
+    "effects": {
+      "writes_code": false,
+      "writes_configuration": false,
+      "writes_documentation": false,
+      "changes_dependencies": false,
+      "changes_database": false,
+      "changes_issue_tracker": false,
+      "changes_production_traffic": false,
+      "deletes_state": false,
+      "publishes_artifacts": false
+    },
+    "agent_requirements": {
+      "capabilities": ["repository-read", "shell", "git"],
+      "manual_invocation_required": true
+    },
+    "output_contract": {
+      "schema": "output.schema.json"
+    },
+    "canonical": {
+      "file": "workflow.md"
+    },
+    "agents": {
+      "generic": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "not-applicable",
+        "limitations": ["Generic Markdown provides no agent execution capability assessment."],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "not-applicable",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "claude-code": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "codex": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "cursor": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "gemini-cli": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      },
+      "opencode": {
+        "bundle_compatibility": "compatible",
+        "capability_status": "unknown",
+        "limitations": [
+          "Required capabilities and target-environment permissions have not been verified."
+        ],
+        "verification": {
+          "installation": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "execution": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          },
+          "outcome": {
+            "status": "untested",
+            "evidence": [],
+            "stale_records": 0
+          }
+        }
+      }
+    },
+    "verification": {
+      "structural": {
+        "status": "passing",
+        "source": "derived",
+        "checks": [
+          "schema",
+          "required-files",
+          "content",
+          "evidence-ids",
+          "relative-links",
+          "output-contract"
+        ],
+        "recipe_content_sha256": "6d8fbc50e8f7c6e1b409da932c7c5693a657d2a723482e3f13a158a22284720d"
+      }
+    },
+    "maintainers": ["project-maintainers"],
+    "license": "MIT"
+  }
+]
