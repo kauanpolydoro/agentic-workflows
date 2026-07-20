@@ -142,10 +142,13 @@ print -r -- "INSTALL:\${(j: :)CAPTURED}"
     await writeFile(
       wrapper,
       `source "$AWF_COMPLETION_FILE"
-echo OPTIONS:(complete -C 'awf list --a' | string collect)
-echo AGENT:(complete -C 'awf list --agent co' | string collect)
-echo CATEGORY:(complete -C 'awf list --category co' | string collect)
-echo INSTALL:(complete -C 'awf install review-pull-request --' | string collect)
+function complete_awf
+  complete -C "$argv[1]" | string replace -r '\\t.*$' '' | string join ' '
+end
+printf 'OPTIONS:%s\\n' (complete_awf 'awf list --a')
+printf 'AGENT:%s\\n' (complete_awf 'awf list --agent co')
+printf 'CATEGORY:%s\\n' (complete_awf 'awf list --category co')
+printf 'INSTALL:%s\\n' (complete_awf 'awf install review-pull-request --')
 `,
     );
     output = run("fish", ["--no-config", wrapper], environment);
@@ -155,8 +158,11 @@ echo INSTALL:(complete -C 'awf install review-pull-request --' | string collect)
       wrapper,
       `$ErrorActionPreference = 'Stop'
 . $env:AWF_COMPLETION_FILE
+if (-not (Get-Command awf -ErrorAction SilentlyContinue)) {
+  throw 'The temporary awf executable is not available to PowerShell.'
+}
 function Complete-Awf([string]$InputText) {
-  $result = [System.Management.Automation.CommandCompletion]::CompleteInput($InputText, $InputText.Length, $null)
+  $result = TabExpansion2 -inputScript $InputText -cursorColumn $InputText.Length
   return (($result.CompletionMatches | ForEach-Object { $_.CompletionText }) -join ' ')
 }
 Write-Output "OPTIONS:$(Complete-Awf 'awf list --a')"

@@ -6,6 +6,7 @@ import {
   mkdtemp,
   readdir,
   readFile,
+  realpath,
   rm,
   stat,
   symlink,
@@ -160,7 +161,7 @@ async function replaceEvidenceRecords(
 }
 
 beforeEach(async () => {
-  project = await mkdtemp(path.join(os.tmpdir(), "awf-cli-unit-"));
+  project = await realpath(await mkdtemp(path.join(os.tmpdir(), "awf-cli-unit-")));
   await writeFile(path.join(project, "package.json"), "{}\n");
   process.chdir(project);
   process.env.AWF_CATALOG_ROOT = path.join(repositoryRoot, "recipes");
@@ -314,7 +315,7 @@ describe.sequential("CLI command contracts", () => {
     });
     stdout = "";
     await run("show", "write-release-notes", "--location");
-    expect(stdout).toContain("docs/catalog/write-release-notes.md");
+    expect(stdout).toContain(path.join("docs", "catalog", "write-release-notes.md"));
     await expect(run("show", "write-release-notes", "--location", "--open")).rejects.toMatchObject({
       exitCode: 2,
     });
@@ -437,7 +438,7 @@ describe.sequential("CLI command contracts", () => {
     );
     expect(documentationOpener).toHaveBeenCalledOnce();
     expect(stdout).toContain("Opened ");
-    expect(stdout).toContain("docs/catalog/write-release-notes.md");
+    expect(stdout).toContain(path.join("docs", "catalog", "write-release-notes.md"));
 
     stdout = "";
     await createProgram({ documentationOpener }).parseAsync(
