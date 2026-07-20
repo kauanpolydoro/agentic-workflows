@@ -1,1 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" role="img" aria-labelledby="title"><title id="title">Agentic Workflows command-line demonstration</title><rect width="900" height="420" rx="14" fill="#101b18"/><circle cx="30" cy="28" r="6" fill="#e36f3d"/><circle cx="50" cy="28" r="6" fill="#d9b95b"/><circle cx="70" cy="28" r="6" fill="#63d6b4"/><g font-family="monospace" font-size="20"><text x="30" y="90" fill="#63d6b4">$ pnpm awf list --category security</text><text x="30" y="130" fill="#fff">dependency-audit       Evaluate dependency risk...</text><text x="30" y="165" fill="#fff">security-review        Perform a defensive review...</text><text x="30" y="225" fill="#63d6b4">$ pnpm awf install security-review --agent generic --dry-run</text><text x="30" y="265" fill="#fff">Would install security-review for generic.</text><text x="30" y="325" fill="#63d6b4">$ pnpm awf validate recipes --strict</text><text x="30" y="365" fill="#fff">Valid: 20 recipe(s).</text></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" role="img" aria-labelledby="title">
+  <title id="title">Agentic Workflows global installation and awf command demonstration</title>
+  <rect width="900" height="420" rx="14" fill="#101b18"/>
+  <circle cx="30" cy="28" r="6" fill="#e36f3d"/>
+  <circle cx="50" cy="28" r="6" fill="#d9b95b"/>
+  <circle cx="70" cy="28" r="6" fill="#63d6b4"/>
+  <g font-family="monospace" font-size="20">
+    <text x="30" y="80" fill="#63d6b4">$ npm install --global @kauanpolydoro/agentic-workflows</text>
+    <text x="30" y="135" fill="#63d6b4">$ awf list --category security</text>
+    <text x="30" y="175" fill="#fff">dependency-audit       Evaluate dependency risk...</text>
+    <text x="30" y="210" fill="#fff">security-review        Perform a defensive review...</text>
+    <text x="30" y="270" fill="#63d6b4">$ awf install security-review --agent codex --dry-run</text>
+    <text x="30" y="310" fill="#fff">Would install security-review for codex:</text>
+    <text x="30" y="350" fill="#fff">Entrypoint: .agents/skills/security-review/SKILL.md</text>
+    <text x="30" y="385" fill="#fff">Invocation policy: manual (enforced)</text>
+  </g>
+</svg>
