@@ -243,6 +243,7 @@ assertPackedContents(
     "platform.js",
     "status.js",
     "version.js",
+    "wizard.js",
   ],
 );
 const tarballs = (await readdir(artifacts)).filter((file) => file.endsWith(".tgz"));
@@ -344,6 +345,14 @@ const shown = JSON.parse(
   id?: string;
 };
 if (shown.id !== "write-release-notes") throw new Error("Packaged recipe lookup failed.");
+const documentationLocation = runCli(
+  entrypoint,
+  ["show", "write-release-notes", "--location"],
+  consumer,
+).trim();
+if (!documentationLocation.endsWith("/catalog/write-release-notes")) {
+  throw new Error("Packaged documentation location lookup failed.");
+}
 for (const shell of ["bash", "zsh", "fish", "pwsh"]) {
   const completion = runCli(entrypoint, ["completion", shell], consumer);
   if (!completion.includes("review-pull-request") || !completion.includes("agentic-workflows")) {
@@ -563,6 +572,7 @@ await assertPackageContents(path.join(installedScope, "agentic-workflows"), [
   "platform.js",
   "status.js",
   "version.js",
+  "wizard.js",
 ]);
 await assertPackageContents(path.join(installedScope, "agentic-workflows-core"), [
   "adapter-registry.js",

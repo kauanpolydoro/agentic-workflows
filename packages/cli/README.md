@@ -20,6 +20,8 @@ awf
 
 Generate tab completion for Bash, Zsh, Fish, or PowerShell with `awf completion <shell>`.
 
+Run bare `awf init` in an interactive terminal for a guided agent and target setup, or pass `--agent`, `--target`, or `--no-interactive` to keep automation non-interactive.
+
 ## Complete first workflow
 
 Run these commands from the root of the project that should receive the workflow:

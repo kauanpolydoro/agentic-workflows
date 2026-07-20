@@ -36,6 +36,8 @@ Use `--agent` to focus compatibility details and limitations on one destination.
 
 Use `--raw` for the canonical workflow Markdown or `--json` for complete structured recipe metadata.
 
+Use `--location` to print the local documentation path or public catalog URL without launching another process.
+
 Use `--open` to open a repository-local documentation page when available, or the public catalog page from the npm package.
 
 The three output modes are mutually exclusive.
@@ -130,15 +132,25 @@ Missing Corepack or pnpm is a warning for npm package consumers.
 
 Use `--maintainer` to treat those source-development tools as required.
 
+Use `--failures-only` to retain the full pass, warning, and failure summary while omitting passing check records from human and JSON output.
+
 Finding an agent command on `PATH` does not establish workflow execution or outcome evidence.
 
 ## `awf init`
 
 Create `.agentic-workflows/config.yml` with a default agent and target.
 
+Running bare `awf init` in an interactive terminal starts a short agent and target wizard.
+
+Non-interactive execution keeps deterministic defaults of `generic` and `.`, and providing `--agent`, `--target`, or `--no-interactive` skips the wizard.
+
 Use `--agent` and `--target` to choose those defaults.
 
 An existing configuration is never replaced unless `--force` is explicit.
+
+When no Git, AWF configuration, or package marker exists, human project commands report that the current directory was selected and suggest `--project-root`.
+
+JSON commands stay machine-only and do not emit that notice.
 
 ## `awf manifest <workflow-id>`
 

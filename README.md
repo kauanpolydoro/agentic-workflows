@@ -37,6 +37,10 @@ awf install review-pull-request --dry-run
 awf install review-pull-request --dry-run --show-content
 ```
 
+Run bare `awf init` in an interactive terminal when you prefer to choose the default agent and target through a short wizard.
+
+Providing `--agent`, `--target`, or `--no-interactive` skips the wizard for deterministic scripts and CI.
+
 The first preview lists every create, replace, unchanged, and retire action.
 Add `--show-content` when you also want to inspect the complete generated files.
 Remove `--dry-run` after reviewing the plan to install the workflow.

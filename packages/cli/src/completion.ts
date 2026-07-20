@@ -74,7 +74,7 @@ _awf_completion() {
       ;;
   esac
 
-  COMPREPLY=( $(compgen -W "--agent --target --dry-run --show-content --force --json --raw --open --strict --maintainer --project-root --help" -- "$current") )
+  COMPREPLY=( $(compgen -W "--agent --target --dry-run --show-content --force --json --raw --open --location --strict --maintainer --failures-only --no-interactive --project-root --help" -- "$current") )
 }
 complete -F _awf_completion awf agentic-workflows
 `;
@@ -90,7 +90,7 @@ _awf() {
   workflows=(${workflows.join(" ")})
   agents=(${agents.join(" ")})
   shells=(${completionShells.join(" ")})
-  options=(--agent --target --dry-run --show-content --force --json --raw --open --strict --maintainer --project-root --help)
+  options=(--agent --target --dry-run --show-content --force --json --raw --open --location --strict --maintainer --failures-only --no-interactive --project-root --help)
 
   if (( CURRENT == 2 )); then
     compadd -- $commands
@@ -127,6 +127,9 @@ function fishCompletion(workflows: readonly string[]): string {
       `complete -c ${executable} -l target -r`,
       `complete -c ${executable} -l project-root -r`,
       `complete -c ${executable} -l json`,
+      `complete -c ${executable} -l location`,
+      `complete -c ${executable} -l failures-only`,
+      `complete -c ${executable} -l no-interactive`,
       `complete -c ${executable} -l help`,
     );
   }
@@ -142,7 +145,7 @@ $awfCompleter = {
   $workflows = @('${workflows.join("','")}')
   $agents = @('${agents.join("','")}')
   $shells = @('${completionShells.join("','")}')
-  $options = @('--agent','--target','--dry-run','--show-content','--force','--json','--raw','--open','--strict','--maintainer','--project-root','--help')
+  $options = @('--agent','--target','--dry-run','--show-content','--force','--json','--raw','--open','--location','--strict','--maintainer','--failures-only','--no-interactive','--project-root','--help')
   $command = if ($tokens.Count -gt 1) { $tokens[1] } else { '' }
 
   if ($tokens.Count -le 2) { $candidates = $commands }

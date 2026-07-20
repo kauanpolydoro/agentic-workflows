@@ -32,6 +32,10 @@ awf validate . --strict
 
 `awf init` saves the default agent and target in `.agentic-workflows/config.yml` so later install commands do not need to repeat them.
 
+In an interactive terminal, you can run bare `awf init` and choose the agent and project-relative target from a short wizard.
+
+Passing `--agent`, `--target`, or `--no-interactive` skips the wizard, which keeps scripts and CI deterministic.
+
 The dry run generates the proposed bundle in memory and prints every planned file action without changing the target.
 
 Add `--show-content` to inspect the complete generated content after the concise plan.
@@ -127,6 +131,12 @@ Run consumer checks after installation or when a lifecycle command fails:
 
 ```bash
 awf doctor
+```
+
+Show only warnings and failures while retaining summary counts with:
+
+```bash
+awf doctor --failures-only
 ```
 
 The write-access check creates a uniquely named probe in the configured target and removes it immediately.

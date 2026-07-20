@@ -16,6 +16,13 @@ export interface ProjectRootOptions {
   allowPackageRoot?: boolean;
 }
 
+export type ProjectRootSource = "explicit" | "git" | "config" | "package" | "cwd";
+
+export interface ProjectContext {
+  root: string;
+  source: ProjectRootSource;
+}
+
 async function explicitProjectRoot(candidate: string): Promise<string> {
   const absolute = path.resolve(candidate);
   const information = await lstat(absolute);
@@ -25,17 +32,19 @@ async function explicitProjectRoot(candidate: string): Promise<string> {
   return realpath(absolute);
 }
 
-export async function findProjectRoot(
+export async function findProjectContext(
   start = process.cwd(),
   options: ProjectRootOptions = {},
-): Promise<string> {
-  if (options.explicitRoot) return explicitProjectRoot(options.explicitRoot);
+): Promise<ProjectContext> {
+  if (options.explicitRoot) {
+    return { root: await explicitProjectRoot(options.explicitRoot), source: "explicit" };
+  }
   const initial = path.resolve(start);
   let current = initial;
   let nearestConfig: string | null = null;
   let nearestPackage: string | null = null;
   while (true) {
-    if (await exists(path.join(current, ".git"))) return current;
+    if (await exists(path.join(current, ".git"))) return { root: current, source: "git" };
     if (!nearestConfig && (await exists(path.join(current, ".agentic-workflows", "config.yml")))) {
       nearestConfig = current;
     }
@@ -44,10 +53,21 @@ export async function findProjectRoot(
     }
     const parent = path.dirname(current);
     if (parent === current) {
-      return nearestConfig ?? (options.allowPackageRoot ? nearestPackage : null) ?? initial;
+      if (nearestConfig) return { root: nearestConfig, source: "config" };
+      if (options.allowPackageRoot && nearestPackage) {
+        return { root: nearestPackage, source: "package" };
+      }
+      return { root: initial, source: "cwd" };
     }
     current = parent;
   }
+}
+
+export async function findProjectRoot(
+  start = process.cwd(),
+  options: ProjectRootOptions = {},
+): Promise<string> {
+  return (await findProjectContext(start, options)).root;
 }
 
 export function catalogRoot(): string {

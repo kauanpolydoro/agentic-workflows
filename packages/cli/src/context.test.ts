@@ -2,7 +2,12 @@ import { mkdir, mkdtemp, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { catalogRoot, findProjectRoot, generatedCatalogPath } from "./context.js";
+import {
+  catalogRoot,
+  findProjectContext,
+  findProjectRoot,
+  generatedCatalogPath,
+} from "./context.js";
 
 describe("project-root discovery", () => {
   it("prefers the enclosing repository over a nested package manifest", async () => {
@@ -64,6 +69,24 @@ describe("project-root discovery", () => {
     const start = path.join(root, "nested");
     await mkdir(start);
     await expect(findProjectRoot(start, { explicitRoot: root })).resolves.toBe(root);
+    await expect(findProjectContext(start, { explicitRoot: root })).resolves.toEqual({
+      root,
+      source: "explicit",
+    });
+  });
+
+  it("reports whether discovery used a package marker or the current-directory fallback", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "awf-root-source-"));
+    const packageRoot = path.join(root, "package");
+    const nested = path.join(packageRoot, "src");
+    await mkdir(nested, { recursive: true });
+    await writeFile(path.join(packageRoot, "package.json"), "{}\n");
+
+    await expect(findProjectContext(nested, { allowPackageRoot: true })).resolves.toEqual({
+      root: packageRoot,
+      source: "package",
+    });
+    await expect(findProjectContext(nested)).resolves.toEqual({ root: nested, source: "cwd" });
   });
 
   it("rejects explicit roots that are files or symbolic links", async () => {

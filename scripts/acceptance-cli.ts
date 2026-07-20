@@ -123,6 +123,10 @@ if (
 }
 const recipes = JSON.parse(success(["list", "--json"]).stdout) as unknown[];
 if (recipes.length !== 20) throw new Error(`Expected 20 recipes, received ${recipes.length}.`);
+const documentationLocation = success(["show", "review-pull-request", "--location"]).stdout.trim();
+if (!documentationLocation.endsWith("/catalog/review-pull-request")) {
+  throw new Error("Documentation location output did not return the packaged catalog URL.");
+}
 for (const shell of ["bash", "zsh", "fish", "pwsh"]) {
   const completion = success(["completion", shell]).stdout;
   if (!completion.includes("review-pull-request") || !completion.includes("agentic-workflows")) {
@@ -160,6 +164,18 @@ if (
   )
 ) {
   throw new Error("Installation status did not report the healthy installed workflow.");
+}
+const diagnostics = JSON.parse(success(["doctor", "--failures-only", "--json"]).stdout) as {
+  filter?: string;
+  summary?: { pass?: number };
+  checks?: Array<{ status?: string }>;
+};
+if (
+  diagnostics.filter !== "failures-only" ||
+  !diagnostics.summary?.pass ||
+  !diagnostics.checks?.every((check) => check.status !== "pass")
+) {
+  throw new Error("Filtered doctor output omitted its summary or retained passing checks.");
 }
 failure(["status", "review-pull-request", "--json"], "NOT_FOUND");
 failure(["install", "write-release-notes", "--json"], "CONFLICT");

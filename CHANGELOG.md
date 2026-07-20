@@ -10,12 +10,14 @@ All notable project changes will be documented here.
 - Complete lifecycle dry runs with optional generated-content previews.
 - Installation health reporting through `awf status` and consumer diagnostics through `awf doctor`.
 - Bash, Zsh, Fish, and PowerShell completion through `awf completion <shell>`.
+- Interactive `awf init` setup for agent and target selection while retaining deterministic flags.
 - Versioned lifecycle plan, validation, diagnostic, and JSON error contracts.
 - Resumable npm and GitHub release synchronization with exact tarball integrity checks.
 
 ### Changed
 
 - No-op updates identify and preserve unchanged managed files instead of rewriting them.
+- Root fallback notices, documentation location output, and filtered doctor diagnostics make ambiguous environments easier to inspect.
 - Package smoke tests now exercise local, package-runner, global-install, completion, status, and lifecycle paths while rejecting test artifacts.
 - Acceptance coverage now verifies safe `SIGINT` and `SIGTERM` handling on supported POSIX runners.
 

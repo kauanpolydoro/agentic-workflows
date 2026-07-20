@@ -36,7 +36,7 @@ import {
 import { Argument, Command, CommanderError, Option } from "commander";
 import { parse, stringify } from "yaml";
 import { completionShells, renderCompletion, type CompletionShell } from "./completion.js";
-import { catalogRoot, findProjectRoot, generatedCatalogPath } from "./context.js";
+import { catalogRoot, findProjectContext, generatedCatalogPath } from "./context.js";
 import {
   installRecipe,
   planInstallRecipe,
@@ -51,6 +51,7 @@ import { fail, output } from "./io.js";
 import { documentationOpenCommand } from "./platform.js";
 import { inspectInstallations, type InstallationStatus } from "./status.js";
 import { CLI_VERSION } from "./version.js";
+import { type InitWizard, promptInitWizard } from "./wizard.js";
 
 interface ProjectConfig {
   schema_version: 1;
@@ -97,6 +98,8 @@ const generatedStructuralChecks = [
 
 interface ProgramOptions {
   signal?: AbortSignal;
+  interactive?: boolean;
+  initWizard?: InitWizard;
 }
 
 function errorCode(error: unknown): string | undefined {
@@ -314,10 +317,7 @@ async function openDocumentation(
   signal?: AbortSignal,
 ): Promise<{ target: string; opened: boolean }> {
   throwIfAborted(signal);
-  const localDocumentation = path.resolve(catalogRoot(), "..", "docs", "catalog", `${id}.md`);
-  const documentation = (await hasRegularFile(localDocumentation, "the local documentation page"))
-    ? localDocumentation
-    : `https://kauanpolydoro.github.io/agentic-workflows/catalog/${id}`;
+  const documentation = await documentationLocation(id);
   const { command, args } = documentationOpenCommand(documentation);
   const opened = await new Promise<boolean>((resolve, reject) => {
     const child = spawn(command, args, { signal, stdio: "ignore" });
@@ -331,6 +331,13 @@ async function openDocumentation(
   });
   throwIfAborted(signal);
   return { target: documentation, opened };
+}
+
+async function documentationLocation(id: string): Promise<string> {
+  const localDocumentation = path.resolve(catalogRoot(), "..", "docs", "catalog", `${id}.md`);
+  return (await hasRegularFile(localDocumentation, "the local documentation page"))
+    ? localDocumentation
+    : `https://kauanpolydoro.github.io/agentic-workflows/catalog/${id}`;
 }
 
 async function replaceConfiguration(destination: string, temporary: string): Promise<void> {
@@ -1555,6 +1562,8 @@ Start with a dry run before installing a workflow. Run awf <command> --help for 
 
 export function createProgram(options: ProgramOptions = {}): Command {
   const { signal } = options;
+  const interactive = options.interactive ?? Boolean(process.stdin.isTTY && process.stdout.isTTY);
+  const initWizard = options.initWizard ?? promptInitWizard;
   const program = new Command()
     .name("awf")
     .description("Browse, inspect, and install step-by-step workflows for coding agents.")
@@ -1573,12 +1582,22 @@ export function createProgram(options: ProgramOptions = {}): Command {
   program.hook("preAction", () => throwIfAborted(signal));
   program.hook("postAction", () => throwIfAborted(signal));
   program.action(() => output(`${program.helpInformation().trimEnd()}\n${firstRunHelp.trim()}`));
-  const projectRoot = () => {
+  let fallbackNoticeShown = false;
+  const projectRoot = async (machineOutput = false) => {
     const explicitRoot = program.opts<{ projectRoot?: string }>().projectRoot;
-    return findProjectRoot(
+    const context = await findProjectContext(
       process.cwd(),
       explicitRoot ? { explicitRoot } : { allowPackageRoot: true },
     );
+    if (context.source === "cwd" && !machineOutput && !fallbackNoticeShown) {
+      fallbackNoticeShown = true;
+      process.stderr.write(
+        `${sanitizeTerminal(
+          `Notice: no Git, AWF configuration, or package marker was found. Using ${context.root} as the project root. Pass --project-root <directory> to choose explicitly.`,
+        )}\n`,
+      );
+    }
+    return context.root;
   };
 
   program
@@ -1665,13 +1684,15 @@ export function createProgram(options: ProgramOptions = {}): Command {
     .option("--json", "Print complete structured recipe metadata")
     .option("--raw", "Print the canonical workflow Markdown")
     .option("--open", "Open the local page or public catalog page in a browser")
+    .option("--location", "Print the local documentation path or public catalog URL")
     .action(async (id, options) => {
-      if ([options.json, options.raw, options.open].filter(Boolean).length > 1) {
+      if ([options.json, options.raw, options.open, options.location].filter(Boolean).length > 1) {
         throw new CommanderError(2, "awf.conflictingOutput", "Choose one output mode.");
       }
       const source = await loadRecipeSource(await resolveWorkflowPath(id));
       const recipe = source.recipe;
       if (options.raw) return output(source.files["workflow.md"]);
+      if (options.location) return output(await documentationLocation(id));
       if (options.open) {
         const documentation = await openDocumentation(id, signal);
         return output(
@@ -1698,7 +1719,7 @@ export function createProgram(options: ProgramOptions = {}): Command {
     .option("--json", "Print the installation manifest as JSON")
     .action(async (id, options) => {
       requireDryRunForContentPreview(Boolean(options.dryRun), Boolean(options.showContent));
-      const root = await projectRoot();
+      const root = await projectRoot(Boolean(options.json));
       const config = await loadConfig(root);
       const agent = (options.agent ?? config.default_agent) as AgentId;
       const target = await safeTarget(root, options.target ?? config.default_target);
@@ -1756,7 +1777,7 @@ export function createProgram(options: ProgramOptions = {}): Command {
     .option("--json", "Print the update result or dry-run plan as JSON")
     .action(async (id, options) => {
       requireDryRunForContentPreview(Boolean(options.dryRun), Boolean(options.showContent));
-      const root = await projectRoot();
+      const root = await projectRoot(Boolean(options.json));
       const config = await loadConfig(root);
       const target = await safeTarget(root, options.target ?? config.default_target);
       const workflowPath = await resolveWorkflowPath(id);
@@ -1798,7 +1819,7 @@ export function createProgram(options: ProgramOptions = {}): Command {
     .option("--force", "Remove locally modified managed files after explicit review")
     .option("--json", "Print the removed installation manifest as JSON")
     .action(async (id, options) => {
-      const root = await projectRoot();
+      const root = await projectRoot(Boolean(options.json));
       const config = await loadConfig(root);
       const workflowPath = await resolveWorkflowPath(id);
       const target = await safeTarget(root, options.target ?? config.default_target);
@@ -1836,7 +1857,7 @@ export function createProgram(options: ProgramOptions = {}): Command {
     .option("--json", "Print a versioned installation status report as JSON")
     .action(async (id, options) => {
       if (id !== undefined) recipePath(id);
-      const root = await projectRoot();
+      const root = await projectRoot(Boolean(options.json));
       const config = await loadConfig(root);
       const target = await safeTarget(root, options.target ?? config.default_target);
       const statuses = await inspectInstallations(catalogRoot(), target, id);
@@ -1886,8 +1907,9 @@ export function createProgram(options: ProgramOptions = {}): Command {
     .description("Diagnose catalog, configuration, project, installation, and agent availability.")
     .option("--json", "Print structured health checks as JSON")
     .option("--maintainer", "Require source-development tools such as Corepack and pnpm")
+    .option("--failures-only", "Show only warnings and failures while retaining the full summary")
     .action(async (options) => {
-      const root = await projectRoot();
+      const root = await projectRoot(Boolean(options.json));
       const checks: Array<{ check: string; status: "pass" | "warn" | "fail"; detail: string }> = [];
       checks.push({ check: "project-root", status: "pass", detail: root });
       const major = Number(process.versions.node.split(".")[0]);
@@ -2200,18 +2222,32 @@ export function createProgram(options: ProgramOptions = {}): Command {
           checks.push({ check: `agent-${agent}`, status: "fail", detail: errorMessage(error) });
         }
       }
+      const summary = {
+        pass: checks.filter((check) => check.status === "pass").length,
+        warn: checks.filter((check) => check.status === "warn").length,
+        fail: checks.filter((check) => check.status === "fail").length,
+      };
+      const reportedChecks = options.failuresOnly
+        ? checks.filter((check) => check.status !== "pass")
+        : checks;
       const result = {
         schema_version: 1 as const,
         healthy: checks.every((check) => check.status !== "fail"),
         projectRoot: root,
-        checks,
+        filter: options.failuresOnly ? ("failures-only" as const) : ("all" as const),
+        summary,
+        checks: reportedChecks,
       };
+      const renderedChecks =
+        reportedChecks.length > 0
+          ? reportedChecks
+              .map((check) => `[${check.status.toUpperCase()}] ${check.check}: ${check.detail}`)
+              .join("\n")
+          : "[PASS] No warnings or failures.";
       output(
         options.json
           ? result
-          : `${result.healthy ? "Healthy" : "Unhealthy"} project at ${root}\n${checks
-              .map((check) => `[${check.status.toUpperCase()}] ${check.check}: ${check.detail}`)
-              .join("\n")}`,
+          : `${result.healthy ? "Healthy" : "Unhealthy"} project at ${root}\nSummary: ${summary.pass} pass, ${summary.warn} warn, ${summary.fail} fail.\n${renderedChecks}`,
         Boolean(options.json),
       );
       if (!result.healthy) process.exitCode = 1;
@@ -2219,37 +2255,62 @@ export function createProgram(options: ProgramOptions = {}): Command {
 
   program
     .command("init")
-    .description("Create local Agentic Workflows configuration.")
+    .description("Create local configuration, with a guided wizard in interactive terminals.")
     .addOption(
-      new Option("--agent <agent>", "Set the default destination format")
-        .choices(agentIds)
-        .default("generic"),
+      new Option("--agent <agent>", "Set the default destination format").choices(agentIds),
     )
-    .option("--target <directory>", "Default target inside the project", ".")
+    .option("--target <directory>", "Default target inside the project")
+    .option("--no-interactive", "Skip the wizard and use flags or deterministic defaults")
     .option("--force", "Replace an existing AWF configuration")
-    .action(async (options) => {
-      if (!safeRelativeTarget(options.target)) {
-        throw new AwfError("INVALID_PATH", "The configured target must be a safe relative path.");
-      }
+    .action(async (commandOptions) => {
       const root = await projectRoot();
       const directory = path.join(root, ".agentic-workflows");
       await assertNoSymlink(root, directory);
-      await mkdir(directory, { recursive: true });
       const file = path.join(directory, "config.yml");
       await assertNoSymlink(root, file);
+      const existing = await inspectOptionalPath(file, "the existing project configuration");
+      if (existing) {
+        assertRegularFile(existing, file, "The existing project configuration");
+        if (!commandOptions.force) {
+          throw new AwfError(
+            "CONFLICT",
+            "Configuration already exists. Use --force to replace it.",
+          );
+        }
+      }
+      const guided =
+        interactive &&
+        commandOptions.interactive !== false &&
+        commandOptions.agent === undefined &&
+        commandOptions.target === undefined;
+      const selection = guided
+        ? await initWizard({
+            defaultAgent: defaultConfig.default_agent,
+            defaultTarget: defaultConfig.default_target,
+            isValidTarget: safeRelativeTarget,
+            ...(signal ? { signal } : {}),
+          })
+        : {
+            agent: (commandOptions.agent ?? defaultConfig.default_agent) as AgentId,
+            target: commandOptions.target ?? defaultConfig.default_target,
+          };
+      if (!safeRelativeTarget(selection.target)) {
+        throw new AwfError("INVALID_PATH", "The configured target must be a safe relative path.");
+      }
+      await mkdir(directory, { recursive: true });
       const temporary = path.join(directory, `.config-${randomUUID()}.tmp`);
       try {
         await writeFile(
           temporary,
           stringify({
             schema_version: 1,
-            default_agent: options.agent,
-            default_target: options.target,
+            default_agent: selection.agent,
+            default_target: selection.target,
           }),
           { flag: "wx", mode: 0o600 },
         );
         throwIfAborted(signal);
-        if (options.force) {
+        if (commandOptions.force) {
           await replaceConfiguration(file, temporary);
         } else {
           await link(temporary, file);
@@ -2267,7 +2328,9 @@ export function createProgram(options: ProgramOptions = {}): Command {
         await rm(temporary, { force: true });
       }
       throwIfAborted(signal);
-      output("Created .agentic-workflows/config.yml.");
+      output(
+        `Created .agentic-workflows/config.yml.\nDefault agent: ${selection.agent}\nDefault target: ${selection.target}\nNext: awf install <workflow-id> --dry-run`,
+      );
     });
 
   program
@@ -2276,7 +2339,7 @@ export function createProgram(options: ProgramOptions = {}): Command {
     .option("--target <directory>", "Target inside the project")
     .option("--json", "Print the manifest as JSON instead of YAML")
     .action(async (id, options) => {
-      const root = await projectRoot();
+      const root = await projectRoot(Boolean(options.json));
       const config = await loadConfig(root);
       const manifest = await validateInstallation(
         await resolveWorkflowPath(id),

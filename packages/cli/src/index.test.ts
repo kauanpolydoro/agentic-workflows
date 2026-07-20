@@ -290,6 +290,12 @@ describe.sequential("CLI command contracts", () => {
     await expect(run("show", "write-release-notes", "--raw", "--json")).rejects.toMatchObject({
       exitCode: 2,
     });
+    stdout = "";
+    await run("show", "write-release-notes", "--location");
+    expect(stdout).toContain("docs/catalog/write-release-notes.md");
+    await expect(run("show", "write-release-notes", "--location", "--open")).rejects.toMatchObject({
+      exitCode: 2,
+    });
   });
 
   it("reports an actionable empty installation status", async () => {
@@ -487,6 +493,62 @@ describe.sequential("CLI command contracts", () => {
     await expect(
       stat(path.join(project, "managed path/.agents/skills/write-release-notes/SKILL.md")),
     ).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  it("guides interactive init while flags and non-interactive use remain deterministic", async () => {
+    const wizard = vi.fn().mockResolvedValue({ agent: "codex", target: "guided target" });
+    await createProgram({ interactive: true, initWizard: wizard }).parseAsync(["init"], {
+      from: "user",
+    });
+    expect(wizard).toHaveBeenCalledOnce();
+    expect(
+      parse(await readFile(path.join(project, ".agentic-workflows/config.yml"), "utf8")),
+    ).toEqual({
+      schema_version: 1,
+      default_agent: "codex",
+      default_target: "guided target",
+    });
+    expect(stdout).toContain("Default agent: codex");
+    expect(stdout).toContain("Next: awf install <workflow-id> --dry-run");
+
+    wizard.mockClear();
+    await expect(
+      createProgram({ interactive: true, initWizard: wizard }).parseAsync(["init"], {
+        from: "user",
+      }),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(wizard).not.toHaveBeenCalled();
+
+    stdout = "";
+    await createProgram({ interactive: true, initWizard: wizard }).parseAsync(
+      ["init", "--force", "--agent", "generic", "--target", "."],
+      { from: "user" },
+    );
+    expect(wizard).not.toHaveBeenCalled();
+    expect(
+      parse(await readFile(path.join(project, ".agentic-workflows/config.yml"), "utf8")),
+    ).toMatchObject({ default_agent: "generic", default_target: "." });
+
+    await createProgram({ interactive: true, initWizard: wizard }).parseAsync(
+      ["init", "--force", "--no-interactive"],
+      { from: "user" },
+    );
+    expect(wizard).not.toHaveBeenCalled();
+  });
+
+  it("warns only human commands when project-root discovery falls back to the current directory", async () => {
+    await rm(path.join(project, "package.json"));
+    await run("init", "--agent", "generic");
+    expect(process.stderr.write).toHaveBeenCalledWith(
+      expect.stringContaining("no Git, AWF configuration, or package marker was found"),
+    );
+
+    vi.mocked(process.stderr.write).mockClear();
+    await rm(path.join(project, ".agentic-workflows"), { recursive: true });
+    stdout = "";
+    await run("status", "--json");
+    expect(process.stderr.write).not.toHaveBeenCalled();
+    expect(JSON.parse(stdout)).toMatchObject({ schema_version: 1 });
   });
 
   it("keeps dry-run colorless, non-mutating, and explicit about post-install use", async () => {
@@ -701,6 +763,17 @@ describe.sequential("CLI command contracts", () => {
     expect(typeof result.healthy).toBe("boolean");
     expect(result.schema_version).toBe(1);
     expect((await readdir(project)).some((entry) => entry.startsWith(".awf-doctor-"))).toBe(false);
+
+    stdout = "";
+    await run("--project-root", project, "doctor", "--failures-only", "--json");
+    const filtered = JSON.parse(stdout) as {
+      filter: string;
+      summary: { pass: number; warn: number; fail: number };
+      checks: Array<{ status: string }>;
+    };
+    expect(filtered.filter).toBe("failures-only");
+    expect(filtered.summary.pass).toBeGreaterThan(0);
+    expect(filtered.checks.every((check) => check.status !== "pass")).toBe(true);
   });
 
   it("reports an invalid configured target when it is a regular file", async () => {

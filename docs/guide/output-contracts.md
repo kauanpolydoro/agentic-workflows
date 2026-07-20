@@ -57,6 +57,10 @@ An unchanged managed file is not rewritten during an update.
 
 The surrounding command result retains its command-specific fields for compatibility, but new automation should read the versioned `plan` object.
 
+## Filtered diagnostics
+
+`doctor --failures-only --json` retains `summary` counts for every check while returning only warning and failure records in `checks`.
+
 ## Error schema version 1
 
 Every JSON error includes `schema_version`, `error`, and `message`.
