@@ -31,6 +31,9 @@ Add `--json` to initialization for a versioned machine result that also records 
 Run these commands from the root of the project that should receive the workflow:
 
 ```bash
+# Confirm which project root will be used.
+awf context
+
 # Save a default agent and target for this project.
 awf init --agent codex
 
@@ -67,6 +70,8 @@ Use `awf status --failures-only` to focus on drift while retaining complete summ
 If the project configuration uses an unsupported schema, back it up and recreate reviewed values with `awf init --force --no-interactive --agent <agent> --target <directory>`.
 
 Apply `update` or `remove` without `--dry-run` only after reviewing its complete file plan.
+
+`--show-content` requires `--dry-run`, and `--force` never authorizes overwriting an unmanaged file.
 
 ## Run without a global installation
 

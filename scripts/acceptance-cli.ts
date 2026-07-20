@@ -134,6 +134,18 @@ if (
 ) {
   throw new Error("Empty invocation did not return clean, actionable first-run help.");
 }
+const context = JSON.parse(success(["context", "--json"]).stdout) as {
+  schema_version?: number;
+  selection_source?: string;
+  project_root_fallback?: boolean;
+};
+if (
+  context.schema_version !== 1 ||
+  context.selection_source !== "explicit" ||
+  context.project_root_fallback !== false
+) {
+  throw new Error("Project context did not explain the explicit root used by acceptance.");
+}
 const recipes = JSON.parse(success(["list", "--json"]).stdout) as unknown[];
 if (recipes.length !== 20) throw new Error(`Expected 20 recipes, received ${recipes.length}.`);
 const documentationLocation = success(["show", "review-pull-request", "--location"]).stdout.trim();
@@ -215,14 +227,29 @@ if (
 const diagnostics = JSON.parse(success(["doctor", "--failures-only", "--json"]).stdout) as {
   filter?: string;
   summary?: { pass?: number };
-  checks?: Array<{ status?: string }>;
+  checks?: Array<{
+    schema_version?: number;
+    status?: string;
+    remediation?: unknown;
+    data?: unknown;
+  }>;
   projectContext?: { source?: string };
+  status?: string;
+  exit_code?: number;
 };
 if (
   diagnostics.filter !== "failures-only" ||
   !diagnostics.summary?.pass ||
   diagnostics.projectContext?.source !== "explicit" ||
-  !diagnostics.checks?.every((check) => check.status !== "pass")
+  diagnostics.status !== "pass" ||
+  diagnostics.exit_code !== 0 ||
+  !diagnostics.checks?.every(
+    (check) =>
+      check.status !== "pass" &&
+      check.schema_version === 1 &&
+      "remediation" in check &&
+      "data" in check,
+  )
 ) {
   throw new Error("Filtered doctor output omitted its summary or retained passing checks.");
 }

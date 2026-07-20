@@ -20,6 +20,7 @@ awf
 Run the following journey from the root of a project that should receive a workflow:
 
 ```bash
+awf context
 awf init --agent codex
 awf list
 awf show review-pull-request
@@ -55,6 +56,12 @@ This command replaces the configuration and does not claim to migrate unknown fi
 The dry run generates the proposed bundle in memory and prints every planned file action without changing the target.
 
 Add `--show-content` to inspect the complete generated content after the concise plan.
+
+`--show-content` is accepted only with `--dry-run`, so content inspection cannot accidentally apply a plan.
+
+After review, a normal install may create managed files, while `--force` may replace only previously managed files whose local changes were explicitly reviewed.
+
+No form of `--force` allows overwriting an unmanaged file.
 
 The applied installation prints the entrypoint, installed files, required inputs, declared approval gates, declared effects, validation command, and removal command.
 

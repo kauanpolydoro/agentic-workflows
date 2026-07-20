@@ -68,19 +68,22 @@ function globalBinary(prefix: string, name: string): string {
     : path.join(prefix, "bin", name);
 }
 
+interface MachineFailure {
+  schema_version?: unknown;
+  code?: unknown;
+  command?: unknown;
+  retryable?: unknown;
+  help_url?: unknown;
+  remediation?: unknown;
+  details?: Readonly<Record<string, unknown>>;
+}
+
 function failureCode(
   result: { stdout: string; stderr: string },
   expected: string,
   command: string,
-): void {
-  let value: {
-    schema_version?: unknown;
-    code?: unknown;
-    command?: unknown;
-    retryable?: unknown;
-    help_url?: unknown;
-    remediation?: unknown;
-  };
+): MachineFailure {
+  let value: MachineFailure;
   try {
     value = JSON.parse(result.stderr) as typeof value;
   } catch {
@@ -97,6 +100,7 @@ function failureCode(
   ) {
     throw new Error(`Expected error code ${expected}, received: ${String(value.code)}.`);
   }
+  return value;
 }
 
 async function assertMissing(file: string): Promise<void> {
@@ -365,6 +369,13 @@ const globalCatalog = JSON.parse(run(globalAwf, ["list", "--json"], workspace)) 
 if (globalCatalog.length !== 20) {
   throw new Error(`Globally installed awf returned ${globalCatalog.length} recipes.`);
 }
+const globalContext = JSON.parse(run(globalAwf, ["context", "--json"], workspace)) as {
+  selection_source?: string;
+  project_root_fallback?: boolean;
+};
+if (globalContext.selection_source !== "cwd" || globalContext.project_root_fallback !== true) {
+  throw new Error("The globally installed awf command did not explain its root fallback.");
+}
 const listed = JSON.parse(runCli(entrypoint, ["list", "--json"], consumer)) as unknown[];
 if (listed.length !== 20) throw new Error(`Packaged catalog returned ${listed.length} recipes.`);
 const shown = JSON.parse(
@@ -373,6 +384,16 @@ const shown = JSON.parse(
   id?: string;
 };
 if (shown.id !== "write-release-notes") throw new Error("Packaged recipe lookup failed.");
+const packagedContext = JSON.parse(runCli(entrypoint, ["context", "--json"], consumer)) as {
+  selection_source?: string;
+  project_root_fallback?: boolean;
+};
+if (
+  packagedContext.selection_source !== "explicit" ||
+  packagedContext.project_root_fallback !== false
+) {
+  throw new Error("The packaged CLI did not explain its explicit project root.");
+}
 const documentationLocation = runCli(
   entrypoint,
   ["show", "write-release-notes", "--location"],
@@ -480,14 +501,49 @@ const packagedDiagnostics = JSON.parse(
 ) as {
   projectContext?: { source?: string; reason?: string };
   summary?: { pass?: number };
+  status?: string;
+  exit_code?: number;
+  checks?: Array<{
+    schema_version?: number;
+    status?: string;
+    remediation?: unknown;
+    data?: unknown;
+  }>;
 };
 if (
   packagedDiagnostics.projectContext?.source !== "explicit" ||
   !packagedDiagnostics.projectContext?.reason?.includes("--project-root") ||
-  !packagedDiagnostics.summary?.pass
+  !packagedDiagnostics.summary?.pass ||
+  packagedDiagnostics.status !== "pass" ||
+  packagedDiagnostics.exit_code !== 0 ||
+  !packagedDiagnostics.checks?.every(
+    (check) => check.schema_version === 1 && "remediation" in check && "data" in check,
+  )
 ) {
   throw new Error("The packaged CLI omitted project-root provenance from diagnostics.");
 }
+const lifecycleLock = path.join(targetRoot, ".agentic-workflows", "lifecycle.lock");
+await writeFile(
+  lifecycleLock,
+  '{"schema_version":1,"pid":5150,"acquired_at":"2026-07-20T12:00:00.000Z","token":"package-secret"}\n',
+);
+const lockConflict = failureCode(
+  runCliFailure(
+    entrypoint,
+    ["update", "write-release-notes", "--target", installationTarget, "--json"],
+    consumer,
+  ),
+  "CONFLICT",
+  "update",
+);
+if (
+  lockConflict.retryable !== true ||
+  lockConflict.details?.pid !== 5150 ||
+  JSON.stringify(lockConflict).includes("package-secret")
+) {
+  throw new Error("The packaged CLI omitted safe lifecycle-lock conflict metadata.");
+}
+rmSync(lifecycleLock);
 failureCode(
   runCliFailure(entrypoint, ["status", "review-pull-request", "--json"], consumer),
   "NOT_FOUND",

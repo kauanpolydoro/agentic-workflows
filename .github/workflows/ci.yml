@@ -62,6 +62,8 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Exercise unit contracts on ${{ runner.os }}
+        run: pnpm test
       - run: pnpm build
       - name: Exercise compiled CLI on ${{ runner.os }}
         run: pnpm test:automation

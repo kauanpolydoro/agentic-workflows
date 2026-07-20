@@ -1628,6 +1628,7 @@ function describeInstallationConflict(id: string, error: unknown): string {
 
 const firstRunHelp = `
 Examples:
+  $ awf context
   $ awf list
   $ awf show review-pull-request
   $ awf init --agent codex
@@ -1681,6 +1682,32 @@ export function createProgram(options: ProgramOptions = {}): Command {
   };
   const projectRoot = async (machineOutput = false) =>
     (await resolveProjectContext(machineOutput)).root;
+
+  program
+    .command("context")
+    .description("Explain which project root this invocation selected and why.")
+    .option("--json", "Print a versioned project-context report as JSON")
+    .action(async (options) => {
+      const context = await resolveProjectContext(true);
+      const result = {
+        schema_version: 1 as const,
+        project_root: context.root,
+        selection_source: context.source,
+        project_root_fallback: context.source === "cwd",
+        reason: explainProjectRootSource(context.source),
+      };
+      output(
+        options.json
+          ? result
+          : [
+              `Project root: ${result.project_root}`,
+              `Selection source: ${result.selection_source}`,
+              `Current-directory fallback: ${result.project_root_fallback ? "yes" : "no"}`,
+              `Reason: ${result.reason}`,
+            ].join("\n"),
+        Boolean(options.json),
+      );
+    });
 
   program
     .command("list")
@@ -2376,17 +2403,27 @@ export function createProgram(options: ProgramOptions = {}): Command {
           checks.push({ check: `agent-${agent}`, status: "fail", detail: errorMessage(error) });
         }
       }
+      const normalizedChecks = checks.map((check) => ({
+        schema_version: 1 as const,
+        remediation: null as string | null,
+        data: null as Readonly<Record<string, unknown>> | null,
+        ...check,
+      }));
       const summary = {
-        pass: checks.filter((check) => check.status === "pass").length,
-        warn: checks.filter((check) => check.status === "warn").length,
-        fail: checks.filter((check) => check.status === "fail").length,
+        total: normalizedChecks.length,
+        pass: normalizedChecks.filter((check) => check.status === "pass").length,
+        warn: normalizedChecks.filter((check) => check.status === "warn").length,
+        fail: normalizedChecks.filter((check) => check.status === "fail").length,
       };
       const reportedChecks = options.failuresOnly
-        ? checks.filter((check) => check.status !== "pass")
-        : checks;
+        ? normalizedChecks.filter((check) => check.status !== "pass")
+        : normalizedChecks;
+      const healthy = summary.fail === 0;
       const result = {
         schema_version: 1 as const,
-        healthy: checks.every((check) => check.status !== "fail"),
+        status: healthy ? ("pass" as const) : ("fail" as const),
+        healthy,
+        exit_code: healthy ? (0 as const) : (1 as const),
         projectRoot: root,
         projectContext: {
           root,

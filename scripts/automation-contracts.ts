@@ -19,6 +19,7 @@ interface ErrorPayload {
   retryable?: unknown;
   help_url?: unknown;
   remediation?: unknown;
+  details?: Readonly<Record<string, unknown>>;
 }
 
 const cli = path.resolve("packages/cli/dist/index.js");
@@ -107,6 +108,19 @@ if (!Array.isArray(catalog) || catalog.length === 0) {
   throw new Error("Catalog automation did not receive any workflow records.");
 }
 
+const projectContext = jsonSuccess<{
+  schema_version?: number;
+  selection_source?: string;
+  project_root_fallback?: boolean;
+}>(["context", "--json"]);
+if (
+  projectContext.schema_version !== 1 ||
+  projectContext.selection_source !== "explicit" ||
+  projectContext.project_root_fallback !== false
+) {
+  throw new Error("Project-context automation did not explain the explicit root selection.");
+}
+
 const recipe = jsonSuccess<{ id?: string }>(["show", "write-release-notes", "--json"]);
 if (recipe.id !== "write-release-notes") {
   throw new Error("Show automation did not receive the selected workflow.");
@@ -187,6 +201,15 @@ if (
 ) {
   throw new Error("Lifecycle-lock diagnostics omitted sanitized owner recovery metadata.");
 }
+const lockConflict = jsonFailure(["update", "write-release-notes", "--json"], "update", "CONFLICT");
+if (
+  lockConflict.retryable !== true ||
+  lockConflict.details?.pid !== 4242 ||
+  lockConflict.details?.acquiredAt !== "2026-07-20T12:00:00.000Z" ||
+  JSON.stringify(lockConflict).includes("automation-secret")
+) {
+  throw new Error("Lifecycle-lock conflict did not expose safe retry and owner metadata.");
+}
 rmSync(lifecycleLock);
 
 const validation = jsonSuccess<{ schema_version?: number; valid?: boolean }>([
@@ -204,13 +227,30 @@ const diagnostics = jsonSuccess<{
   filter?: string;
   summary?: { pass?: number };
   projectContext?: { source?: string; reason?: string };
+  status?: string;
+  exit_code?: number;
+  checks?: Array<{
+    schema_version?: number;
+    status?: string;
+    remediation?: unknown;
+    data?: unknown;
+  }>;
 }>(["doctor", "--failures-only", "--json"]);
 if (
   diagnostics.schema_version !== 1 ||
   diagnostics.filter !== "failures-only" ||
   !diagnostics.summary?.pass ||
   diagnostics.projectContext?.source !== "explicit" ||
-  !diagnostics.projectContext?.reason?.includes("--project-root")
+  !diagnostics.projectContext?.reason?.includes("--project-root") ||
+  diagnostics.status !== "pass" ||
+  diagnostics.exit_code !== 0 ||
+  !diagnostics.checks?.every(
+    (check) =>
+      check.schema_version === 1 &&
+      ["pass", "warn", "fail"].includes(check.status ?? "") &&
+      "remediation" in check &&
+      "data" in check,
+  )
 ) {
   throw new Error("Diagnostic automation did not receive its filtered versioned summary.");
 }

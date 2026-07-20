@@ -10,6 +10,16 @@ Use the global `--project-root <directory>` option when auto-detection should no
 
 Exit code `0` means success, `1` means a validation or operational error, `2` means the command line is malformed, `130` means interruption by `SIGINT`, and `143` means interruption by `SIGTERM`.
 
+## `awf context`
+
+Explain which project root the invocation selected without changing any file.
+
+Human output includes the root, selection source, whether current-directory fallback occurred, and the reason.
+
+Use `--json` for stable `schema_version`, `project_root`, `selection_source`, `project_root_fallback`, and `reason` fields.
+
+This command is the recommended preflight when a script or nested workspace must audit root selection before another command runs.
+
 ## `awf list`
 
 Print the catalog.
@@ -139,6 +149,10 @@ Use `--failures-only` to retain the full pass, warning, and failure summary whil
 JSON diagnostics include `projectContext` with the selected root, stable source, and human-readable reason.
 
 Failed and warning checks may include `remediation` and structured `data`, including a sanitized lifecycle-lock owner without its ownership token.
+
+Every check has `schema_version`, `check`, `status`, `detail`, `remediation`, and `data` fields, with nullable values retained instead of omitted.
+
+The top-level `status`, `healthy`, and `exit_code` fields provide the same verdict in string, boolean, and process-oriented forms.
 
 The CLI never removes a lock automatically; confirm that the recorded process is inactive and the timestamp is stale before manual removal.
 

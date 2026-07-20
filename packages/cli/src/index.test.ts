@@ -200,6 +200,23 @@ describe.sequential("CLI command contracts", () => {
     expect(process.exitCode).toBeUndefined();
   });
 
+  it("explains project-root selection for humans and automation", async () => {
+    await run("--project-root", project, "context", "--json");
+    expect(JSON.parse(stdout)).toEqual({
+      schema_version: 1,
+      project_root: project,
+      selection_source: "explicit",
+      project_root_fallback: false,
+      reason: "Selected by the explicit --project-root option.",
+    });
+
+    stdout = "";
+    await run("context");
+    expect(stdout).toContain(`Project root: ${project}`);
+    expect(stdout).toContain("Selection source: package");
+    expect(stdout).toContain("Current-directory fallback: no");
+  });
+
   it("generates completion for every supported shell", async () => {
     for (const shell of ["bash", "zsh", "fish", "pwsh"]) {
       stdout = "";
@@ -610,6 +627,15 @@ describe.sequential("CLI command contracts", () => {
     expect(JSON.parse(stdout)).toMatchObject({ schema_version: 1 });
 
     stdout = "";
+    await run("context", "--json");
+    expect(process.stderr.write).not.toHaveBeenCalled();
+    expect(JSON.parse(stdout)).toMatchObject({
+      project_root: project,
+      selection_source: "cwd",
+      project_root_fallback: true,
+    });
+
+    stdout = "";
     await run("doctor", "--json");
     expect(process.stderr.write).not.toHaveBeenCalled();
     expect(JSON.parse(stdout)).toMatchObject({
@@ -814,9 +840,18 @@ describe.sequential("CLI command contracts", () => {
     await run("--project-root", project, "doctor", "--json");
     const result = JSON.parse(stdout) as {
       schema_version: number;
+      status: string;
       healthy: boolean;
+      exit_code: number;
       projectContext: { root: string; source: string; reason: string };
-      checks: Array<{ check: string; status: string }>;
+      summary: { total: number; pass: number; warn: number; fail: number };
+      checks: Array<{
+        schema_version: number;
+        check: string;
+        status: string;
+        remediation: string | null;
+        data: Record<string, unknown> | null;
+      }>;
     };
     expect(result.checks).toEqual(
       expect.arrayContaining([
@@ -833,6 +868,18 @@ describe.sequential("CLI command contracts", () => {
     );
     expect(typeof result.healthy).toBe("boolean");
     expect(result.schema_version).toBe(1);
+    expect(result.status).toBe(result.healthy ? "pass" : "fail");
+    expect(result.exit_code).toBe(result.healthy ? 0 : 1);
+    expect(result.summary.total).toBe(result.checks.length);
+    expect(
+      result.checks.every(
+        (check) =>
+          check.schema_version === 1 &&
+          "remediation" in check &&
+          "data" in check &&
+          ["pass", "warn", "fail"].includes(check.status),
+      ),
+    ).toBe(true);
     expect(result.projectContext).toEqual({
       root: project,
       source: "explicit",

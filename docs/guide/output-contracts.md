@@ -22,6 +22,7 @@ The following table identifies the version field that owns each machine-readable
 
 | Command or mode | Top-level JSON value | Version contract |
 | --- | --- | --- |
+| `context --json` | Project-context report | Top-level `schema_version: 1` |
 | `list --json` | Array of recipe records | Every recipe has `schema_version: 2` |
 | `show --json` | Recipe record | Recipe `schema_version: 2` |
 | Applied `install`, `update`, or `remove` | Installation manifest | Manifest `schema_version: 2` |
@@ -65,6 +66,10 @@ The surrounding command result retains its command-specific fields for compatibi
 The diagnostic report retains `projectContext.root`, `projectContext.source`, and `projectContext.reason` so automation can audit how the root was selected.
 
 Diagnostic checks may include structured `data` and an actionable `remediation` without requiring consumers to parse `detail`.
+
+Every diagnostic check has schema version `1` and always retains `remediation` and `data`, using `null` when no value applies.
+
+The top-level diagnostic `status` is `pass` or `fail`, `healthy` is its boolean equivalent, and `exit_code` predicts the process result.
 
 `status --failures-only --json` retains `summary` counts for every installation while returning only drifted and invalid records in `installations`.
 

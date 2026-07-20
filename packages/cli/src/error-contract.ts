@@ -1,4 +1,5 @@
 const commandNames = [
+  "context",
   "list",
   "show",
   "install",
@@ -15,6 +16,7 @@ const commandNames = [
 type CommandName = (typeof commandNames)[number];
 
 const commandAnchors: Record<CommandName, string> = {
+  context: "awf-context",
   list: "awf-list",
   show: "awf-show-workflow-id",
   install: "awf-install-workflow-id",

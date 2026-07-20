@@ -32,6 +32,7 @@ const installInstructions: Record<CompletionShell, string> = {
 };
 
 const commands = [
+  "context",
   "list",
   "show",
   "install",

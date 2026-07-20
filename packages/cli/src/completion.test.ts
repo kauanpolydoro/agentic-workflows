@@ -14,6 +14,7 @@ describe("shell completion", () => {
     expect(completion).toContain("review-pull-request");
     expect(completion).toContain("generate-tests");
     expect(completion).toContain("completion");
+    expect(completion).toContain("context");
     expect(completion).toContain("codex");
     expect(completion).not.toContain("\u001b");
     expect(completion.endsWith("\n")).toBe(true);

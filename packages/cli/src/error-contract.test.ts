@@ -5,6 +5,7 @@ describe("machine error metadata", () => {
   it("finds commands around global options", () => {
     expect(commandFromArguments(["--project-root", "/tmp/project", "list", "--json"])).toBe("list");
     expect(commandFromArguments(["show", "list", "--json"])).toBe("show");
+    expect(commandFromArguments(["context", "--json"])).toBe("context");
     expect(commandFromArguments(["--project-root=/tmp/project", "doctor", "--json"])).toBe(
       "doctor",
     );
