@@ -13,21 +13,40 @@ Every recipe declares inputs, preconditions, observable steps, decision points, 
 
 ## Quick start
 
-Run the published CLI without a global installation:
+The CLI is available as the public npm package [`@kauanpolydoro/agentic-workflows`](https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows) and requires Node.js 22 or newer.
+Run the latest release without a global installation:
 
 ```bash
 npx --yes @kauanpolydoro/agentic-workflows@latest list
-npx --yes @kauanpolydoro/agentic-workflows@latest show review-pull-request
 ```
 
-To pin the CLI in a project instead:
+With Bun, run the same published CLI with:
+
+```bash
+bunx @kauanpolydoro/agentic-workflows list
+```
+
+Keep the full `@kauanpolydoro/agentic-workflows` scope when using `npx` or `bunx` without a local installation.
+The unscoped `agentic-workflows` name resolves to a different package on npm.
+
+Inspect a workflow or preview its installation from the root of the project that should receive it:
+
+```bash
+npx --yes @kauanpolydoro/agentic-workflows@latest show review-pull-request
+npx --yes @kauanpolydoro/agentic-workflows@latest install review-pull-request --agent codex --dry-run
+```
+
+Remove `--dry-run` after reviewing the planned files to install the workflow.
+
+To pin the CLI version in a project instead:
 
 ```bash
 npm install --save-dev @kauanpolydoro/agentic-workflows
-npx agentic-workflows list
+npx awf list
 ```
 
-The [CLI package](https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows) and [shared core](https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows-core) are public on npm.
+The package exposes both `awf` and `agentic-workflows` as command names.
+The reusable [`@kauanpolydoro/agentic-workflows-core`](https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows-core) package is also public on npm.
 
 To develop from source, clone the repository over HTTPS and run the local CLI:
 
