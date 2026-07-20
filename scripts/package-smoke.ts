@@ -3,6 +3,7 @@ import { rmSync } from "node:fs";
 import { access, mkdir, mkdtemp, readFile, readdir, realpath, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { headingAnchors } from "./check-links.js";
 
 function quoteWindowsCommandArgument(value: string): string {
   return /[\s"&|<>^()%!]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
@@ -106,6 +107,7 @@ function failureCode(
     value.command !== command ||
     typeof value.retryable !== "boolean" ||
     typeof value.help_url !== "string" ||
+    typeof value.details?.help_command !== "string" ||
     typeof value.remediation !== "string"
   ) {
     throw new Error(`Expected error code ${expected}, received: ${String(value.code)}.`);
@@ -145,18 +147,24 @@ async function assertPackagedMarkdownLinks(
     const markdown = await readFile(markdownPath, "utf8");
     for (const match of markdown.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
       const href = match[1]?.trim();
-      if (
-        !href ||
-        href.startsWith("#") ||
-        href.startsWith("http://") ||
-        href.startsWith("https://") ||
-        href.startsWith("mailto:")
-      ) {
+      if (!href || /^[a-z][a-z+.-]*:/i.test(href)) {
         continue;
       }
-      const [linkPath] = href.split(/[?#]/, 1);
-      if (!linkPath) continue;
-      const destination = path.resolve(path.dirname(markdownPath), linkPath);
+      const [pathAndQuery = "", encodedFragment] = href.split("#", 2);
+      const [encodedPath = ""] = pathAndQuery.split("?", 1);
+      let linkPath: string;
+      let fragment: string | undefined;
+      try {
+        linkPath = decodeURIComponent(encodedPath);
+        fragment = encodedFragment === undefined ? undefined : decodeURIComponent(encodedFragment);
+      } catch {
+        throw new Error(
+          `Packaged Markdown link has malformed encoding in ${relativeFile}: ${href}.`,
+        );
+      }
+      const destination = linkPath
+        ? path.resolve(path.dirname(markdownPath), linkPath)
+        : markdownPath;
       const relativeDestination = path.relative(packageRoot, destination);
       if (
         relativeDestination === ".." ||
@@ -168,7 +176,27 @@ async function assertPackagedMarkdownLinks(
         );
       }
       await access(destination);
+      if (fragment && destination.endsWith(".md")) {
+        const anchors = headingAnchors(await readFile(destination, "utf8"));
+        if (!anchors.has(fragment)) {
+          throw new Error(
+            `Packaged Markdown link has a missing anchor in ${relativeFile}: ${href}.`,
+          );
+        }
+      }
     }
+  }
+}
+
+function assertCatalogOutput(label: string, value: string, expectedRecipes: number): void {
+  let catalog: unknown;
+  try {
+    catalog = JSON.parse(value);
+  } catch {
+    throw new Error(`${label} did not return a JSON catalog.`);
+  }
+  if (!Array.isArray(catalog) || catalog.length !== expectedRecipes) {
+    throw new Error(`${label} returned an incomplete catalog.`);
   }
 }
 
@@ -379,6 +407,30 @@ if (!firstRunHelp.includes("awf init --agent codex") || !firstRunHelp.includes("
 const npxVersion = run("npx", ["--no-install", "agentic-workflows", "--version"], consumer).trim();
 if (npxVersion !== rootPackage.version) {
   throw new Error(`npx reported ${npxVersion}, expected ${rootPackage.version}.`);
+}
+const scopedPackage = `@kauanpolydoro/agentic-workflows@${rootPackage.version}`;
+assertCatalogOutput(
+  "npx scoped package execution",
+  run("npx", ["--yes", "--offline", scopedPackage, "list", "--json"], consumer),
+  20,
+);
+assertCatalogOutput(
+  "npm exec package selection",
+  run(
+    "npm",
+    ["exec", "--yes", "--offline", `--package=${scopedPackage}`, "--", "awf", "list", "--json"],
+    consumer,
+  ),
+  20,
+);
+const testedPackageRunners = ["npx", "npm exec"];
+if (process.env.AWF_TEST_BUNX === "1") {
+  assertCatalogOutput(
+    "bunx scoped package execution",
+    run("bunx", ["@kauanpolydoro/agentic-workflows", "list", "--json"], consumer),
+    20,
+  );
+  testedPackageRunners.push("bunx");
 }
 
 const globalPrefix = path.join(workspace, "global npm prefix");
@@ -861,7 +913,7 @@ await assertMissing(
 );
 
 process.stdout.write(
-  `Package smoke test passed for ${listed.length} bundled recipes, shell completion, and the install lifecycle.\n`,
+  `Package smoke test passed for ${listed.length} bundled recipes, ${testedPackageRunners.join(", ")}, shell completion, and the install lifecycle.\n`,
 );
 cleanup();
 process.removeListener("exit", cleanup);

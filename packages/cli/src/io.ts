@@ -10,6 +10,7 @@ function humanError(value: {
   message: string;
   code?: unknown;
   details?: Record<string, unknown>;
+  help_command?: string;
   remediation?: string;
 }): string {
   const lines = [
@@ -44,6 +45,7 @@ function humanError(value: {
   ) {
     lines.push(`Owner: PID ${ownerPid}, acquired at ${ownerAcquiredAt}`);
   }
+  if (typeof value.help_command === "string") lines.push(`Help: ${value.help_command}`);
   if (typeof value.remediation === "string") {
     lines.push(`Next: ${value.remediation}`);
   }
@@ -64,8 +66,28 @@ export function fail(error: unknown, json = false, exitCode = 1): never {
         }
       : { schema_version: 1, error: "UnknownError", message: String(error) };
   const metadata = errorContractMetadata(base);
-  if (json) process.stderr.write(`${JSON.stringify({ ...base, ...metadata })}\n`);
-  else process.stderr.write(`${humanError({ ...base, remediation: metadata.remediation })}\n`);
+  if (json) {
+    const { help_command, ...machineMetadata } = metadata;
+    const existingDetails =
+      "details" in base && typeof base.details === "object" && base.details !== null
+        ? base.details
+        : {};
+    process.stderr.write(
+      `${JSON.stringify({
+        ...base,
+        ...machineMetadata,
+        details: { ...existingDetails, help_command },
+      })}\n`,
+    );
+  } else {
+    process.stderr.write(
+      `${humanError({
+        ...base,
+        help_command: metadata.help_command,
+        remediation: metadata.remediation,
+      })}\n`,
+    );
+  }
   process.exitCode = exitCode;
   throw new Error("__AWF_HANDLED__");
 }

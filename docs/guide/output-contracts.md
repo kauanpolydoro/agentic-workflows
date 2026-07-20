@@ -173,7 +173,11 @@ Unexpected failures use `UNKNOWN_ERROR` instead of omitting the field.
 
 Structured failures include `details` with fields such as remediation, suggestions, affected paths, or validation issues.
 
-The `command` field identifies the command boundary that failed, and `help_url` points to its reference section.
+The `command` field identifies the command boundary that failed, and `help_url` points to its published reference section.
+
+Current CLI errors retain a command-specific offline reference in `details.help_command`.
+
+`details` is the existing extensible record in schema version `1`, so earlier parsers continue accepting this addition without weakening the strict top-level contract.
 
 The `retryable` field is deliberately conservative and is `true` only when retrying later can be safe without changing the request.
 
@@ -198,7 +202,10 @@ For example, an unsafe install target produces one stderr object and leaves stdo
   "command": "install",
   "retryable": false,
   "help_url": "https://kauanpolydoro.github.io/agentic-workflows/guide/cli-reference#awf-install-workflow-id",
-  "remediation": "Choose a real, project-local path without symbolic-link or traversal boundaries."
+  "remediation": "Choose a real, project-local path without symbolic-link or traversal boundaries.",
+  "details": {
+    "help_command": "awf install --help"
+  }
 }
 ```
 

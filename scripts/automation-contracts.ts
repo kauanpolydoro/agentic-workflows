@@ -91,6 +91,7 @@ function jsonFailure(
     typeof payload.retryable !== "boolean" ||
     typeof payload.help_url !== "string" ||
     !payload.help_url.startsWith("https://") ||
+    typeof payload.details?.help_command !== "string" ||
     typeof payload.remediation !== "string" ||
     payload.remediation.length === 0
   ) {

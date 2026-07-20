@@ -52,6 +52,7 @@ function failure(args: string[], code?: string): Result {
       retryable?: unknown;
       help_url?: unknown;
       remediation?: unknown;
+      details?: { help_command?: unknown };
     };
     if (
       payload.schema_version !== 1 ||
@@ -59,6 +60,7 @@ function failure(args: string[], code?: string): Result {
       contract.command !== args[0] ||
       typeof contract.retryable !== "boolean" ||
       typeof contract.help_url !== "string" ||
+      typeof contract.details?.help_command !== "string" ||
       typeof contract.remediation !== "string"
     ) {
       throw new Error(`Expected ${code}, received ${payload.code ?? "no error code"}.`);
@@ -167,12 +169,16 @@ async function verifyInterruption(
 }
 
 async function verifyInteractiveWizardInPty(): Promise<void> {
-  if (process.platform !== "linux") return;
+  if (process.platform === "win32") return;
   const ptyProject = path.join(project, "interactive pty project");
   await mkdir(ptyProject);
   await writeFile(path.join(ptyProject, "package.json"), "{}\n");
   const command = '"$AWF_PTY_NODE" "$AWF_PTY_CLI" --project-root "$AWF_PTY_PROJECT" init';
-  const result = spawnSync("script", ["-qec", command, "/dev/null"], {
+  const scriptArguments =
+    process.platform === "darwin"
+      ? ["-q", "/dev/null", process.execPath, cli, "--project-root", ptyProject, "init"]
+      : ["-qec", command, "/dev/null"];
+  const result = spawnSync("script", scriptArguments, {
     cwd: ptyProject,
     encoding: "utf8",
     env: {

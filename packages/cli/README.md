@@ -117,7 +117,7 @@ Use a Node.js version manager, a user-owned npm prefix, or a one-off package env
 npm exec --yes --package=@kauanpolydoro/agentic-workflows@latest -- awf doctor
 ```
 
-The published tarball also includes `docs/guide/installation.md`, `docs/guide/cli-reference.md`, and `docs/guide/output-contracts.md` for version-matched offline reference.
+The tarball produced by this source revision includes `docs/guide/installation.md`, `docs/guide/cli-reference.md`, and `docs/guide/output-contracts.md` for version-matched offline reference.
 
 ## Safety boundary
 
@@ -132,6 +132,8 @@ It never overwrites an unmanaged file, including when `--force` is present.
 Run `awf doctor` for consumer health checks, or `awf doctor --maintainer` when developing the Agentic Workflows source repository.
 
 Machine diagnostics expose the selected project-root source and structured remediation while keeping lifecycle-lock recovery manual and fail-closed.
+
+Every error also prints an offline `awf <command> --help` path and retains the matching `details.help_command` in JSON output.
 
 If a lifecycle lock blocks an operation, human output identifies the recorded PID and acquisition time without exposing the ownership token, then explains how to verify staleness before manual removal.
 

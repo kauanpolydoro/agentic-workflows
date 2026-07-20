@@ -25,6 +25,7 @@ describe("machine error metadata", () => {
       retryable: false,
       help_url:
         "https://kauanpolydoro.github.io/agentic-workflows/guide/cli-reference#awf-install-workflow-id",
+      help_command: "awf install --help",
       remediation:
         "Choose a real, project-local path without symbolic-link or traversal boundaries.",
     });

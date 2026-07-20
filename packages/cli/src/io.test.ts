@@ -24,7 +24,7 @@ describe("terminal output", () => {
     vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     expect(() => fail(new Error("bad\u001b[31mred"))).toThrow("__AWF_HANDLED__");
     expect(process.stderr.write).toHaveBeenCalledWith(
-      "Error: badred\nNext: Run `awf --help` to verify the command syntax.\n",
+      "Error: badred\nHelp: awf --help\nNext: Run `awf --help` to verify the command syntax.\n",
     );
   });
 
@@ -51,6 +51,7 @@ describe("terminal output", () => {
         "Details:\n" +
         "- [BROKEN_LINK] at example/workflow.md\n" +
         "  Fix: Correct the relative target.\n" +
+        "Help: awf --help\n" +
         "Next: Run `awf validate --strict` again.\n",
     );
   });
@@ -104,6 +105,7 @@ describe("terminal output", () => {
       help_url: "https://kauanpolydoro.github.io/agentic-workflows/guide/cli-reference",
       remediation:
         "Choose a real, project-local path without symbolic-link or traversal boundaries.",
+      details: { help_command: "awf --help" },
     });
   });
 

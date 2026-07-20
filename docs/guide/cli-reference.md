@@ -242,7 +242,9 @@ With `--json`, successful commands print exactly one JSON value to stdout and no
 
 With `--json`, failures print exactly one object to stderr and leave stdout empty.
 
-Every JSON error contains `error`, `message`, a stable `code`, `command`, `retryable`, `help_url`, and `remediation`, and includes `details` for structured diagnostics when available.
+Every JSON error contains `error`, `message`, a stable `code`, `command`, `retryable`, `help_url`, and `remediation`, and includes `details` for structured diagnostics and offline help.
+
+`details.help_command` provides an offline command-specific reference, while `help_url` points to the matching published section.
 
 SIGINT and SIGTERM use exit codes `130` and `143` after safe cancellation.
 

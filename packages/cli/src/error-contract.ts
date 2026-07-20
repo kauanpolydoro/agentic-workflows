@@ -41,6 +41,7 @@ export interface ErrorContractMetadata {
   command: CommandName | "awf";
   retryable: boolean;
   help_url: string;
+  help_command: string;
   remediation: string;
 }
 
@@ -111,6 +112,7 @@ export function errorContractMetadata(
       command === "awf"
         ? "https://kauanpolydoro.github.io/agentic-workflows/guide/cli-reference"
         : `https://kauanpolydoro.github.io/agentic-workflows/guide/cli-reference#${commandAnchors[command]}`,
+    help_command: command === "awf" ? "awf --help" : `awf ${command} --help`,
     remediation:
       typeof explicitRemediation === "string"
         ? explicitRemediation
