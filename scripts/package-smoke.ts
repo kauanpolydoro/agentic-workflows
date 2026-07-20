@@ -9,7 +9,7 @@ function run(command: string, args: string[], cwd: string): string {
     cwd,
     encoding: "utf8",
     env: { ...process.env, NO_COLOR: "1" },
-    shell: process.platform === "win32",
+    shell: process.platform === "win32" && command !== process.execPath,
   });
   if (result.status !== 0) {
     throw new Error(
