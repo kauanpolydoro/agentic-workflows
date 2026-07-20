@@ -456,8 +456,17 @@ describe.sequential("CLI command contracts", () => {
     const controller = new AbortController();
     const interruption = new Error("synthetic opener cancellation");
     interruption.name = "AbortError";
+    let reportStarted!: () => void;
+    const started = new Promise<void>((resolve) => {
+      reportStarted = resolve;
+    });
     const documentationOpener = (_documentation: string, signal?: AbortSignal) =>
       new Promise<boolean>((_resolve, reject) => {
+        reportStarted();
+        if (signal?.aborted) {
+          reject(signal.reason ?? new Error("Documentation opening was aborted."));
+          return;
+        }
         signal?.addEventListener(
           "abort",
           () => reject(signal.reason ?? new Error("Documentation opening was aborted.")),
@@ -468,7 +477,7 @@ describe.sequential("CLI command contracts", () => {
       signal: controller.signal,
       documentationOpener,
     }).parseAsync(["show", "write-release-notes", "--open"], { from: "user" });
-    await new Promise<void>((resolve) => setTimeout(resolve, 20));
+    await started;
     controller.abort(interruption);
     await expect(pending).rejects.toBe(interruption);
   });

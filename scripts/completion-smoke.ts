@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { rmSync } from "node:fs";
-import { chmod, mkdtemp, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, realpath, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import type { CompletionShell } from "../packages/cli/src/completion.js";
@@ -29,7 +29,9 @@ if (requested && shells.length === 0) {
 if (shells.length === 0) throw new Error("No supported shell is available for completion smoke.");
 
 const cli = path.resolve("packages/cli/dist/index.js");
-const workspace = await mkdtemp(path.join(os.tmpdir(), "awf completion smoke with spaces "));
+const workspace = await realpath(
+  await mkdtemp(path.join(os.tmpdir(), "awf completion smoke with spaces ")),
+);
 const cleanup = () => rmSync(workspace, { recursive: true, force: true });
 process.once("exit", cleanup);
 
@@ -88,7 +90,7 @@ function assertCandidates(shell: CompletionShell, output: string): void {
 
 async function smoke(shell: CompletionShell): Promise<void> {
   const completion = run(process.execPath, [cli, "completion", shell]);
-  const completionFile = path.join(workspace, `awf completion.${shell}`);
+  const completionFile = path.join(workspace, `awf completion.${shell === "pwsh" ? "ps1" : shell}`);
   await writeFile(completionFile, completion);
   const environment = { ...executableEnvironment, AWF_COMPLETION_FILE: completionFile };
   let output: string;

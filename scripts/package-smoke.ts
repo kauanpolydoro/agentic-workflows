@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { rmSync } from "node:fs";
-import { access, mkdir, mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, readdir, realpath, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -211,8 +211,10 @@ const rootPackage = JSON.parse(await readFile(path.join(repository, "package.jso
   version?: unknown;
 };
 if (typeof rootPackage.version !== "string") throw new Error("The root package has no version.");
-const workspace = await mkdtemp(path.join(os.tmpdir(), "awf package smoke with spaces "));
-const artifacts = await mkdtemp(path.join(os.tmpdir(), "awf-package-artifacts-"));
+const workspace = await realpath(
+  await mkdtemp(path.join(os.tmpdir(), "awf package smoke with spaces ")),
+);
+const artifacts = await realpath(await mkdtemp(path.join(os.tmpdir(), "awf-package-artifacts-")));
 const cleanup = () => {
   rmSync(workspace, { recursive: true, force: true });
   rmSync(artifacts, { recursive: true, force: true });

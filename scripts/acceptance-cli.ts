@@ -1,6 +1,6 @@
 import { spawn, spawnSync } from "node:child_process";
 import { rmSync } from "node:fs";
-import { access, chmod, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { access, chmod, mkdir, mkdtemp, readFile, realpath, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { parseCliOutput } from "../packages/cli/src/output-contract.js";
@@ -12,7 +12,9 @@ interface Result {
 }
 
 const cli = path.resolve("packages/cli/dist/index.js");
-const project = await mkdtemp(path.join(os.tmpdir(), "awf acceptance path with spaces "));
+const project = await realpath(
+  await mkdtemp(path.join(os.tmpdir(), "awf acceptance path with spaces ")),
+);
 const cleanup = () => rmSync(project, { recursive: true, force: true });
 process.once("exit", cleanup);
 await writeFile(path.join(project, "package.json"), "{}\n");
