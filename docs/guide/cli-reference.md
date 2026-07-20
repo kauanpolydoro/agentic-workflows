@@ -8,7 +8,25 @@ Run `awf` without arguments for actionable help, or run `awf <command> --help` f
 
 Use the global `--project-root <directory>` option when auto-detection should not select the nearest Git repository, initialized AWF project, or package root.
 
-Exit code `0` means success, `1` means a validation or operational error, `2` means the command line is malformed, `130` means interruption by `SIGINT`, and `143` means interruption by `SIGTERM`.
+## Exit codes
+
+| Code | Meaning | Representative cases |
+| --- | --- | --- |
+| `0` | The command completed normally. | Help, an empty filtered list, no installed workflows, a healthy status, or diagnostics containing warnings but no failures. |
+| `1` | The command completed with an unhealthy report or encountered an operational or validation failure. | Drifted or invalid installations, failed doctor checks, unsafe paths, conflicts, missing workflows, or strict validation issues. |
+| `2` | The command line is malformed or combines incompatible modes. | Unknown options, missing arguments, invalid option values, a status filter without `--agent`, or `--show-content` without `--dry-run`. |
+| `130` | `SIGINT` requested safe cancellation. | Usually produced by `Ctrl+C`. |
+| `143` | `SIGTERM` requested safe cancellation. | Usually produced by a process supervisor. |
+
+`awf status --json` and `awf doctor --json` are report commands.
+
+When either command completes its inspection but finds an unhealthy state, it writes a valid versioned report to stdout, leaves stderr empty, and exits with code `1`.
+
+Warnings alone do not make `doctor` fail.
+
+Other failed JSON operations write one versioned error object to stderr and leave stdout empty.
+
+Automation should inspect both the exit code and the documented stream before choosing the corresponding output schema.
 
 ## `awf context`
 
@@ -232,4 +250,4 @@ When `--json` is active, interruption emits one `INTERRUPTED` error object to st
 
 The `@kauanpolydoro/agentic-workflows/output-contract` export provides executable Zod schemas and `parseCliOutput` for every CLI-owned versioned record.
 
-See the [CLI output contracts](./output-contracts) for the schema owner and compatibility rules of every JSON mode.
+See the [CLI output contracts](./output-contracts.md) for the schema owner and compatibility rules of every JSON mode.

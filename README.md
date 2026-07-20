@@ -60,6 +60,7 @@ bunx @kauanpolydoro/agentic-workflows list
 
 Keep the full `@kauanpolydoro/agentic-workflows` scope when using `npx` or `bunx` without a local installation.
 The unscoped `agentic-workflows` name resolves to a different package on npm.
+If `awf` is unavailable after a global installation, follow the [installation troubleshooting guide](docs/guide/installation.md#troubleshoot-installation) to verify Node.js, npm's prefix, `PATH`, and permissions.
 
 To pin the CLI version for a project or CI environment instead:
 

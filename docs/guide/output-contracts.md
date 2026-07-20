@@ -6,17 +6,23 @@ Use `--json` whenever another process consumes a command result.
 
 ## Stream and exit-code rules
 
-A successful JSON command writes exactly one JSON value to stdout and writes nothing to stderr.
+A JSON command that completes with a normal result writes exactly one JSON value to stdout and writes nothing to stderr.
 
-A failed JSON command writes exactly one JSON object to stderr and leaves stdout empty.
+`status --json` and `doctor --json` also write their versioned report to stdout when the completed inspection is unhealthy.
 
-Exit code `0` means success, `1` means an operational or validation failure, and `2` means invalid command syntax.
+In that case, stderr remains empty and the process exits with code `1`, so consumers can parse the report and act on its health fields.
+
+An operational, validation, or syntax failure represented by the error schema writes exactly one JSON object to stderr and leaves stdout empty.
+
+Exit code `0` means normal completion, `1` means an unhealthy report or an operational or validation failure, and `2` means invalid command syntax.
 
 An interrupted process uses `130` for `SIGINT` and `143` for `SIGTERM` after requesting safe cancellation of the active operation.
 
 An interrupted JSON command writes one versioned `INTERRUPTED` object to stderr and leaves stdout empty.
 
 Human output and errors are sanitized before they reach the terminal.
+
+The complete command-by-command meanings are listed in the [CLI exit-code reference](./cli-reference.md#exit-codes).
 
 ## Schema ownership
 
@@ -52,9 +58,67 @@ parseCliOutput("status", report);
 
 Available contracts are `context`, `lifecycle_plan`, `status`, `doctor`, `init`, `validation`, `documentation_open`, and `error`.
 
+`parseCliOutput` returns the parsed, inferred record when validation succeeds and throws a Zod validation error when the value does not satisfy that contract.
+
 Catalog records and installation manifests continue to use the schemas owned by the core package.
 
 The package smoke test imports this public subpath from an installed tarball, and subprocess automation validates real command results against the schemas.
+
+## Automation examples
+
+These shell examples assume a global installation.
+
+Replace `awf` with `npx awf` when the CLI is pinned as a project dependency.
+
+In Bash, retain command failure and parse only successful stdout:
+
+```bash
+context_json="$(awf context --json)" || exit $?
+printf '%s\n' "$context_json" | jq -r '.project_root'
+```
+
+In PowerShell, capture the process status before interpreting the JSON:
+
+```powershell
+$contextJson = awf context --json
+$awfExitCode = $LASTEXITCODE
+if ($awfExitCode -ne 0) { exit $awfExitCode }
+
+$context = $contextJson | ConvertFrom-Json
+$context.project_root
+```
+
+For Node.js automation, pin the package locally, execute its JavaScript entrypoint without a shell, and validate the result with the public contract export:
+
+```js
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { parseCliOutput } from "@kauanpolydoro/agentic-workflows/output-contract";
+
+const cli = fileURLToPath(import.meta.resolve("@kauanpolydoro/agentic-workflows"));
+const result = spawnSync(process.execPath, [cli, "status", "--json"], {
+  cwd: process.cwd(),
+  encoding: "utf8",
+});
+
+if (result.error) throw result.error;
+
+if (result.status === 0 || (result.status === 1 && result.stdout.trim() !== "")) {
+  const report = parseCliOutput("status", JSON.parse(result.stdout));
+
+  if (result.status === 1) {
+    console.error(
+      `Unhealthy installations: ${report.summary.drifted + report.summary.invalid}`,
+    );
+    process.exitCode = 1;
+  }
+} else {
+  const error = parseCliOutput("error", JSON.parse(result.stderr));
+  throw new Error(`[${error.code}] ${error.message}\nNext: ${error.remediation}`);
+}
+```
+
+This distinction lets automation consume a completed unhealthy report without confusing it with a command failure.
 
 ## Lifecycle plan version 1
 

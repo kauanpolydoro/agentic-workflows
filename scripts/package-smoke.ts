@@ -136,6 +136,42 @@ async function recursiveFiles(directory: string): Promise<string[]> {
   return files;
 }
 
+async function assertPackagedMarkdownLinks(
+  packageRoot: string,
+  relativeFiles: readonly string[],
+): Promise<void> {
+  for (const relativeFile of relativeFiles) {
+    const markdownPath = path.join(packageRoot, relativeFile);
+    const markdown = await readFile(markdownPath, "utf8");
+    for (const match of markdown.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
+      const href = match[1]?.trim();
+      if (
+        !href ||
+        href.startsWith("#") ||
+        href.startsWith("http://") ||
+        href.startsWith("https://") ||
+        href.startsWith("mailto:")
+      ) {
+        continue;
+      }
+      const [linkPath] = href.split(/[?#]/, 1);
+      if (!linkPath) continue;
+      const destination = path.resolve(path.dirname(markdownPath), linkPath);
+      const relativeDestination = path.relative(packageRoot, destination);
+      if (
+        relativeDestination === ".." ||
+        relativeDestination.startsWith(`..${path.sep}`) ||
+        path.isAbsolute(relativeDestination)
+      ) {
+        throw new Error(
+          `Packaged Markdown link escapes the CLI package in ${relativeFile}: ${href}.`,
+        );
+      }
+      await access(destination);
+    }
+  }
+}
+
 async function assertPackageContents(
   packageRoot: string,
   requiredRuntimeFiles: readonly string[],
@@ -738,22 +774,13 @@ if (validated.schema_version !== 1 || validated.recipes !== 20) {
   throw new Error("Packaged catalog strict validation failed.");
 }
 const packageRoot = path.dirname(catalog);
-for (const recipe of await readdir(catalog)) {
-  const readmePath = path.join(catalog, recipe, "README.md");
-  const readme = await readFile(readmePath, "utf8");
-  for (const match of readme.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
-    const href = match[1];
-    if (!href || href.startsWith("http://") || href.startsWith("https://")) continue;
-    const [linkPath] = href.split("#", 1);
-    if (!linkPath) continue;
-    const destination = path.resolve(path.dirname(readmePath), linkPath);
-    const relative = path.relative(packageRoot, destination);
-    if (relative.startsWith("..") || path.isAbsolute(relative)) {
-      throw new Error(`Packaged recipe link escapes the CLI package: ${recipe}/${href}.`);
-    }
-    await access(destination);
-  }
-}
+await assertPackagedMarkdownLinks(packageRoot, [
+  "README.md",
+  "docs/guide/installation.md",
+  "docs/guide/cli-reference.md",
+  "docs/guide/output-contracts.md",
+  ...(await readdir(catalog)).map((recipe) => `catalog/${recipe}/README.md`),
+]);
 const cliPackage = JSON.parse(
   await readFile(
     path.join(consumer, "node_modules", "@kauanpolydoro", "agentic-workflows", "package.json"),
@@ -802,6 +829,9 @@ for (const packagedFile of [
   "agentic-workflows/README.md",
   "agentic-workflows/LICENSE",
   "agentic-workflows/catalog.json",
+  "agentic-workflows/docs/guide/installation.md",
+  "agentic-workflows/docs/guide/cli-reference.md",
+  "agentic-workflows/docs/guide/output-contracts.md",
   "agentic-workflows-core/README.md",
   "agentic-workflows-core/LICENSE",
 ]) {

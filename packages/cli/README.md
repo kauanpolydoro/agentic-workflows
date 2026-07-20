@@ -95,6 +95,30 @@ npm install --save-dev @kauanpolydoro/agentic-workflows
 npx awf list
 ```
 
+## Installation troubleshooting
+
+Check the runtime, installed package, and global prefix when `awf` is unavailable after a global installation:
+
+```bash
+node --version
+npm list --global --depth=0 @kauanpolydoro/agentic-workflows
+npm prefix --global
+```
+
+Node.js 22 or newer is required.
+
+npm links global executables into `<prefix>/bin` on Unix systems and directly into `<prefix>` on Windows, so restart the terminal and confirm that directory is present in `PATH`.
+
+Do not use `sudo` to bypass an `EACCES` installation error.
+
+Use a Node.js version manager, a user-owned npm prefix, or a one-off package environment instead:
+
+```bash
+npm exec --yes --package=@kauanpolydoro/agentic-workflows@latest -- awf doctor
+```
+
+The published tarball also includes `docs/guide/installation.md`, `docs/guide/cli-reference.md`, and `docs/guide/output-contracts.md` for version-matched offline reference.
+
 ## Safety boundary
 
 The package includes the versioned recipe catalog used by `list`, `show`, `install`, `update`, `remove`, and strict validation.
@@ -124,4 +148,4 @@ const status = JSON.parse(capturedStdout);
 parseCliOutput("status", status);
 ```
 
-See the [installation guide](https://kauanpolydoro.github.io/agentic-workflows/guide/installation.html) and [CLI reference](https://kauanpolydoro.github.io/agentic-workflows/guide/cli-reference.html) for the complete contract.
+See the [installation guide](https://kauanpolydoro.github.io/agentic-workflows/guide/installation.html), [CLI reference](https://kauanpolydoro.github.io/agentic-workflows/guide/cli-reference.html), and [output contracts](https://kauanpolydoro.github.io/agentic-workflows/guide/output-contracts.html) for the complete contract.

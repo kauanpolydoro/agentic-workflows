@@ -131,6 +131,56 @@ npx awf list
 
 Commit the resulting package manifest and lockfile according to your project's dependency policy.
 
+## Troubleshoot installation
+
+Start by checking the active Node.js runtime, the installed package, and npm's global prefix:
+
+```bash
+node --version
+npm list --global --depth=0 @kauanpolydoro/agentic-workflows
+npm prefix --global
+```
+
+The Node.js major version must be `22` or newer.
+
+If npm lists the package but the shell reports `awf: command not found` or an equivalent error, close and reopen the terminal before checking `PATH`.
+
+npm links global executables into `<prefix>/bin` on Unix systems and directly into `<prefix>` on Windows.
+
+Test the installed executable directly on Linux or macOS:
+
+```bash
+"$(npm prefix --global)/bin/awf" --version
+```
+
+Use the corresponding check in PowerShell on Windows:
+
+```powershell
+& "$(npm prefix --global)\awf.cmd" --version
+```
+
+If the direct command works, add that executable directory to the shell's `PATH`, restart the terminal, and run `awf --version` again.
+
+If the executable is absent, repeat the global installation with the same `node` and `npm` executables that produced the inspected prefix.
+
+Do not solve an `EACCES` global-installation error by adding `sudo` to the npm command.
+
+The npm documentation recommends installing Node.js through a version manager or changing npm's prefix to a user-owned directory on Unix systems.
+
+Follow npm's [official EACCES recovery guide](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally/) because the appropriate setup depends on the operating system and shell.
+
+To separate a global `PATH` problem from a package problem, run the CLI through npm's temporary package environment:
+
+```bash
+npm exec --yes --package=@kauanpolydoro/agentic-workflows@latest -- awf doctor
+```
+
+If that command works, the package binary is usable and the remaining issue is the global installation or its `PATH` entry.
+
+Use the full scoped package name with `npx` or `bunx` for one-off runs.
+
+Use `npx awf` only after installing the package in the current project, and prefer an explicitly approved version plus a committed lockfile in CI.
+
 ## Lifecycle after installation
 
 Inspect the retained manifest and preview an update before applying it:

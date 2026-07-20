@@ -9,6 +9,9 @@ const packagedDocumentation = [
   "quality/recipe-quality-standard.md",
   "research/adapter-sources.md",
   "guide/contributing.md",
+  "guide/installation.md",
+  "guide/cli-reference.md",
+  "guide/output-contracts.md",
   "guide/verification.md",
   "guide/security.md",
   "decisions/0001-portable-core-and-data-only-recipes.md",
@@ -38,4 +41,4 @@ await writeFile(
   path.join(repository, "packages/cli/catalog.json"),
   await readFile(path.join(repository, "generated/catalog.json"), "utf8"),
 );
-process.stdout.write("Prepared the packaged CLI catalog.\n");
+process.stdout.write("Prepared the packaged CLI catalog and documentation.\n");

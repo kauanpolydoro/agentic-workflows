@@ -61,6 +61,7 @@ bunx @kauanpolydoro/agentic-workflows list
 ```
 
 O nome sem escopo `agentic-workflows` pertence a outro pacote no npm.
+Se `awf` não estiver disponível depois da instalação global, siga o [guia de diagnóstico da instalação](docs/guide/installation.md#troubleshoot-installation) para verificar Node.js, prefixo do npm, `PATH` e permissões.
 
 Para fixar a versão da CLI em um projeto ou ambiente de CI:
 
