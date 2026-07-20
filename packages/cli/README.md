@@ -33,6 +33,9 @@ awf show review-pull-request
 # Preview every generated file without changing the project.
 awf install review-pull-request --dry-run
 
+# Include the complete proposed content when a path needs closer review.
+awf install review-pull-request --dry-run --show-content
+
 # Apply the reviewed installation and verify its hashes.
 awf install review-pull-request
 awf validate . --strict
@@ -44,9 +47,14 @@ Use the manifest-backed lifecycle commands to inspect, update, or remove the bun
 
 ```bash
 awf manifest review-pull-request
+awf status
 awf update review-pull-request --dry-run
-awf remove review-pull-request
+awf remove review-pull-request --dry-run
 ```
+
+`awf status` reports healthy installations, modified or missing managed files, and invalid manifests without changing the project.
+
+Apply `update` or `remove` without `--dry-run` only after reviewing its complete file plan.
 
 ## Run without a global installation
 

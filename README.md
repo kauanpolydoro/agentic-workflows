@@ -34,9 +34,12 @@ From the root of a project, preview a workflow installation before writing any f
 ```bash
 awf init --agent codex
 awf install review-pull-request --dry-run
+awf install review-pull-request --dry-run --show-content
 ```
 
-Remove `--dry-run` after reviewing the planned files to install the workflow.
+The first preview lists every create, replace, and retire action.
+Add `--show-content` when you also want to inspect the complete generated files.
+Remove `--dry-run` after reviewing the plan to install the workflow.
 The package exposes both `awf` and `agentic-workflows` as command names, but this documentation uses the shorter `awf` form.
 
 To try the latest release without installing it globally, use either package runner:
@@ -141,8 +144,9 @@ The `awf` binary supports:
 
 - `list` with category, agent, tag, global support, recipe compatibility, and JSON filters;
 - `show` with raw Markdown and JSON output;
-- `install` with dry-run, target, adapter, overwrite, and JSON controls;
-- `update` and `remove` with modified-file protection;
+- `install` with complete dry-run plans, optional generated content, target, adapter, overwrite, and JSON controls;
+- `status` for local installation health and managed-file drift;
+- `update` and `remove` with non-mutating plans and modified-file protection;
 - `validate`, `doctor`, and `init` for catalog and project maintenance.
 
 Read the [CLI reference](docs/guide/cli-reference.md) for flags and exit codes.

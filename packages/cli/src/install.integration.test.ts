@@ -24,6 +24,8 @@ import { parse, stringify } from "yaml";
 import {
   createSyntheticV2MigrationRegistryForTest,
   installRecipe,
+  planInstallRecipe,
+  planRemoveRecipe,
   planUpdateRecipe,
   readManifest,
   removeRecipe,
@@ -204,6 +206,29 @@ describe("transactional installation lifecycle", () => {
     for (const file of manifest.files) await missing(path.join(target, file.path));
   });
 
+  it("plans an installation with optional content without writing", async () => {
+    const parent = await temporaryTarget("install plan parent");
+    const target = path.join(parent, "missing target");
+
+    const plan = await planInstallRecipe(
+      recipeDirectory,
+      target,
+      {
+        agent: "codex",
+        force: false,
+        dryRun: true,
+      },
+      { includeContent: true },
+    );
+
+    expect(plan.requiresForce).toBe(false);
+    expect(plan.changes.create).toEqual(plan.manifest.files.map((file) => file.path).sort());
+    expect(plan.changes.replace).toEqual([]);
+    expect(plan.proposedFiles).toHaveLength(plan.manifest.files.length);
+    expect(plan.proposedFiles?.every((file) => file.content.length > 0)).toBe(true);
+    await missing(target);
+  });
+
   it("plans an update without changing the manifest or managed files", async () => {
     const target = await temporaryTarget("update dry run");
     const installed = await installRecipe(recipeDirectory, target, {
@@ -309,6 +334,27 @@ describe("transactional installation lifecycle", () => {
       await missing(manifestPath(target));
     },
   );
+
+  it("plans removal of modified managed files without deleting them", async () => {
+    const target = await temporaryTarget("remove plan");
+    const manifest = await installRecipe(recipeDirectory, target, {
+      agent: "generic",
+      force: false,
+      dryRun: false,
+    });
+    const entrypoint = manifest.files.find((file) => file.role === "entrypoint");
+    if (!entrypoint) throw new Error("Fixture bundle omitted its entrypoint.");
+    const entrypointPath = path.join(target, entrypoint.path);
+    await writeFile(entrypointPath, `${await readFile(entrypointPath, "utf8")}local edit\n`);
+
+    const plan = await planRemoveRecipe(recipeDirectory, target, false);
+
+    expect(plan.requiresForce).toBe(true);
+    expect(plan.changes.remove).toEqual(manifest.files.map((file) => file.path).sort());
+    expect(plan.changes.modifiedManagedFiles).toEqual([entrypoint.path]);
+    expect(await readFile(entrypointPath, "utf8")).toContain("local edit");
+    expect(await readFile(manifestPath(target), "utf8")).toContain("schema_version");
+  });
 
   it("refuses to overwrite an unmanaged auxiliary file", async () => {
     const target = await temporaryTarget("unmanaged auxiliary");

@@ -24,13 +24,17 @@ awf init --agent codex
 awf list
 awf show review-pull-request
 awf install review-pull-request --dry-run
+awf install review-pull-request --dry-run --show-content
 awf install review-pull-request
+awf status
 awf validate . --strict
 ```
 
 `awf init` saves the default agent and target in `.agentic-workflows/config.yml` so later install commands do not need to repeat them.
 
-The dry run generates the proposed bundle in memory and prints its files without changing the target.
+The dry run generates the proposed bundle in memory and prints every planned file action without changing the target.
+
+Add `--show-content` to inspect the complete generated content after the concise plan.
 
 The applied installation prints the entrypoint, installed files, required inputs, declared approval gates, declared effects, validation command, and removal command.
 
@@ -64,6 +68,7 @@ Inspect the retained manifest and preview an update before applying it:
 
 ```bash
 awf manifest review-pull-request
+awf status
 awf update review-pull-request --dry-run
 awf update review-pull-request
 ```
@@ -72,8 +77,13 @@ Validate installed hashes or remove the exact managed bundle:
 
 ```bash
 awf validate . --strict
+awf remove review-pull-request --dry-run
 awf remove review-pull-request
 ```
+
+`awf status` reports each installed workflow as healthy, drifted, or invalid.
+
+Update and removal dry runs enumerate modified and missing managed files before any mutation.
 
 The CLI detects modified managed files and refuses to update or remove them unless `--force` is explicit.
 

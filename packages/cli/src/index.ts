@@ -38,6 +38,8 @@ import { parse, stringify } from "yaml";
 import { catalogRoot, findProjectRoot, generatedCatalogPath } from "./context.js";
 import {
   installRecipe,
+  planInstallRecipe,
+  planRemoveRecipe,
   planUpdateRecipe,
   readManifest,
   removeRecipe,
@@ -45,6 +47,7 @@ import {
   validateInstallation,
 } from "./install.js";
 import { fail, output } from "./io.js";
+import { inspectInstallations, type InstallationStatus } from "./status.js";
 import { CLI_VERSION } from "./version.js";
 
 interface ProjectConfig {
@@ -1351,6 +1354,52 @@ function invocationGuidance(
   return lines.join("\n");
 }
 
+function renderChangeSections(sections: Array<[string, readonly string[]]>): string[] {
+  return sections.flatMap(([label, files]) => [
+    `${label}:`,
+    ...(files.length > 0 ? files.map((file) => `- ${file}`) : ["- none"]),
+  ]);
+}
+
+function renderProposedFiles(
+  files:
+    | Awaited<ReturnType<typeof planInstallRecipe>>["proposedFiles"]
+    | Awaited<ReturnType<typeof planUpdateRecipe>>["proposedFiles"],
+): string[] {
+  if (!files) return [];
+  return [
+    "",
+    "Proposed generated content:",
+    ...files.flatMap((file) => [`=== ${file.path} (${file.role}) ===`, file.content.trimEnd()]),
+  ];
+}
+
+function renderInstallPlan(
+  id: string,
+  agent: AgentId,
+  plan: Awaited<ReturnType<typeof planInstallRecipe>>,
+  recipe: Awaited<ReturnType<typeof loadRecipe>>,
+  target: string,
+): string {
+  return [
+    `Would install ${id} for ${agent}:`,
+    ...renderChangeSections([
+      ["Create", plan.changes.create],
+      ["Replace", plan.changes.replace],
+      ["Retire", plan.changes.retire],
+      ["Modified managed files", plan.changes.modifiedManagedFiles],
+      ["Missing managed files", plan.changes.missingManagedFiles],
+    ]),
+    ...(plan.requiresForce
+      ? ["An installation already exists. Review this plan and add --force to replace it."]
+      : []),
+    "No files were changed.",
+    "",
+    invocationGuidance(plan.manifest, recipe, target),
+    ...renderProposedFiles(plan.proposedFiles),
+  ].join("\n");
+}
+
 function renderUpdatePlan(id: string, plan: Awaited<ReturnType<typeof planUpdateRecipe>>): string {
   const sections: Array<[string, readonly string[]]> = [
     ["Create", plan.changes.create],
@@ -1361,15 +1410,98 @@ function renderUpdatePlan(id: string, plan: Awaited<ReturnType<typeof planUpdate
   ];
   return [
     `Would update ${id}:`,
-    ...sections.flatMap(([label, files]) => [
-      `${label}:`,
-      ...(files.length > 0 ? files.map((file) => `- ${file}`) : ["- none"]),
+    ...renderChangeSections(sections),
+    ...(plan.requiresForce
+      ? ["This plan contains locally modified managed files and requires an explicit --force."]
+      : []),
+    "No files were changed.",
+    ...renderProposedFiles(plan.proposedFiles),
+  ].join("\n");
+}
+
+function renderRemovePlan(id: string, plan: Awaited<ReturnType<typeof planRemoveRecipe>>): string {
+  return [
+    `Would remove ${id}:`,
+    ...renderChangeSections([
+      ["Remove", plan.changes.remove],
+      ["Modified managed files", plan.changes.modifiedManagedFiles],
+      ["Missing managed files", plan.changes.missingManagedFiles],
     ]),
     ...(plan.requiresForce
       ? ["This plan contains locally modified managed files and requires an explicit --force."]
       : []),
     "No files were changed.",
   ].join("\n");
+}
+
+function renderWorkflowDetails(
+  recipe: Awaited<ReturnType<typeof loadRecipe>>,
+  selectedAgent?: AgentId,
+): string {
+  const effects = Object.entries(recipe.effects)
+    .filter(([, enabled]) => enabled)
+    .map(([effect]) => effect);
+  const agents = selectedAgent ? [selectedAgent] : agentIds;
+  return [
+    recipe.title,
+    recipe.summary,
+    "",
+    `ID: ${recipe.id}`,
+    `Version: ${recipe.version}`,
+    `Category: ${recipe.category}`,
+    `Difficulty: ${recipe.difficulty}`,
+    `Risk: ${recipe.risk_level}`,
+    `Estimated duration: ${recipe.estimated_duration}`,
+    `Tags: ${recipe.tags.join(", ")}`,
+    "",
+    "Required inputs:",
+    ...recipe.inputs.required.map((input) => `- ${input}`),
+    "Optional inputs:",
+    ...(recipe.inputs.optional.length > 0
+      ? recipe.inputs.optional.map((input) => `- ${input}`)
+      : ["- none"]),
+    "Outputs:",
+    ...recipe.outputs.map((workflowOutput) => `- ${workflowOutput}`),
+    "Human approval gates:",
+    ...(recipe.safety.requires_human_approval.length > 0
+      ? recipe.safety.requires_human_approval.map((approval) => `- ${approval}`)
+      : ["- none"]),
+    `Declared effects: ${effects.length > 0 ? effects.join(", ") : "none"}`,
+    "",
+    "Agent compatibility:",
+    ...agents.flatMap((agent) => {
+      const support = recipe.agents[agent];
+      return [
+        `- ${agent}: ${support.bundle_compatibility}; capability ${support.capability_status}`,
+        ...support.limitations.map((limitation) => `  Limitation: ${limitation}`),
+      ];
+    }),
+    "",
+    `Preview: awf install ${recipe.id} --agent ${selectedAgent ?? "<agent>"} --dry-run`,
+  ].join("\n");
+}
+
+function renderInstallationStatus(target: string, statuses: readonly InstallationStatus[]): string {
+  if (statuses.length === 0) {
+    return `No workflows are installed in ${target}. Preview one with \`awf install <workflow-id> --agent <agent> --dry-run\`.`;
+  }
+  return [
+    `Installed workflows in ${target}:`,
+    ...statuses.flatMap((status) => [
+      `${status.id.padEnd(28)} ${status.status.padEnd(8)} ${status.agent ?? "unknown"} ${status.recipeVersion ?? "unknown"} ${status.files} file(s)`,
+      ...(status.issue ? [`  [${status.issue.code}] ${status.issue.message}`] : []),
+      ...(status.issue?.files ?? []).map((file) => `  - ${file.file}: ${file.state}`),
+    ]),
+  ].join("\n");
+}
+
+function requireDryRunForContentPreview(dryRun: boolean, showContent: boolean): void {
+  if (!showContent || dryRun) return;
+  throw new CommanderError(
+    2,
+    "awf.contentPreviewRequiresDryRun",
+    "--show-content requires --dry-run because generated content is a preview.",
+  );
 }
 
 function describeInstallationConflict(id: string, error: unknown): string {
@@ -1505,6 +1637,9 @@ export function createProgram(options: ProgramOptions = {}): Command {
   program
     .command("show <workflow-id>")
     .description("Show workflow details.")
+    .addOption(
+      new Option("--agent <agent>", "Focus compatibility details on one agent").choices(agentIds),
+    )
     .option("--json", "Print complete structured recipe metadata")
     .option("--raw", "Print the canonical workflow Markdown")
     .option("--open", "Open the local page or public catalog page in a browser")
@@ -1524,9 +1659,7 @@ export function createProgram(options: ProgramOptions = {}): Command {
         );
       }
       if (options.json) return output(recipe, true);
-      output(
-        `${recipe.title}\n${recipe.summary}\n\nCategory: ${recipe.category}\nRisk: ${recipe.risk_level}\nVersion: ${recipe.version}`,
-      );
+      output(renderWorkflowDetails(recipe, options.agent as AgentId | undefined));
     });
 
   program
@@ -1534,30 +1667,66 @@ export function createProgram(options: ProgramOptions = {}): Command {
     .description("Install a complete workflow bundle in the current project.")
     .addOption(new Option("--agent <agent>", "Select the destination format").choices(agentIds))
     .option("--target <directory>", "Target inside the project")
-    .option("--dry-run", "Preview generated files without changing the target")
+    .option("--dry-run", "Preview the complete installation plan without changing the target")
+    .option("--show-content", "Include proposed generated content in a dry run")
     .option(
       "--force",
       "Replace this workflow's existing managed bundle, but never overwrite unmanaged files",
     )
     .option("--json", "Print the installation manifest as JSON")
     .action(async (id, options) => {
+      requireDryRunForContentPreview(Boolean(options.dryRun), Boolean(options.showContent));
       const root = await projectRoot();
       const config = await loadConfig(root);
       const agent = (options.agent ?? config.default_agent) as AgentId;
       const target = await safeTarget(root, options.target ?? config.default_target);
       const workflowPath = await resolveWorkflowPath(id);
       const recipe = await loadRecipe(workflowPath);
+      if (options.dryRun) {
+        const plan = await planInstallRecipe(
+          workflowPath,
+          target,
+          {
+            agent,
+            force: Boolean(options.force),
+            dryRun: true,
+            ...(signal ? { signal } : {}),
+          },
+          {
+            includeContent: Boolean(options.showContent),
+            ...(signal ? { signal } : {}),
+          },
+        );
+        throwIfAborted(signal);
+        output(
+          options.json
+            ? {
+                ...plan.manifest,
+                plan: {
+                  schema_version: 1,
+                  operation: "install",
+                  dry_run: true,
+                  requires_force: plan.requiresForce,
+                  changes: plan.changes,
+                  ...(plan.proposedFiles ? { proposed_files: plan.proposedFiles } : {}),
+                },
+              }
+            : renderInstallPlan(id, agent, plan, recipe, target),
+          Boolean(options.json),
+        );
+        return;
+      }
       const manifest = await installRecipe(workflowPath, target, {
         agent,
         force: Boolean(options.force),
-        dryRun: Boolean(options.dryRun),
+        dryRun: false,
         ...(signal ? { signal } : {}),
       });
       throwIfAborted(signal);
       output(
         options.json
           ? manifest
-          : `${options.dryRun ? "Would install" : "Installed"} ${id} for ${agent}:\n${invocationGuidance(manifest, recipe, target)}`,
+          : `Installed ${id} for ${agent}:\n${invocationGuidance(manifest, recipe, target)}`,
         Boolean(options.json),
       );
     });
@@ -1567,21 +1736,21 @@ export function createProgram(options: ProgramOptions = {}): Command {
     .description("Update an installed bundle after checking every managed file.")
     .option("--target <directory>", "Target inside the project")
     .option("--dry-run", "Show the complete migration plan without changing files")
+    .option("--show-content", "Include proposed generated content in a dry run")
     .option("--force", "Replace locally modified managed files after explicit review")
     .option("--json", "Print the update result or dry-run plan as JSON")
     .action(async (id, options) => {
+      requireDryRunForContentPreview(Boolean(options.dryRun), Boolean(options.showContent));
       const root = await projectRoot();
       const config = await loadConfig(root);
       const target = await safeTarget(root, options.target ?? config.default_target);
       const workflowPath = await resolveWorkflowPath(id);
       if (options.dryRun) {
         throwIfAborted(signal);
-        const plan = await planUpdateRecipe(
-          workflowPath,
-          target,
-          Boolean(options.force),
-          signal ? { signal } : {},
-        );
+        const plan = await planUpdateRecipe(workflowPath, target, Boolean(options.force), {
+          includeContent: Boolean(options.showContent),
+          ...(signal ? { signal } : {}),
+        });
         throwIfAborted(signal);
         output(options.json ? plan : renderUpdatePlan(id, plan), Boolean(options.json));
         return;
@@ -1605,20 +1774,59 @@ export function createProgram(options: ProgramOptions = {}): Command {
     .command("remove <workflow-id>")
     .description("Remove only the exact managed bundle after integrity checks.")
     .option("--target <directory>", "Target inside the project")
+    .option("--dry-run", "Show every managed file that would be removed without changing files")
     .option("--force", "Remove locally modified managed files after explicit review")
     .option("--json", "Print the removed installation manifest as JSON")
     .action(async (id, options) => {
       const root = await projectRoot();
       const config = await loadConfig(root);
+      const workflowPath = await resolveWorkflowPath(id);
+      const target = await safeTarget(root, options.target ?? config.default_target);
+      if (options.dryRun) {
+        const plan = await planRemoveRecipe(
+          workflowPath,
+          target,
+          Boolean(options.force),
+          signal ? { signal } : {},
+        );
+        throwIfAborted(signal);
+        output(options.json ? plan : renderRemovePlan(id, plan), Boolean(options.json));
+        return;
+      }
       const result = await removeRecipe(
-        await resolveWorkflowPath(id),
-        await safeTarget(root, options.target ?? config.default_target),
+        workflowPath,
+        target,
         Boolean(options.force),
         undefined,
         signal ? { signal } : {},
       );
       throwIfAborted(signal);
       output(options.json ? result : `Removed ${id}.`, Boolean(options.json));
+    });
+
+  program
+    .command("status [workflow-id]")
+    .description("Inspect locally installed workflows and report managed-file drift.")
+    .option("--target <directory>", "Target inside the project")
+    .option("--json", "Print a versioned installation status report as JSON")
+    .action(async (id, options) => {
+      if (id !== undefined) recipePath(id);
+      const root = await projectRoot();
+      const config = await loadConfig(root);
+      const target = await safeTarget(root, options.target ?? config.default_target);
+      const statuses = await inspectInstallations(catalogRoot(), target, id);
+      throwIfAborted(signal);
+      output(
+        options.json
+          ? {
+              schema_version: 1,
+              target,
+              installations: statuses,
+            }
+          : renderInstallationStatus(target, statuses),
+        Boolean(options.json),
+      );
+      if (statuses.some((status) => status.status !== "healthy")) process.exitCode = 1;
     });
 
   program

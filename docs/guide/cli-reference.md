@@ -30,7 +30,9 @@ Installation, execution, and outcome are independent evidence stages, so filteri
 
 ## `awf show <workflow-id>`
 
-Print the workflow title, summary, category, risk level, and version in human mode.
+Print the workflow identity, difficulty, duration, tags, inputs, outputs, approvals, effects, and agent compatibility in human mode.
+
+Use `--agent` to focus compatibility details and limitations on one destination.
 
 Use `--raw` for the canonical workflow Markdown or `--json` for complete structured recipe metadata.
 
@@ -46,9 +48,15 @@ Generate and copy a complete workflow bundle into a project.
 
 `--agent` selects the destination format, and `--target` selects a directory inside the project root.
 
-`--dry-run` generates the proposed manifest and guidance without changing the target.
+`--dry-run` prints create, replace, retire, modified, and missing file sets without changing the target.
 
-`--json` prints the installation manifest instead of human guidance.
+Add `--show-content` to an install dry run to print the complete proposed generated files.
+
+The dry-run JSON result retains the installation manifest fields and adds a versioned `plan` object.
+
+`--show-content` without `--dry-run` is rejected because content preview is not an installation mode.
+
+`--json` prints the applied installation manifest instead of human guidance.
 
 `--force` replaces an existing managed installation of the same workflow after integrity checks.
 
@@ -68,6 +76,8 @@ Rebuild an installed bundle using the adapter recorded at installation time.
 
 `--dry-run` prints create, replace, retire, modified, and missing file sets without changing the target.
 
+Add `--show-content` to print the complete proposed generated files after the human plan or inside the JSON plan.
+
 Files changed locally are preserved unless `--force` explicitly authorizes replacing managed files.
 
 An unmanaged destination remains protected even with `--force`.
@@ -78,9 +88,25 @@ Use `--json` for the structured update plan or resulting manifest.
 
 Delete the files recorded in the installation manifest and then remove that manifest.
 
+`--dry-run` lists every file that would be removed, including modified and missing managed files, without changing the target.
+
 Locally modified managed files are preserved unless `--force` explicitly authorizes their removal.
 
 Use `--json` to retain the removed manifest in machine-readable output.
+
+## `awf status [workflow-id]`
+
+Inspect all local installation manifests or one selected workflow without changing files.
+
+Human output reports the agent, recipe version, file count, and a health state of `healthy`, `drifted`, or `invalid`.
+
+Drift details identify each modified or missing managed file.
+
+Use `--target` to inspect another project-local target.
+
+Use `--json` for a report with `schema_version`, `target`, and `installations` fields.
+
+The command exits with code `1` when any selected installation is drifted or invalid.
 
 ## `awf validate [path]`
 

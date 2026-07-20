@@ -200,7 +200,8 @@ describe.sequential("CLI command contracts", () => {
   it("documents safety-relevant options in command help", async () => {
     await expect(run("install", "--help")).rejects.toMatchObject({ exitCode: 0 });
 
-    expect(stdout).toContain("Preview generated files without changing the target");
+    expect(stdout).toContain("Preview the complete installation plan without changing");
+    expect(stdout).toContain("Include proposed generated content in a dry run");
     expect(stdout).toContain("never overwrite unmanaged files");
   });
 
@@ -264,9 +265,26 @@ describe.sequential("CLI command contracts", () => {
     stdout = "";
     await run("show", "write-release-notes");
     expect(stdout).toContain("Risk:");
+    expect(stdout).toContain("Difficulty:");
+    expect(stdout).toContain("Required inputs:");
+    expect(stdout).toContain("Agent compatibility:");
+    expect(stdout).toContain("- codex: compatible; capability unknown");
+    stdout = "";
+    await run("show", "write-release-notes", "--agent", "codex");
+    expect(stdout).toContain("- codex: compatible; capability unknown");
+    expect(stdout).not.toContain("- cursor:");
     await expect(run("show", "write-release-notes", "--raw", "--json")).rejects.toMatchObject({
       exitCode: 2,
     });
+  });
+
+  it("reports an actionable empty installation status", async () => {
+    await run("status");
+    expect(stdout).toContain("No workflows are installed");
+    expect(stdout).toContain("awf install <workflow-id> --agent <agent> --dry-run");
+    stdout = "";
+    await run("status", "--json");
+    expect(JSON.parse(stdout)).toMatchObject({ schema_version: 1, installations: [] });
   });
 
   it("suggests nearby workflow IDs without weakening ID validation", async () => {
@@ -389,6 +407,19 @@ describe.sequential("CLI command contracts", () => {
     expect(manifest.adapter.id).toBe("codex");
     expect(manifest.files.some((file) => file.role === "policy")).toBe(true);
     stdout = "";
+    await run("status", "--json");
+    expect(JSON.parse(stdout)).toMatchObject({
+      schema_version: 1,
+      installations: [
+        {
+          id: "write-release-notes",
+          status: "healthy",
+          agent: "codex",
+          issue: null,
+        },
+      ],
+    });
+    stdout = "";
     await run("manifest", "write-release-notes", "--json");
     expect(JSON.parse(stdout)).toMatchObject({ adapter: { id: "codex" } });
     stdout = "";
@@ -411,6 +442,21 @@ describe.sequential("CLI command contracts", () => {
     expect(stdout).toContain("Create:\n- none");
     expect(stdout).toContain("No files were changed.");
     await run("update", "write-release-notes");
+    stdout = "";
+    await run("remove", "write-release-notes", "--dry-run");
+    expect(stdout).toContain("Would remove write-release-notes:");
+    expect(stdout).toContain("Remove:\n-");
+    expect(stdout).toContain("No files were changed.");
+    await expect(
+      stat(path.join(project, "managed path/.agents/skills/write-release-notes/SKILL.md")),
+    ).resolves.toBeDefined();
+    stdout = "";
+    await run("remove", "write-release-notes", "--dry-run", "--json");
+    expect(JSON.parse(stdout)).toMatchObject({
+      requiresForce: false,
+      changes: { modifiedManagedFiles: [], missingManagedFiles: [] },
+    });
+    stdout = "";
     await run("remove", "write-release-notes");
     await expect(
       stat(path.join(project, "managed path/.agents/skills/write-release-notes/SKILL.md")),
@@ -434,6 +480,8 @@ describe.sequential("CLI command contracts", () => {
     expect(stdout).toContain("Invoke explicitly with: $write-release-notes");
     expect(stdout).toContain("Warning:");
     expect(stdout).toContain("does not prove agent execution or workflow outcome quality");
+    expect(stdout).toContain("Create:\n-");
+    expect(stdout).not.toContain("Proposed generated content:");
     expect(stdout).not.toContain("\u001b");
     await expect(stat(path.join(project, target))).rejects.toMatchObject({ code: "ENOENT" });
 
@@ -452,6 +500,32 @@ describe.sequential("CLI command contracts", () => {
     expect(manifest.files.map((file) => file.role)).toContain("output-schema");
     expect(stdout).not.toContain("Would install");
     await expect(stat(path.join(project, target))).rejects.toMatchObject({ code: "ENOENT" });
+
+    stdout = "";
+    await run(
+      "install",
+      "write-release-notes",
+      "--agent",
+      "codex",
+      "--target",
+      target,
+      "--dry-run",
+      "--show-content",
+    );
+    expect(stdout).toContain("Proposed generated content:");
+    expect(stdout).toContain("=== .agents/skills/write-release-notes/SKILL.md (entrypoint) ===");
+    await expect(stat(path.join(project, target))).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  it("rejects content previews outside dry-run mode", async () => {
+    await expect(run("install", "write-release-notes", "--show-content")).rejects.toMatchObject({
+      exitCode: 2,
+      code: "awf.contentPreviewRequiresDryRun",
+    });
+    await expect(run("update", "write-release-notes", "--show-content")).rejects.toMatchObject({
+      exitCode: 2,
+      code: "awf.contentPreviewRequiresDryRun",
+    });
   });
 
   it("renders declared effects and approval gates for a write-capable recipe", async () => {

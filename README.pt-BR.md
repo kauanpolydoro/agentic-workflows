@@ -34,9 +34,18 @@ Na raiz do projeto que receberá o fluxo, salve o agente padrão e simule a inst
 ```bash
 awf init --agent codex
 awf install review-pull-request --dry-run
+awf install review-pull-request --dry-run --show-content
 ```
 
-Remova `--dry-run` depois de revisar os arquivos propostos.
+A primeira simulação lista cada criação, substituição e retirada prevista.
+Adicione `--show-content` quando também quiser inspecionar o conteúdo completo dos arquivos gerados.
+Remova `--dry-run` depois de revisar o plano.
+
+Depois da instalação, verifique a saúde dos arquivos gerenciados com:
+
+```bash
+awf status
+```
 
 Para experimentar a versão mais recente sem instalação global, mantenha o escopo completo do pacote:
 
