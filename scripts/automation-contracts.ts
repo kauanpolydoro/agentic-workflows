@@ -112,9 +112,25 @@ if (recipe.id !== "write-release-notes") {
   throw new Error("Show automation did not receive the selected workflow.");
 }
 
-const initialized = success(["init", "--agent", "codex", "--target", "managed"]);
-if (!initialized.stdout.includes("Default agent: codex")) {
-  throw new Error("Deterministic initialization did not retain the selected default agent.");
+for (const shell of ["bash", "zsh", "fish", "pwsh"]) {
+  const instructions = success(["completion", shell, "--install-instructions"]);
+  if (!instructions.stdout.includes(`awf completion ${shell}`)) {
+    throw new Error(`${shell} completion installation instructions are incomplete.`);
+  }
+}
+
+const initialized = jsonSuccess<{
+  schema_version?: number;
+  project_context?: { source?: string };
+  configuration?: { default_agent?: string; default_target?: string };
+}>(["init", "--agent", "codex", "--target", "managed", "--json"]);
+if (
+  initialized.schema_version !== 1 ||
+  initialized.project_context?.source !== "explicit" ||
+  initialized.configuration?.default_agent !== "codex" ||
+  initialized.configuration?.default_target !== "managed"
+) {
+  throw new Error("Deterministic initialization did not return its versioned configuration.");
 }
 
 const installPlan = jsonSuccess<{ plan?: { schema_version?: number; operation?: string } }>([
@@ -143,6 +159,36 @@ if (
   throw new Error("Filtered status automation lost full health summary information.");
 }
 
+const lifecycleLock = path.join(project, "managed", ".agentic-workflows", "lifecycle.lock");
+await writeFile(
+  lifecycleLock,
+  '{"schema_version":1,"pid":4242,"acquired_at":"2026-07-20T12:00:00.000Z","token":"automation-secret"}\n',
+);
+const lockedDiagnosticResult = invoke(["doctor", "--json"]);
+if (
+  lockedDiagnosticResult.status !== 1 ||
+  lockedDiagnosticResult.stderr !== "" ||
+  lockedDiagnosticResult.stdout.includes("automation-secret")
+) {
+  throw commandFailure(["doctor", "--json"], lockedDiagnosticResult);
+}
+const lockedDiagnostic = JSON.parse(lockedDiagnosticResult.stdout) as {
+  checks?: Array<{
+    check?: string;
+    remediation?: string;
+    data?: { recordValid?: boolean; owner?: { pid?: number } };
+  }>;
+};
+const lockCheck = lockedDiagnostic.checks?.find((check) => check.check === "lifecycle-lock");
+if (
+  lockCheck?.data?.recordValid !== true ||
+  lockCheck.data.owner?.pid !== 4242 ||
+  !lockCheck.remediation?.includes("manually removing")
+) {
+  throw new Error("Lifecycle-lock diagnostics omitted sanitized owner recovery metadata.");
+}
+rmSync(lifecycleLock);
+
 const validation = jsonSuccess<{ schema_version?: number; valid?: boolean }>([
   "validate",
   "managed",
@@ -157,11 +203,14 @@ const diagnostics = jsonSuccess<{
   schema_version?: number;
   filter?: string;
   summary?: { pass?: number };
+  projectContext?: { source?: string; reason?: string };
 }>(["doctor", "--failures-only", "--json"]);
 if (
   diagnostics.schema_version !== 1 ||
   diagnostics.filter !== "failures-only" ||
-  !diagnostics.summary?.pass
+  !diagnostics.summary?.pass ||
+  diagnostics.projectContext?.source !== "explicit" ||
+  !diagnostics.projectContext?.reason?.includes("--project-root")
 ) {
   throw new Error("Diagnostic automation did not receive its filtered versioned summary.");
 }

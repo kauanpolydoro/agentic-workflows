@@ -23,6 +23,18 @@ export interface ProjectContext {
   source: ProjectRootSource;
 }
 
+const projectRootSourceReasons: Record<ProjectRootSource, string> = {
+  explicit: "Selected by the explicit --project-root option.",
+  git: "Selected by the nearest enclosing .git marker.",
+  config: "Selected by the nearest enclosing .agentic-workflows/config.yml file.",
+  package: "Selected by the nearest enclosing package.json file.",
+  cwd: "No enclosing Git, AWF configuration, or package marker was found, so the invocation directory was selected.",
+};
+
+export function explainProjectRootSource(source: ProjectRootSource): string {
+  return projectRootSourceReasons[source];
+}
+
 async function explicitProjectRoot(candidate: string): Promise<string> {
   const absolute = path.resolve(candidate);
   const information = await lstat(absolute);

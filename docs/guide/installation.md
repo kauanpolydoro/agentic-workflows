@@ -36,6 +36,12 @@ In an interactive terminal, you can run bare `awf init` and choose the agent and
 
 Passing `--agent`, `--target`, or `--no-interactive` skips the wizard, which keeps scripts and CI deterministic.
 
+Use `--json` for deterministic initialization output in automation:
+
+```bash
+awf init --agent codex --target . --json
+```
+
 If a future or unsupported configuration schema is detected, the CLI reports the detected and supported versions instead of interpreting it loosely.
 
 Back up the existing values, then recreate the configuration explicitly with reviewed values:
@@ -81,6 +87,12 @@ awf completion pwsh | Out-String | Invoke-Expression
 ```
 
 Add the command for your shell to its profile to enable completion in future sessions.
+
+Ask the CLI for the exact persistent setup without letting it edit your profile:
+
+```bash
+awf completion zsh --install-instructions
+```
 
 Regenerate the completion after upgrading the CLI so newly bundled workflow IDs become available.
 

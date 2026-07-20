@@ -35,8 +35,18 @@ import {
 } from "@kauanpolydoro/agentic-workflows-core";
 import { Argument, Command, CommanderError, Option } from "commander";
 import { parse, stringify } from "yaml";
-import { completionShells, renderCompletion, type CompletionShell } from "./completion.js";
-import { catalogRoot, findProjectContext, generatedCatalogPath } from "./context.js";
+import {
+  completionShells,
+  renderCompletion,
+  renderCompletionInstallInstructions,
+  type CompletionShell,
+} from "./completion.js";
+import {
+  catalogRoot,
+  explainProjectRootSource,
+  findProjectContext,
+  generatedCatalogPath,
+} from "./context.js";
 import {
   installRecipe,
   planInstallRecipe,
@@ -85,6 +95,7 @@ const defaultConfig: ProjectConfig = {
   default_target: ".",
 };
 const MAX_CONFIG_BYTES = 64 * 1024;
+const MAX_LIFECYCLE_LOCK_BYTES = 16 * 1024;
 const MAX_GENERATED_CATALOG_BYTES = 16 * 1024 * 1024;
 const MAX_SITE_CONFIG_BYTES = 1024 * 1024;
 const MAX_VERIFICATION_EVIDENCE_BYTES = 1024 * 1024;
@@ -107,6 +118,19 @@ interface ProgramOptions {
   initWizard?: InitWizard;
 }
 
+interface DoctorCheck {
+  check: string;
+  status: "pass" | "warn" | "fail";
+  detail: string;
+  remediation?: string;
+  data?: Readonly<Record<string, unknown>>;
+}
+
+interface LifecycleLockOwner {
+  pid: number;
+  acquiredAt: string;
+}
+
 function errorCode(error: unknown): string | undefined {
   return typeof error === "object" && error !== null && "code" in error
     ? String((error as { code?: unknown }).code)
@@ -115,6 +139,32 @@ function errorCode(error: unknown): string | undefined {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function errorRemediation(error: unknown): string | undefined {
+  if (!(error instanceof AwfError)) return undefined;
+  const remediation = error.details.remediation;
+  return typeof remediation === "string" ? remediation : undefined;
+}
+
+function parseLifecycleLockOwner(content: string): LifecycleLockOwner | null {
+  try {
+    const value = JSON.parse(content) as Record<string, unknown>;
+    if (
+      value.schema_version !== 1 ||
+      !Number.isSafeInteger(value.pid) ||
+      (value.pid as number) <= 0 ||
+      typeof value.acquired_at !== "string" ||
+      !Number.isFinite(Date.parse(value.acquired_at)) ||
+      typeof value.token !== "string" ||
+      value.token.length === 0
+    ) {
+      return null;
+    }
+    return { pid: value.pid as number, acquiredAt: value.acquired_at };
+  } catch {
+    return null;
+  }
 }
 
 async function inspectOptionalPath(candidate: string, scope: string): Promise<Stats | null> {
@@ -1586,7 +1636,7 @@ Examples:
 Next steps:
   $ awf status       Inspect installed workflow health
   $ awf doctor       Diagnose configuration and environment problems
-  $ awf completion zsh  Generate completion for your shell
+  $ awf completion zsh --install-instructions  Configure completion without profile writes
 
 Start with a dry run before installing a workflow. Run awf <command> --help for command details.`;
 
@@ -1613,7 +1663,7 @@ export function createProgram(options: ProgramOptions = {}): Command {
   program.hook("postAction", () => throwIfAborted(signal));
   program.action(() => output(`${program.helpInformation().trimEnd()}\n${firstRunHelp.trim()}`));
   let fallbackNoticeShown = false;
-  const projectRoot = async (machineOutput = false) => {
+  const resolveProjectContext = async (machineOutput = false) => {
     const explicitRoot = program.opts<{ projectRoot?: string }>().projectRoot;
     const context = await findProjectContext(
       process.cwd(),
@@ -1627,8 +1677,10 @@ export function createProgram(options: ProgramOptions = {}): Command {
         )}\n`,
       );
     }
-    return context.root;
+    return context;
   };
+  const projectRoot = async (machineOutput = false) =>
+    (await resolveProjectContext(machineOutput)).root;
 
   program
     .command("list")
@@ -1951,9 +2003,16 @@ export function createProgram(options: ProgramOptions = {}): Command {
     .option("--maintainer", "Require source-development tools such as Corepack and pnpm")
     .option("--failures-only", "Show only warnings and failures while retaining the full summary")
     .action(async (options) => {
-      const root = await projectRoot(Boolean(options.json));
-      const checks: Array<{ check: string; status: "pass" | "warn" | "fail"; detail: string }> = [];
-      checks.push({ check: "project-root", status: "pass", detail: root });
+      const context = await resolveProjectContext(Boolean(options.json));
+      const root = context.root;
+      const contextReason = explainProjectRootSource(context.source);
+      const checks: DoctorCheck[] = [];
+      checks.push({
+        check: "project-root",
+        status: "pass",
+        detail: `${root} (${context.source}: ${contextReason})`,
+        data: { root, source: context.source, reason: contextReason },
+      });
       const major = Number(process.versions.node.split(".")[0]);
       checks.push({
         check: "node",
@@ -1984,7 +2043,14 @@ export function createProgram(options: ProgramOptions = {}): Command {
         config = await loadConfig(root);
         checks.push({ check: "config", status: "pass", detail: JSON.stringify(config) });
       } catch (error) {
-        checks.push({ check: "config", status: "fail", detail: errorMessage(error) });
+        checks.push({
+          check: "config",
+          status: "fail",
+          detail: errorMessage(error),
+          remediation:
+            errorRemediation(error) ??
+            "Run `awf init --force --no-interactive` only after reviewing or backing up the invalid configuration.",
+        });
       }
       if (config) {
         try {
@@ -1998,6 +2064,8 @@ export function createProgram(options: ProgramOptions = {}): Command {
               check: "default-target",
               status: "warn",
               detail: `Configured default target does not exist yet: ${configuredTarget}`,
+              remediation:
+                "Create the configured directory or run `awf init --force` with a reviewed target.",
             });
           } else {
             assertRealDirectory(
@@ -2014,13 +2082,21 @@ export function createProgram(options: ProgramOptions = {}): Command {
         } catch (error) {
           configuredTarget = null;
           configuredTargetInformation = null;
-          checks.push({ check: "default-target", status: "fail", detail: errorMessage(error) });
+          checks.push({
+            check: "default-target",
+            status: "fail",
+            detail: errorMessage(error),
+            remediation:
+              errorRemediation(error) ??
+              "Run `awf init --force` with a safe project-relative target after reviewing the configuration.",
+          });
         }
       } else {
         checks.push({
           check: "default-target",
           status: "fail",
           detail: "Cannot resolve the default target until the project configuration is valid.",
+          remediation: "Resolve the config check first, then rerun `awf doctor`.",
         });
       }
       try {
@@ -2106,12 +2182,15 @@ export function createProgram(options: ProgramOptions = {}): Command {
           check: "target-writable",
           status: "fail",
           detail: "The configured default target could not be resolved safely.",
+          remediation: "Resolve the config and default-target checks before retrying.",
         });
       } else if (!configuredTargetInformation) {
         checks.push({
           check: "target-writable",
           status: "warn",
           detail: `Not probed because the configured default target does not exist: ${configuredTarget}`,
+          remediation:
+            "Create the configured target, then rerun `awf doctor` to test write access.",
         });
       } else {
         const probe = path.join(configuredTarget, `.awf-doctor-${process.pid}-${randomUUID()}`);
@@ -2123,7 +2202,12 @@ export function createProgram(options: ProgramOptions = {}): Command {
           probeCreated = false;
           checks.push({ check: "target-writable", status: "pass", detail: configuredTarget });
         } catch (error) {
-          checks.push({ check: "target-writable", status: "fail", detail: errorMessage(error) });
+          checks.push({
+            check: "target-writable",
+            status: "fail",
+            detail: errorMessage(error),
+            remediation: "Review directory ownership and permissions, then rerun `awf doctor`.",
+          });
         } finally {
           if (probeCreated) {
             try {
@@ -2157,27 +2241,55 @@ export function createProgram(options: ProgramOptions = {}): Command {
           const lockInformation = metadataInformation
             ? await inspectOptionalPath(lifecycleLock, "the lifecycle lock")
             : null;
-          checks.push(
-            lockInformation
-              ? {
-                  check: "lifecycle-lock",
-                  status: "fail",
-                  detail: `Lifecycle lock present at ${lifecycleLock}. Verify its recorded PID and timestamp before retrying; never remove it automatically.`,
-                }
-              : {
-                  check: "lifecycle-lock",
-                  status: "pass",
-                  detail: `No lifecycle lock is present at ${lifecycleLock}`,
-                },
-          );
+          if (lockInformation) {
+            assertRegularFile(lockInformation, lifecycleLock, "The lifecycle lock");
+            const owner = parseLifecycleLockOwner(
+              (
+                await readBoundedRegularFile(
+                  lifecycleLock,
+                  MAX_LIFECYCLE_LOCK_BYTES,
+                  configuredTarget,
+                )
+              ).toString("utf8"),
+            );
+            checks.push({
+              check: "lifecycle-lock",
+              status: "fail",
+              detail: owner
+                ? `Lifecycle lock present at ${lifecycleLock}; recorded PID ${owner.pid}, acquired at ${owner.acquiredAt}.`
+                : `Lifecycle lock present at ${lifecycleLock}, but its owner record is invalid or unsupported.`,
+              remediation: owner
+                ? `Confirm that PID ${owner.pid} is no longer active and that ${owner.acquiredAt} is stale before manually removing ${lifecycleLock}; then rerun \`awf doctor\`.`
+                : `Treat the lock as authoritative until you confirm that no lifecycle process owns ${configuredTarget}; only then remove ${lifecycleLock} manually and rerun \`awf doctor\`.`,
+              data: {
+                path: lifecycleLock,
+                recordValid: owner !== null,
+                owner,
+              },
+            });
+          } else {
+            checks.push({
+              check: "lifecycle-lock",
+              status: "pass",
+              detail: `No lifecycle lock is present at ${lifecycleLock}`,
+              data: { path: lifecycleLock, recordValid: null, owner: null },
+            });
+          }
         } catch (error) {
-          checks.push({ check: "lifecycle-lock", status: "fail", detail: errorMessage(error) });
+          checks.push({
+            check: "lifecycle-lock",
+            status: "fail",
+            detail: errorMessage(error),
+            remediation:
+              "Inspect the lifecycle lock as a regular project-local file and confirm ownership before any manual removal.",
+          });
         }
       } else {
         checks.push({
           check: "lifecycle-lock",
           status: "fail",
           detail: "Cannot inspect the lifecycle lock without a safely resolved default target.",
+          remediation: "Resolve the config and default-target checks before inspecting the lock.",
         });
       }
 
@@ -2276,6 +2388,11 @@ export function createProgram(options: ProgramOptions = {}): Command {
         schema_version: 1 as const,
         healthy: checks.every((check) => check.status !== "fail"),
         projectRoot: root,
+        projectContext: {
+          root,
+          source: context.source,
+          reason: contextReason,
+        },
         filter: options.failuresOnly ? ("failures-only" as const) : ("all" as const),
         summary,
         checks: reportedChecks,
@@ -2283,7 +2400,10 @@ export function createProgram(options: ProgramOptions = {}): Command {
       const renderedChecks =
         reportedChecks.length > 0
           ? reportedChecks
-              .map((check) => `[${check.status.toUpperCase()}] ${check.check}: ${check.detail}`)
+              .flatMap((check) => [
+                `[${check.status.toUpperCase()}] ${check.check}: ${check.detail}`,
+                ...(check.remediation ? [`  Next: ${check.remediation}`] : []),
+              ])
               .join("\n")
           : "[PASS] No warnings or failures.";
       output(
@@ -2304,8 +2424,10 @@ export function createProgram(options: ProgramOptions = {}): Command {
     .option("--target <directory>", "Default target inside the project")
     .option("--no-interactive", "Skip the wizard and use flags or deterministic defaults")
     .option("--force", "Replace an existing AWF configuration")
+    .option("--json", "Print a versioned configuration result and skip the wizard")
     .action(async (commandOptions) => {
-      const root = await projectRoot();
+      const context = await resolveProjectContext(Boolean(commandOptions.json));
+      const root = context.root;
       const directory = path.join(root, ".agentic-workflows");
       await assertNoSymlink(root, directory);
       const file = path.join(directory, "config.yml");
@@ -2322,6 +2444,7 @@ export function createProgram(options: ProgramOptions = {}): Command {
       }
       const guided =
         interactive &&
+        !commandOptions.json &&
         commandOptions.interactive !== false &&
         commandOptions.agent === undefined &&
         commandOptions.target === undefined;
@@ -2371,7 +2494,26 @@ export function createProgram(options: ProgramOptions = {}): Command {
       }
       throwIfAborted(signal);
       output(
-        `Created .agentic-workflows/config.yml.\nDefault agent: ${selection.agent}\nDefault target: ${selection.target}\nNext: awf install <workflow-id> --dry-run`,
+        commandOptions.json
+          ? {
+              schema_version: 1,
+              created: existing === null,
+              replaced: existing !== null,
+              config_path: ".agentic-workflows/config.yml",
+              project_context: {
+                root,
+                source: context.source,
+                reason: explainProjectRootSource(context.source),
+              },
+              configuration: {
+                schema_version: 1,
+                default_agent: selection.agent,
+                default_target: selection.target,
+              },
+              next: "awf install <workflow-id> --dry-run",
+            }
+          : `Created .agentic-workflows/config.yml.\nDefault agent: ${selection.agent}\nDefault target: ${selection.target}\nNext: awf install <workflow-id> --dry-run`,
+        Boolean(commandOptions.json),
       );
     });
 
@@ -2398,7 +2540,15 @@ export function createProgram(options: ProgramOptions = {}): Command {
         ...completionShells,
       ]),
     )
-    .action(async (shell: CompletionShell) => {
+    .option(
+      "--install-instructions",
+      "Print persistent profile setup instructions without modifying the profile",
+    )
+    .action(async (shell: CompletionShell, options) => {
+      if (options.installInstructions) {
+        output(renderCompletionInstallInstructions(shell).trimEnd());
+        return;
+      }
       const catalog = await loadGeneratedCatalog();
       output(renderCompletion(shell, catalog).trimEnd());
     });

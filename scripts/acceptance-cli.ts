@@ -145,12 +145,33 @@ for (const shell of ["bash", "zsh", "fish", "pwsh"]) {
   if (!completion.includes("review-pull-request") || !completion.includes("agentic-workflows")) {
     throw new Error(`${shell} completion omitted a workflow or executable alias.`);
   }
+  const instructions = success(["completion", shell, "--install-instructions"]).stdout;
+  if (
+    !instructions.includes("will not edit") ||
+    !instructions.includes(`awf completion ${shell}`)
+  ) {
+    throw new Error(`${shell} completion installation instructions are incomplete.`);
+  }
 }
 const validation = JSON.parse(
   success(["validate", path.resolve("packages/cli/catalog"), "--strict", "--json"]).stdout,
 ) as { schema_version?: number };
 if (validation.schema_version !== 1) throw new Error("Validation output is not versioned.");
-success(["init", "--agent", "codex", "--target", "managed files"]);
+const initialization = JSON.parse(
+  success(["init", "--agent", "codex", "--target", "managed files", "--json"]).stdout,
+) as {
+  schema_version?: number;
+  project_context?: { source?: string };
+  configuration?: { default_agent?: string; default_target?: string };
+};
+if (
+  initialization.schema_version !== 1 ||
+  initialization.project_context?.source !== "explicit" ||
+  initialization.configuration?.default_agent !== "codex" ||
+  initialization.configuration?.default_target !== "managed files"
+) {
+  throw new Error("Versioned initialization output omitted its selected context or defaults.");
+}
 await mkdir(path.join(project, "managed files"), { recursive: true });
 const installPlan = JSON.parse(
   success(["install", "write-release-notes", "--dry-run", "--show-content", "--json"]).stdout,
@@ -195,10 +216,12 @@ const diagnostics = JSON.parse(success(["doctor", "--failures-only", "--json"]).
   filter?: string;
   summary?: { pass?: number };
   checks?: Array<{ status?: string }>;
+  projectContext?: { source?: string };
 };
 if (
   diagnostics.filter !== "failures-only" ||
   !diagnostics.summary?.pass ||
+  diagnostics.projectContext?.source !== "explicit" ||
   !diagnostics.checks?.every((check) => check.status !== "pass")
 ) {
   throw new Error("Filtered doctor output omitted its summary or retained passing checks.");

@@ -8,6 +8,29 @@ export const completionShells = ["bash", "zsh", "fish", "pwsh"] as const;
 
 export type CompletionShell = (typeof completionShells)[number];
 
+const installInstructions: Record<CompletionShell, string> = {
+  bash: [
+    "The CLI will not edit your shell profile.",
+    "Add this line to ~/.bashrc, then start a new Bash session:",
+    "source <(awf completion bash)",
+  ].join("\n"),
+  zsh: [
+    "The CLI will not edit your shell profile.",
+    "Add this line to ~/.zshrc after compinit, then start a new Zsh session:",
+    "source <(awf completion zsh)",
+  ].join("\n"),
+  fish: [
+    "The CLI will not edit your shell configuration.",
+    "Create ~/.config/fish/completions if needed, then run:",
+    "awf completion fish > ~/.config/fish/completions/awf.fish",
+  ].join("\n"),
+  pwsh: [
+    "The CLI will not edit your PowerShell profile.",
+    "Add this line to $PROFILE, then start a new PowerShell session:",
+    "awf completion pwsh | Out-String | Invoke-Expression",
+  ].join("\n"),
+};
+
 const commands = [
   "list",
   "show",
@@ -74,7 +97,7 @@ _awf_completion() {
       ;;
   esac
 
-  COMPREPLY=( $(compgen -W "--agent --target --dry-run --show-content --force --json --raw --open --location --strict --maintainer --failures-only --no-interactive --project-root --help" -- "$current") )
+  COMPREPLY=( $(compgen -W "--agent --target --dry-run --show-content --force --json --raw --open --location --strict --maintainer --failures-only --no-interactive --install-instructions --project-root --help" -- "$current") )
 }
 complete -F _awf_completion awf agentic-workflows
 `;
@@ -90,7 +113,7 @@ _awf() {
   workflows=(${workflows.join(" ")})
   agents=(${agents.join(" ")})
   shells=(${completionShells.join(" ")})
-  options=(--agent --target --dry-run --show-content --force --json --raw --open --location --strict --maintainer --failures-only --no-interactive --project-root --help)
+  options=(--agent --target --dry-run --show-content --force --json --raw --open --location --strict --maintainer --failures-only --no-interactive --install-instructions --project-root --help)
 
   if (( CURRENT == 2 )); then
     compadd -- $commands
@@ -130,6 +153,7 @@ function fishCompletion(workflows: readonly string[]): string {
       `complete -c ${executable} -l location`,
       `complete -c ${executable} -l failures-only`,
       `complete -c ${executable} -l no-interactive`,
+      `complete -c ${executable} -l install-instructions`,
       `complete -c ${executable} -l help`,
     );
   }
@@ -145,7 +169,7 @@ $awfCompleter = {
   $workflows = @('${workflows.join("','")}')
   $agents = @('${agents.join("','")}')
   $shells = @('${completionShells.join("','")}')
-  $options = @('--agent','--target','--dry-run','--show-content','--force','--json','--raw','--open','--location','--strict','--maintainer','--failures-only','--no-interactive','--project-root','--help')
+  $options = @('--agent','--target','--dry-run','--show-content','--force','--json','--raw','--open','--location','--strict','--maintainer','--failures-only','--no-interactive','--install-instructions','--project-root','--help')
   $command = if ($tokens.Count -gt 1) { $tokens[1] } else { '' }
 
   if ($tokens.Count -le 2) { $candidates = $commands }
@@ -177,4 +201,8 @@ export function renderCompletion(
     case "pwsh":
       return powerShellCompletion(workflows);
   }
+}
+
+export function renderCompletionInstallInstructions(shell: CompletionShell): string {
+  return `${installInstructions[shell]}\n`;
 }

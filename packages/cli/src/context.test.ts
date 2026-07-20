@@ -4,12 +4,21 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   catalogRoot,
+  explainProjectRootSource,
   findProjectContext,
   findProjectRoot,
   generatedCatalogPath,
 } from "./context.js";
 
 describe("project-root discovery", () => {
+  it("explains every stable discovery source for machine diagnostics", () => {
+    expect(explainProjectRootSource("explicit")).toContain("--project-root");
+    expect(explainProjectRootSource("git")).toContain(".git");
+    expect(explainProjectRootSource("config")).toContain("config.yml");
+    expect(explainProjectRootSource("package")).toContain("package.json");
+    expect(explainProjectRootSource("cwd")).toContain("invocation directory");
+  });
+
   it("prefers the enclosing repository over a nested package manifest", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "awf-root-"));
     await mkdir(path.join(root, ".git"));

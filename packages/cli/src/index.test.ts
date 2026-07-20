@@ -206,6 +206,12 @@ describe.sequential("CLI command contracts", () => {
       await run("completion", shell);
       expect(stdout).toContain("review-pull-request");
       expect(stdout).toContain("agentic-workflows");
+
+      stdout = "";
+      await run("completion", shell, "--install-instructions");
+      expect(stdout).toContain("will not edit");
+      expect(stdout).toContain(`awf completion ${shell}`);
+      expect(stdout).not.toContain("review-pull-request");
     }
 
     await expect(run("completion", "unsupported")).rejects.toMatchObject({ exitCode: 1 });
@@ -568,6 +574,25 @@ describe.sequential("CLI command contracts", () => {
       { from: "user" },
     );
     expect(wizard).not.toHaveBeenCalled();
+
+    stdout = "";
+    await createProgram({ interactive: true, initWizard: wizard }).parseAsync(
+      ["init", "--force", "--json", "--agent", "codex", "--target", "machine target"],
+      { from: "user" },
+    );
+    expect(wizard).not.toHaveBeenCalled();
+    expect(JSON.parse(stdout)).toMatchObject({
+      schema_version: 1,
+      created: false,
+      replaced: true,
+      config_path: ".agentic-workflows/config.yml",
+      project_context: { source: "config" },
+      configuration: {
+        schema_version: 1,
+        default_agent: "codex",
+        default_target: "machine target",
+      },
+    });
   });
 
   it("warns only human commands when project-root discovery falls back to the current directory", async () => {
@@ -583,6 +608,17 @@ describe.sequential("CLI command contracts", () => {
     await run("status", "--json");
     expect(process.stderr.write).not.toHaveBeenCalled();
     expect(JSON.parse(stdout)).toMatchObject({ schema_version: 1 });
+
+    stdout = "";
+    await run("doctor", "--json");
+    expect(process.stderr.write).not.toHaveBeenCalled();
+    expect(JSON.parse(stdout)).toMatchObject({
+      projectContext: {
+        root: project,
+        source: "cwd",
+        reason: expect.stringContaining("invocation directory"),
+      },
+    });
   });
 
   it("keeps dry-run colorless, non-mutating, and explicit about post-install use", async () => {
@@ -779,6 +815,7 @@ describe.sequential("CLI command contracts", () => {
     const result = JSON.parse(stdout) as {
       schema_version: number;
       healthy: boolean;
+      projectContext: { root: string; source: string; reason: string };
       checks: Array<{ check: string; status: string }>;
     };
     expect(result.checks).toEqual(
@@ -796,6 +833,11 @@ describe.sequential("CLI command contracts", () => {
     );
     expect(typeof result.healthy).toBe("boolean");
     expect(result.schema_version).toBe(1);
+    expect(result.projectContext).toEqual({
+      root: project,
+      source: "explicit",
+      reason: expect.stringContaining("--project-root"),
+    });
     expect((await readdir(project)).some((entry) => entry.startsWith(".awf-doctor-"))).toBe(false);
 
     stdout = "";
@@ -941,23 +983,39 @@ describe.sequential("CLI command contracts", () => {
   it("reports a lifecycle lock without deleting it", async () => {
     await run("init");
     const lifecycleLock = path.join(project, ".agentic-workflows", "lifecycle.lock");
-    await writeFile(lifecycleLock, '{"pid":123,"created_at":"synthetic"}\n');
+    await writeFile(
+      lifecycleLock,
+      '{"schema_version":1,"pid":123,"acquired_at":"2026-07-20T12:00:00.000Z","token":"must-not-leak"}\n',
+    );
     stdout = "";
     process.exitCode = undefined;
 
     await run("--project-root", project, "doctor", "--json");
 
     const result = JSON.parse(stdout) as {
-      checks: Array<{ check: string; status: string; detail: string }>;
+      checks: Array<{
+        check: string;
+        status: string;
+        detail: string;
+        remediation?: string;
+        data?: Record<string, unknown>;
+      }>;
     };
     expect(result.checks).toContainEqual(
       expect.objectContaining({
         check: "lifecycle-lock",
         status: "fail",
         detail: expect.stringContaining(lifecycleLock),
+        remediation: expect.stringContaining("PID 123"),
+        data: {
+          path: lifecycleLock,
+          recordValid: true,
+          owner: { pid: 123, acquiredAt: "2026-07-20T12:00:00.000Z" },
+        },
       }),
     );
     expect(await readFile(lifecycleLock, "utf8")).toContain('"pid":123');
+    expect(stdout).not.toContain("must-not-leak");
   });
 
   it("keeps doctor structured when configuration prevents safe target resolution", async () => {

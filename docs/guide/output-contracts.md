@@ -29,6 +29,7 @@ The following table identifies the version field that owns each machine-readable
 | `status --json` | Status report | Top-level `schema_version: 1` |
 | `validate --json` | Validation report | Top-level `schema_version: 1` |
 | `doctor --json` | Diagnostic report | Top-level `schema_version: 1` |
+| `init --json` | Configuration result | Top-level `schema_version: 1` |
 | `manifest --json` | Installation manifest | Manifest `schema_version: 2` |
 | Any failed command with `--json` | Error object | Top-level `schema_version: 1` |
 
@@ -60,6 +61,10 @@ The surrounding command result retains its command-specific fields for compatibi
 ## Filtered diagnostics
 
 `doctor --failures-only --json` retains `summary` counts for every check while returning only warning and failure records in `checks`.
+
+The diagnostic report retains `projectContext.root`, `projectContext.source`, and `projectContext.reason` so automation can audit how the root was selected.
+
+Diagnostic checks may include structured `data` and an actionable `remediation` without requiring consumers to parse `detail`.
 
 `status --failures-only --json` retains `summary` counts for every installation while returning only drifted and invalid records in `installations`.
 

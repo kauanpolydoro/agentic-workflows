@@ -20,7 +20,11 @@ awf
 
 Generate tab completion for Bash, Zsh, Fish, or PowerShell with `awf completion <shell>`.
 
+Run `awf completion <shell> --install-instructions` for persistent profile setup that does not modify the profile automatically.
+
 Run bare `awf init` in an interactive terminal for a guided agent and target setup, or pass `--agent`, `--target`, or `--no-interactive` to keep automation non-interactive.
+
+Add `--json` to initialization for a versioned machine result that also records how the project root was selected.
 
 ## Complete first workflow
 
@@ -93,5 +97,7 @@ The CLI works offline during normal use, does not execute workflow content, does
 It never overwrites an unmanaged file, including when `--force` is present.
 
 Run `awf doctor` for consumer health checks, or `awf doctor --maintainer` when developing the Agentic Workflows source repository.
+
+Machine diagnostics expose the selected project-root source and structured remediation while keeping lifecycle-lock recovery manual and fail-closed.
 
 See the [installation guide](https://kauanpolydoro.github.io/agentic-workflows/guide/installation.html) and [CLI reference](https://kauanpolydoro.github.io/agentic-workflows/guide/cli-reference.html) for the complete contract.

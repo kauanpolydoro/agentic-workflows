@@ -30,7 +30,8 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test:coverage
       - run: pnpm build
-      - run: pnpm test:automation
+      - name: Verify compiled CLI automation contracts on Linux
+        run: pnpm test:automation
       - run: pnpm test:integration
       - run: pnpm test:acceptance
       - run: pnpm test:package
@@ -62,10 +63,13 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - run: pnpm test:automation
+      - name: Exercise compiled CLI on ${{ runner.os }}
+        run: pnpm test:automation
       - run: pnpm test:integration
-      - run: pnpm test:acceptance
-      - run: pnpm test:package
+      - name: Exercise CLI acceptance on ${{ runner.os }}
+        run: pnpm test:acceptance
+      - name: Exercise packed and globally installed CLI on ${{ runner.os }}
+        run: pnpm test:package
 
   node-22-compatibility:
     runs-on: ubuntu-latest
@@ -82,7 +86,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - run: pnpm test:automation
+      - name: Verify compiled CLI automation contracts on Node.js 22
+        run: pnpm test:automation
       - run: pnpm test
       - run: pnpm test:integration
       - run: pnpm test:acceptance

@@ -46,6 +46,7 @@ Add `--show-content` when you also want to inspect the complete generated files.
 Remove `--dry-run` after reviewing the plan to install the workflow.
 The package exposes both `awf` and `agentic-workflows` as command names, but this documentation uses the shorter `awf` form.
 Run `awf completion bash`, `awf completion zsh`, `awf completion fish`, or `awf completion pwsh` to generate tab completion for your shell.
+Add `--install-instructions` to print persistent setup without modifying your shell profile.
 
 To try the latest release without installing it globally, use either package runner:
 

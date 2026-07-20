@@ -353,6 +353,14 @@ if (
 ) {
   throw new Error("The globally installed awf command returned incomplete Bash completion.");
 }
+const globalCompletionInstructions = run(
+  globalAwf,
+  ["completion", "zsh", "--install-instructions"],
+  workspace,
+);
+if (!globalCompletionInstructions.includes("~/.zshrc")) {
+  throw new Error("The globally installed awf command omitted Zsh installation instructions.");
+}
 const globalCatalog = JSON.parse(run(globalAwf, ["list", "--json"], workspace)) as unknown[];
 if (globalCatalog.length !== 20) {
   throw new Error(`Globally installed awf returned ${globalCatalog.length} recipes.`);
@@ -378,33 +386,48 @@ for (const shell of ["bash", "zsh", "fish", "pwsh"]) {
   if (!completion.includes("review-pull-request") || !completion.includes("agentic-workflows")) {
     throw new Error(`Packaged ${shell} completion is incomplete.`);
   }
+  const instructions = runCli(
+    entrypoint,
+    ["completion", shell, "--install-instructions"],
+    consumer,
+  );
+  if (
+    !instructions.includes("will not edit") ||
+    !instructions.includes(`awf completion ${shell}`)
+  ) {
+    throw new Error(`Packaged ${shell} completion installation instructions are incomplete.`);
+  }
 }
-const dryRun = JSON.parse(
+
+const installationTarget = "installed bundle with spaces";
+const initialization = JSON.parse(
   runCli(
     entrypoint,
-    ["install", "write-release-notes", "--agent", "codex", "--dry-run", "--json"],
+    ["init", "--agent", "codex", "--target", installationTarget, "--json"],
     consumer,
   ),
+) as {
+  schema_version?: number;
+  project_context?: { source?: string };
+  configuration?: { default_agent?: string; default_target?: string };
+};
+if (
+  initialization.schema_version !== 1 ||
+  initialization.project_context?.source !== "explicit" ||
+  initialization.configuration?.default_agent !== "codex" ||
+  initialization.configuration?.default_target !== installationTarget
+) {
+  throw new Error("Packaged init omitted its versioned context or selected defaults.");
+}
+const dryRun = JSON.parse(
+  runCli(entrypoint, ["install", "write-release-notes", "--dry-run", "--json"], consumer),
 ) as { files?: Array<{ role?: string }> };
 if (!dryRun.files?.some((file) => file.role === "policy")) {
   throw new Error("Packaged Codex bundle omitted its invocation policy.");
 }
 
-const installationTarget = "installed bundle with spaces";
 const installed = JSON.parse(
-  runCli(
-    entrypoint,
-    [
-      "install",
-      "write-release-notes",
-      "--agent",
-      "codex",
-      "--target",
-      installationTarget,
-      "--json",
-    ],
-    consumer,
-  ),
+  runCli(entrypoint, ["install", "write-release-notes", "--json"], consumer),
 ) as {
   adapter?: { id?: string };
   entrypoint?: string;
@@ -451,6 +474,19 @@ if (
   filteredInstallationStatus.installations?.length !== 0
 ) {
   throw new Error("The packaged CLI lost summary data while filtering healthy installations.");
+}
+const packagedDiagnostics = JSON.parse(
+  runCli(entrypoint, ["doctor", "--failures-only", "--json"], consumer),
+) as {
+  projectContext?: { source?: string; reason?: string };
+  summary?: { pass?: number };
+};
+if (
+  packagedDiagnostics.projectContext?.source !== "explicit" ||
+  !packagedDiagnostics.projectContext?.reason?.includes("--project-root") ||
+  !packagedDiagnostics.summary?.pass
+) {
+  throw new Error("The packaged CLI omitted project-root provenance from diagnostics.");
 }
 failureCode(
   runCliFailure(entrypoint, ["status", "review-pull-request", "--json"], consumer),

@@ -136,6 +136,12 @@ Use `--maintainer` to treat those source-development tools as required.
 
 Use `--failures-only` to retain the full pass, warning, and failure summary while omitting passing check records from human and JSON output.
 
+JSON diagnostics include `projectContext` with the selected root, stable source, and human-readable reason.
+
+Failed and warning checks may include `remediation` and structured `data`, including a sanitized lifecycle-lock owner without its ownership token.
+
+The CLI never removes a lock automatically; confirm that the recorded process is inactive and the timestamp is stale before manual removal.
+
 Finding an agent command on `PATH` does not establish workflow execution or outcome evidence.
 
 ## `awf init`
@@ -145,6 +151,8 @@ Create `.agentic-workflows/config.yml` with a default agent and target.
 Running bare `awf init` in an interactive terminal starts a short agent and target wizard.
 
 Non-interactive execution keeps deterministic defaults of `generic` and `.`, and providing `--agent`, `--target`, or `--no-interactive` skips the wizard.
+
+`--json` also skips the wizard and returns a versioned result with the selected project context, configuration path, defaults, and whether an existing file was replaced.
 
 Use `--agent` and `--target` to choose those defaults.
 
@@ -167,6 +175,10 @@ Use `--target` to select another project-local target and `--json` to print JSON
 ## `awf completion <shell>`
 
 Generate deterministic tab completion for `bash`, `zsh`, `fish`, or PowerShell (`pwsh`).
+
+Add `--install-instructions` to print the exact persistent profile setup for the selected shell.
+
+The instruction mode does not modify the profile or any path outside the project.
 
 The generated script includes commands, options, agents, shell names, and the workflow IDs bundled with the installed CLI version.
 
