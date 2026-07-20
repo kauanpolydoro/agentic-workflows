@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { rmSync } from "node:fs";
-import { mkdtemp, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import type { CompletionShell } from "../packages/cli/src/completion.js";
@@ -32,6 +32,21 @@ const cli = path.resolve("packages/cli/dist/index.js");
 const workspace = await mkdtemp(path.join(os.tmpdir(), "awf completion smoke with spaces "));
 const cleanup = () => rmSync(workspace, { recursive: true, force: true });
 process.once("exit", cleanup);
+
+const executable = path.join(workspace, process.platform === "win32" ? "awf.cmd" : "awf");
+await writeFile(
+  executable,
+  process.platform === "win32" ? "@echo off\r\nexit /b 0\r\n" : "#!/bin/sh\nexit 0\n",
+);
+if (process.platform !== "win32") await chmod(executable, 0o755);
+const pathEnvironmentKey =
+  Object.keys(process.env).find((key) => key.toLowerCase() === "path") ?? "PATH";
+const executableEnvironment = {
+  ...process.env,
+  [pathEnvironmentKey]: [workspace, process.env[pathEnvironmentKey]]
+    .filter(Boolean)
+    .join(path.delimiter),
+};
 
 function run(command: string, args: readonly string[], environment = process.env): string {
   const result = spawnSync(command, args, {
@@ -75,7 +90,7 @@ async function smoke(shell: CompletionShell): Promise<void> {
   const completion = run(process.execPath, [cli, "completion", shell]);
   const completionFile = path.join(workspace, `awf completion.${shell}`);
   await writeFile(completionFile, completion);
-  const environment = { ...process.env, AWF_COMPLETION_FILE: completionFile };
+  const environment = { ...executableEnvironment, AWF_COMPLETION_FILE: completionFile };
   let output: string;
 
   if (shell === "bash") {

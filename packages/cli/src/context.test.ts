@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, symlink, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, realpath, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -77,9 +77,10 @@ describe("project-root discovery", () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "awf-root-"));
     const start = path.join(root, "nested");
     await mkdir(start);
-    await expect(findProjectRoot(start, { explicitRoot: root })).resolves.toBe(root);
+    const canonicalRoot = await realpath(root);
+    await expect(findProjectRoot(start, { explicitRoot: root })).resolves.toBe(canonicalRoot);
     await expect(findProjectContext(start, { explicitRoot: root })).resolves.toEqual({
-      root,
+      root: canonicalRoot,
       source: "explicit",
     });
   });
