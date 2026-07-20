@@ -1,30 +1,81 @@
 # Agentic Workflows CLI
 
-`awf` inspects and installs evidence-oriented workflow bundles for coding agents.
-
-## Usage
-
-Run the CLI without a global installation:
-
-```bash
-npx --yes @kauanpolydoro/agentic-workflows list
-```
-
-Or install it in a project:
-
-```bash
-npm install --save-dev @kauanpolydoro/agentic-workflows
-npx agentic-workflows list
-```
+`awf` browses and safely installs evidence-oriented workflow bundles for coding agents.
 
 Node.js 22 or newer is required.
 
+## Install once
+
+Install the public package globally to make the short `awf` command available in every project:
+
+```bash
+npm install --global @kauanpolydoro/agentic-workflows
+```
+
+Run `awf` without arguments for first-run help:
+
+```bash
+awf
+```
+
+## Complete first workflow
+
+Run these commands from the root of the project that should receive the workflow:
+
+```bash
+# Save a default agent and target for this project.
+awf init --agent codex
+
+# Discover and inspect a workflow before installing it.
+awf list
+awf show review-pull-request
+
+# Preview every generated file without changing the project.
+awf install review-pull-request --dry-run
+
+# Apply the reviewed installation and verify its hashes.
+awf install review-pull-request
+awf validate . --strict
+```
+
+After installation, `awf` prints the generated entrypoint and the exact agent invocation when the selected adapter defines one.
+
+Use the manifest-backed lifecycle commands to inspect, update, or remove the bundle later:
+
+```bash
+awf manifest review-pull-request
+awf update review-pull-request --dry-run
+awf remove review-pull-request
+```
+
+## Run without a global installation
+
+Use the full scoped package name with a package runner:
+
+```bash
+npx --yes @kauanpolydoro/agentic-workflows@latest list
+bunx @kauanpolydoro/agentic-workflows list
+```
+
+The unscoped `agentic-workflows` package on npm is a different project.
+
+For reproducible CI or team usage, install a pinned project dependency and invoke its short binary:
+
+```bash
+npm install --save-dev @kauanpolydoro/agentic-workflows
+npx awf list
+```
+
+## Safety boundary
+
 The package includes the versioned recipe catalog used by `list`, `show`, `install`, `update`, `remove`, and strict validation.
 
-Installation generates adapter files and a hash-bearing manifest in the selected project.
+Installation generates adapter files and a hash-bearing manifest only inside the selected project target.
 
-It does not execute an external agent, satisfy human approval gates, or approve workflow outcomes.
+The CLI works offline during normal use, does not execute workflow content, does not satisfy human approval gates, and does not claim that an external agent produced an approved outcome.
 
-See the [repository installation guide](https://kauanpolydoro.github.io/agentic-workflows/guide/installation.html)
-and [CLI reference](https://kauanpolydoro.github.io/agentic-workflows/guide/cli-reference.html)
-for the complete contract.
+It never overwrites an unmanaged file, including when `--force` is present.
+
+Run `awf doctor` for consumer health checks, or `awf doctor --maintainer` when developing the Agentic Workflows source repository.
+
+See the [installation guide](https://kauanpolydoro.github.io/agentic-workflows/guide/installation.html) and [CLI reference](https://kauanpolydoro.github.io/agentic-workflows/guide/cli-reference.html) for the complete contract.

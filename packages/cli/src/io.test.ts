@@ -26,6 +26,33 @@ describe("terminal output", () => {
     expect(process.stderr.write).toHaveBeenCalledWith("Error: badred\n");
   });
 
+  it("preserves codes, remediation, and validation issues in human errors", () => {
+    const write = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    expect(() =>
+      fail(
+        new AwfError("INVALID_RECIPE", "strict failure", {
+          issues: [
+            {
+              code: "BROKEN_LINK",
+              path: "example/workflow.md",
+              severity: "error",
+              remediation: "Correct the relative target.",
+            },
+          ],
+          remediation: "Run `awf validate --strict` again.",
+        }),
+      ),
+    ).toThrow("__AWF_HANDLED__");
+
+    expect(String(write.mock.calls[0]?.[0])).toBe(
+      "Error [INVALID_RECIPE]: strict failure\n" +
+        "Details:\n" +
+        "- [BROKEN_LINK] at example/workflow.md\n" +
+        "  Fix: Correct the relative target.\n" +
+        "Next: Run `awf validate --strict` again.\n",
+    );
+  });
+
   it("remains colorless when NO_COLOR is set", () => {
     const previous = process.env.NO_COLOR;
     process.env.NO_COLOR = "1";

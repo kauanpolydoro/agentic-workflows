@@ -22,7 +22,7 @@ features:
     details: Every workflow is plain Markdown. You can see its inputs, steps, safety rules, and expected results before anything touches your project.
   - icon: "02"
     title: Install with one command
-    details: The CLI copies a workflow into your project in the format your coding agent understands, and it never overwrites your files without asking.
+    details: The CLI copies a workflow into your project in the format your coding agent understands, and it never overwrites unmanaged files or replaces managed edits without explicit authorization.
   - icon: "03"
     title: Know what has been tested
     details: Every workflow shows its real verification status. When something has not been tested with a given agent yet, the catalog says so instead of implying it works.

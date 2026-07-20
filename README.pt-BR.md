@@ -14,18 +14,44 @@ Cada receita declara entradas, pré-condições, passos observáveis, decisões,
 
 ## Início rápido
 
-Execute a CLI publicada sem instalação global:
+O pacote público da CLI exige Node.js 22 ou superior.
+Para uso frequente, instale-o globalmente uma vez:
+
+```bash
+npm install --global @kauanpolydoro/agentic-workflows
+```
+
+O comando curto `awf` passa a funcionar em qualquer projeto:
+
+```bash
+awf
+awf list
+awf show review-pull-request
+```
+
+Na raiz do projeto que receberá o fluxo, salve o agente padrão e simule a instalação antes de escrever arquivos:
+
+```bash
+awf init --agent codex
+awf install review-pull-request --dry-run
+```
+
+Remova `--dry-run` depois de revisar os arquivos propostos.
+
+Para experimentar a versão mais recente sem instalação global, mantenha o escopo completo do pacote:
 
 ```bash
 npx --yes @kauanpolydoro/agentic-workflows@latest list
-npx --yes @kauanpolydoro/agentic-workflows@latest show review-pull-request
+bunx @kauanpolydoro/agentic-workflows list
 ```
 
-Para fixar a CLI nas dependências de um projeto:
+O nome sem escopo `agentic-workflows` pertence a outro pacote no npm.
+
+Para fixar a versão da CLI em um projeto ou ambiente de CI:
 
 ```bash
 npm install --save-dev @kauanpolydoro/agentic-workflows
-npx agentic-workflows list
+npx awf list
 ```
 
 O [pacote da CLI](https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows) e o [núcleo compartilhado](https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows-core) estão públicos no npm.

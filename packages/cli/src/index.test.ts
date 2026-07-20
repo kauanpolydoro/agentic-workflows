@@ -188,6 +188,22 @@ afterEach(async () => {
 });
 
 describe.sequential("CLI command contracts", () => {
+  it("turns an empty invocation into actionable help with a successful parse", async () => {
+    await run();
+
+    expect(stdout).toContain("Usage: awf [options] [command]");
+    expect(stdout).toContain("awf init --agent codex");
+    expect(stdout).toContain("awf install review-pull-request --agent codex --dry-run");
+    expect(process.exitCode).toBeUndefined();
+  });
+
+  it("documents safety-relevant options in command help", async () => {
+    await expect(run("install", "--help")).rejects.toMatchObject({ exitCode: 0 });
+
+    expect(stdout).toContain("Preview generated files without changing the target");
+    expect(stdout).toContain("never overwrite unmanaged files");
+  });
+
   it("separates adapter support and recipe compatibility filters", async () => {
     await run(
       "list",
@@ -216,7 +232,8 @@ describe.sequential("CLI command contracts", () => {
     });
     stdout = "";
     await run("list", "--category", "does-not-exist");
-    expect(stdout).toBe("\n");
+    expect(stdout).toContain("No workflows match the selected filters");
+    expect(stdout).toContain("awf list --help");
     stdout = "";
     await run("list", "--category", "release");
     expect(stdout).toContain("write-release-notes");
@@ -249,6 +266,19 @@ describe.sequential("CLI command contracts", () => {
     expect(stdout).toContain("Risk:");
     await expect(run("show", "write-release-notes", "--raw", "--json")).rejects.toMatchObject({
       exitCode: 2,
+    });
+  });
+
+  it("suggests nearby workflow IDs without weakening ID validation", async () => {
+    await expect(run("show", "review-pull-reques")).rejects.toMatchObject({
+      code: "MISSING_FILE",
+      details: {
+        suggestions: ["review-pull-request"],
+        remediation: expect.stringContaining("awf list"),
+      },
+    });
+    await expect(run("show", "Review-Pull-Request")).rejects.toMatchObject({
+      code: "INVALID_RECIPE",
     });
   });
 
@@ -603,14 +633,31 @@ describe.sequential("CLI command contracts", () => {
     try {
       await run("--project-root", project, "doctor", "--json");
       const result = JSON.parse(stdout) as {
+        healthy: boolean;
         checks: Array<{ check: string; status: string }>;
       };
       expect(result.checks).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ check: "corepack", status: "warn" }),
+          expect.objectContaining({ check: "pnpm", status: "warn" }),
+        ]),
+      );
+      expect(result.healthy).toBe(true);
+
+      stdout = "";
+      process.exitCode = undefined;
+      await run("--project-root", project, "doctor", "--maintainer", "--json");
+      const maintainerResult = JSON.parse(stdout) as {
+        healthy: boolean;
+        checks: Array<{ check: string; status: string }>;
+      };
+      expect(maintainerResult.checks).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ check: "corepack", status: "fail" }),
           expect.objectContaining({ check: "pnpm", status: "fail" }),
         ]),
       );
+      expect(maintainerResult.healthy).toBe(false);
     } finally {
       if (previousPath === undefined) delete process.env.PATH;
       else process.env.PATH = previousPath;

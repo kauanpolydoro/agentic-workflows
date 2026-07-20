@@ -1,35 +1,105 @@
 # Installation
 
-The CLI is public on npm, and `npx` is the shortest path to run it.
+The CLI is public on npm and requires Node.js 22 or newer.
 
-## Run with npx
+## Recommended global installation
+
+Install the package once to make `awf` available from any project:
+
+```bash
+npm install --global @kauanpolydoro/agentic-workflows
+```
+
+Confirm the installation and display first-run guidance:
+
+```bash
+awf --version
+awf
+```
+
+Run the following journey from the root of a project that should receive a workflow:
+
+```bash
+awf init --agent codex
+awf list
+awf show review-pull-request
+awf install review-pull-request --dry-run
+awf install review-pull-request
+awf validate . --strict
+```
+
+`awf init` saves the default agent and target in `.agentic-workflows/config.yml` so later install commands do not need to repeat them.
+
+The dry run generates the proposed bundle in memory and prints its files without changing the target.
+
+The applied installation prints the entrypoint, installed files, required inputs, declared approval gates, declared effects, validation command, and removal command.
+
+## Run without installing globally
+
+Use the full package scope with `npx` or `bunx`:
 
 ```bash
 npx --yes @kauanpolydoro/agentic-workflows@latest list
-npx --yes @kauanpolydoro/agentic-workflows@latest show review-pull-request
+bunx @kauanpolydoro/agentic-workflows list
 ```
 
-To pin the CLI in a project, install it as a development dependency:
+The unscoped `agentic-workflows` package on npm is unrelated, so keep `@kauanpolydoro/agentic-workflows` in package-runner commands.
+
+Package runners are useful for an occasional trial or an explicitly selected release.
+
+## Pin a project or CI version
+
+Install the package as a development dependency when the repository or CI pipeline must control the exact CLI version:
 
 ```bash
 npm install --save-dev @kauanpolydoro/agentic-workflows
-npx agentic-workflows list
+npx awf list
 ```
 
-Node.js 22 or newer is required.
-Every command on this page corresponds to a supported repository workflow.
+Commit the resulting package manifest and lockfile according to your project's dependency policy.
 
-## Install from source
+## Lifecycle after installation
 
-Use this path when developing the repository or validating changes that have not been published.
+Inspect the retained manifest and preview an update before applying it:
 
-## What you need
+```bash
+awf manifest review-pull-request
+awf update review-pull-request --dry-run
+awf update review-pull-request
+```
 
-- Git
-- Node.js 22 or newer
-- Corepack, which ships with Node.js and picks the right pnpm version for you
+Validate installed hashes or remove the exact managed bundle:
 
-## Clone, build, and try it
+```bash
+awf validate . --strict
+awf remove review-pull-request
+```
+
+The CLI detects modified managed files and refuses to update or remove them unless `--force` is explicit.
+
+`--force` never permits overwriting an unmanaged file.
+
+## Diagnose the environment
+
+Run consumer checks after installation or when a lifecycle command fails:
+
+```bash
+awf doctor
+```
+
+The write-access check creates a uniquely named probe in the configured target and removes it immediately.
+
+Corepack and pnpm are optional for npm package consumers and appear only as warnings when absent.
+
+Repository maintainers can require source-development tools with:
+
+```bash
+awf doctor --maintainer
+```
+
+## Develop from source
+
+Use this path when contributing to the repository or validating unpublished changes:
 
 ```bash
 git clone https://github.com/kauanpolydoro/agentic-workflows.git
@@ -38,29 +108,7 @@ corepack enable
 pnpm install --frozen-lockfile
 pnpm build
 pnpm awf list
+pnpm awf install review-pull-request --agent generic --dry-run
 ```
 
-The last command prints the catalog.
-If you see a list of workflows, everything is working.
-
-If your GitHub SSH keys are already set up, you can clone with `git@github.com:kauanpolydoro/agentic-workflows.git` instead.
-
-## Install a workflow into another project
-
-Run this from the root of the project that should receive the workflow:
-
-```bash
-AWF_CATALOG_ROOT=/path/to/agentic-workflows/recipes \
-  node /path/to/agentic-workflows/packages/cli/dist/index.js \
-  install review-pull-request --agent generic
-```
-
-Two tips before you commit to anything:
-
-- Add `--dry-run` to see exactly which files would be created, without creating them.
-- The CLI refuses to touch files that already exist unless you explicitly pass `--force`.
-
-## What about a global install?
-
-A global installation is not required.
-Using `npx` keeps the selected package version explicit and avoids a stale global CLI.
+Use `git@github.com:kauanpolydoro/agentic-workflows.git` only when your GitHub SSH credentials are already configured.

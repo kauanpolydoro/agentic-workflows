@@ -24,6 +24,7 @@ You can then use the short `awf` command from any project:
 
 ```bash
 awf --version
+awf
 awf list
 awf show review-pull-request
 ```
@@ -31,7 +32,8 @@ awf show review-pull-request
 From the root of a project, preview a workflow installation before writing any files:
 
 ```bash
-awf install review-pull-request --agent codex --dry-run
+awf init --agent codex
+awf install review-pull-request --dry-run
 ```
 
 Remove `--dry-run` after reviewing the planned files to install the workflow.

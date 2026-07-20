@@ -5,6 +5,40 @@ export function output(value: unknown, json = false): void {
   else process.stdout.write(`${sanitizeTerminal(String(value))}\n`);
 }
 
+function humanError(value: {
+  message: string;
+  code?: unknown;
+  details?: Record<string, unknown>;
+}): string {
+  const lines = [
+    value.code === undefined
+      ? `Error: ${value.message}`
+      : `Error [${String(value.code)}]: ${value.message}`,
+  ];
+  const issues = Array.isArray(value.details?.issues)
+    ? (value.details.issues as Array<Record<string, unknown>>)
+    : [];
+  if (issues.length > 0) {
+    lines.push("Details:");
+    for (const issue of issues) {
+      const code = typeof issue.code === "string" ? issue.code : "ISSUE";
+      const location = typeof issue.path === "string" ? ` at ${issue.path}` : "";
+      lines.push(`- [${code}]${location}`);
+      if (typeof issue.remediation === "string") lines.push(`  Fix: ${issue.remediation}`);
+    }
+  }
+  const suggestions = Array.isArray(value.details?.suggestions)
+    ? value.details.suggestions.filter(
+        (suggestion): suggestion is string => typeof suggestion === "string",
+      )
+    : [];
+  if (suggestions.length > 0) lines.push(`Suggestions: ${suggestions.join(", ")}`);
+  if (typeof value.details?.remediation === "string") {
+    lines.push(`Next: ${value.details.remediation}`);
+  }
+  return sanitizeTerminal(lines.join("\n"));
+}
+
 export function fail(error: unknown, json = false, exitCode = 1): never {
   const value =
     error instanceof Error
@@ -18,7 +52,7 @@ export function fail(error: unknown, json = false, exitCode = 1): never {
         }
       : { error: "UnknownError", message: String(error) };
   if (json) process.stderr.write(`${JSON.stringify(value)}\n`);
-  else process.stderr.write(`Error: ${sanitizeTerminal(value.message)}\n`);
+  else process.stderr.write(`${humanError(value)}\n`);
   process.exitCode = exitCode;
   throw new Error("__AWF_HANDLED__");
 }

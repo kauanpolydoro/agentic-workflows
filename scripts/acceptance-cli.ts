@@ -47,6 +47,14 @@ function failure(args: string[], code?: string): Result {
   return result;
 }
 
+const firstRun = success([]);
+if (
+  !firstRun.stdout.includes("Usage: awf [options] [command]") ||
+  !firstRun.stdout.includes("awf init --agent codex") ||
+  firstRun.stderr !== ""
+) {
+  throw new Error("Empty invocation did not return clean, actionable first-run help.");
+}
 const recipes = JSON.parse(success(["list", "--json"]).stdout) as unknown[];
 if (recipes.length !== 20) throw new Error(`Expected 20 recipes, received ${recipes.length}.`);
 success(["validate", path.resolve("packages/cli/catalog"), "--strict", "--json"]);
@@ -84,11 +92,22 @@ const human = success(["list", "--category", "release"], true);
 if (human.stdout.includes("\u001b")) {
   throw new Error("NO_COLOR human output contains terminal escapes.");
 }
+const empty = success(["list", "--category", "does-not-exist"], true);
+if (!empty.stdout.includes("No workflows match the selected filters")) {
+  throw new Error("Human catalog filtering did not provide an actionable empty state.");
+}
+const suggestion = failure(["show", "review-pull-reques", "--json"], "MISSING_FILE");
+const suggestionPayload = JSON.parse(suggestion.stderr) as {
+  details?: { suggestions?: string[] };
+};
+if (!suggestionPayload.details?.suggestions?.includes("review-pull-request")) {
+  throw new Error("Missing workflow diagnostics did not include the nearest workflow ID.");
+}
 const parserFailure = failure([`--unknown\u001b[2J\rrewritten`]);
 if (parserFailure.stderr.includes("\u001b") || parserFailure.stderr.includes("\r")) {
   throw new Error("Commander parser output contains terminal control sequences.");
 }
 
 process.stdout.write(
-  "CLI acceptance passed for JSON, NO_COLOR, spaced paths, and lifecycle safety.\n",
+  "CLI acceptance passed for onboarding, JSON, NO_COLOR, spaced paths, and lifecycle safety.\n",
 );

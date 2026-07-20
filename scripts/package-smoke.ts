@@ -61,6 +61,12 @@ function binary(consumer: string, name: string): string {
   );
 }
 
+function globalBinary(prefix: string, name: string): string {
+  return process.platform === "win32"
+    ? path.join(prefix, `${name}.cmd`)
+    : path.join(prefix, "bin", name);
+}
+
 function failureCode(result: { stderr: string }, expected: string): void {
   let value: { code?: unknown };
   try {
@@ -161,11 +167,6 @@ await writeFile(
         "@kauanpolydoro/agentic-workflows-core": `file:${path.join(artifacts, core)}`,
         "@kauanpolydoro/agentic-workflows": `file:${path.join(artifacts, cli)}`,
       },
-      pnpm: {
-        overrides: {
-          "@kauanpolydoro/agentic-workflows-core": `file:${path.join(artifacts, core)}`,
-        },
-      },
     },
     null,
     2,
@@ -181,15 +182,46 @@ const entrypoint = path.join(
   "index.js",
 );
 for (const alias of ["awf", "agentic-workflows"]) {
-  await access(binary(consumer, alias));
-  const reportedVersion = runCli(entrypoint, ["--version"], consumer).trim();
+  const executable = binary(consumer, alias);
+  await access(executable);
+  const reportedVersion = run(executable, ["--version"], consumer).trim();
   if (reportedVersion !== rootPackage.version) {
     throw new Error(`${alias} reported ${reportedVersion}, expected ${rootPackage.version}.`);
   }
 }
+const firstRunHelp = run(binary(consumer, "awf"), [], consumer);
+if (!firstRunHelp.includes("awf init --agent codex") || !firstRunHelp.includes("awf list")) {
+  throw new Error("The packaged awf alias did not provide actionable first-run help.");
+}
 const npxVersion = run("npx", ["--no-install", "agentic-workflows", "--version"], consumer).trim();
 if (npxVersion !== rootPackage.version) {
   throw new Error(`npx reported ${npxVersion}, expected ${rootPackage.version}.`);
+}
+
+const globalPrefix = path.join(workspace, "global npm prefix");
+await mkdir(globalPrefix);
+run(
+  "npm",
+  [
+    "install",
+    "--global",
+    "--prefix",
+    globalPrefix,
+    "--ignore-scripts",
+    path.join(artifacts, core),
+    path.join(artifacts, cli),
+  ],
+  workspace,
+);
+for (const alias of ["awf", "agentic-workflows"]) {
+  const executable = globalBinary(globalPrefix, alias);
+  await access(executable);
+  const reportedVersion = run(executable, ["--version"], workspace).trim();
+  if (reportedVersion !== rootPackage.version) {
+    throw new Error(
+      `Globally installed ${alias} reported ${reportedVersion}, expected ${rootPackage.version}.`,
+    );
+  }
 }
 const listed = JSON.parse(runCli(entrypoint, ["list", "--json"], consumer)) as unknown[];
 if (listed.length !== 20) throw new Error(`Packaged catalog returned ${listed.length} recipes.`);
