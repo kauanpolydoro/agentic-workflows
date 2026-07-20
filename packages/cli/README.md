@@ -18,6 +18,8 @@ Run `awf` without arguments for first-run help:
 awf
 ```
 
+Generate tab completion for Bash, Zsh, Fish, or PowerShell with `awf completion <shell>`.
+
 ## Complete first workflow
 
 Run these commands from the root of the project that should receive the workflow:

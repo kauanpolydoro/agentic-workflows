@@ -224,12 +224,13 @@ describe("transactional installation lifecycle", () => {
     expect(plan.requiresForce).toBe(false);
     expect(plan.changes.create).toEqual(plan.manifest.files.map((file) => file.path).sort());
     expect(plan.changes.replace).toEqual([]);
+    expect(plan.changes.unchanged).toEqual([]);
     expect(plan.proposedFiles).toHaveLength(plan.manifest.files.length);
     expect(plan.proposedFiles?.every((file) => file.content.length > 0)).toBe(true);
     await missing(target);
   });
 
-  it("plans an update without changing the manifest or managed files", async () => {
+  it("plans and applies an update without rewriting unchanged managed files", async () => {
     const target = await temporaryTarget("update dry run");
     const installed = await installRecipe(recipeDirectory, target, {
       agent: "generic",
@@ -246,10 +247,20 @@ describe("transactional installation lifecycle", () => {
 
     expect(plan.changes.create).toEqual([]);
     expect(plan.changes.retire).toEqual([]);
-    expect(plan.changes.replace).toEqual(installed.files.map((file) => file.path).sort());
+    expect(plan.changes.replace).toEqual([]);
+    expect(plan.changes.unchanged).toEqual(installed.files.map((file) => file.path).sort());
     expect(plan.changes.modifiedManagedFiles).toEqual([]);
     expect(plan.changes.missingManagedFiles).toEqual([]);
     expect(await readFile(manifestPath(target), "utf8")).toBe(originalManifest);
+    expect(await readFile(entrypointPath, "utf8")).toBe(originalEntrypoint);
+
+    const mutatedPaths: string[] = [];
+    await updateRecipe(recipeDirectory, target, false, undefined, {
+      beforeWrite: (relative) => {
+        mutatedPaths.push(relative);
+      },
+    });
+    expect(mutatedPaths).toEqual([".agentic-workflows/installations/review-pull-request.yml"]);
     expect(await readFile(entrypointPath, "utf8")).toBe(originalEntrypoint);
   });
 
@@ -421,7 +432,7 @@ describe("transactional installation lifecycle", () => {
     expect(await readFile(racedPath, "utf8")).toBe("external update\n");
   });
 
-  it("does not overwrite an external change while rolling a transaction back", async () => {
+  it("does not overwrite an external change detected before a no-op commit", async () => {
     const target = await temporaryTarget("rollback commit race");
     const installed = await installRecipe(recipeDirectory, target, {
       agent: "generic",
@@ -440,7 +451,7 @@ describe("transactional installation lifecycle", () => {
           throw new Error("Injected concurrent writer failure.");
         },
       }),
-    ).rejects.toMatchObject({ code: "CONFLICT" });
+    ).rejects.toThrow("Injected concurrent writer failure.");
     expect(await readFile(firstPath, "utf8")).toBe("external change after replacement\n");
   });
 
@@ -664,7 +675,7 @@ describe("transactional installation lifecycle", () => {
         ),
       ),
     );
-    await expect(updateRecipe(recipeDirectory, target, false, 2)).rejects.toThrow(
+    await expect(updateRecipe(recipeDirectory, target, false, 1)).rejects.toThrow(
       "Injected transaction failure",
     );
     for (const file of installed.files) {

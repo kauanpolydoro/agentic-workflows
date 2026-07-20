@@ -56,6 +56,7 @@ export default defineConfig({
           { text: "Introduction", link: "/guide/introduction" },
           { text: "Installation", link: "/guide/installation" },
           { text: "CLI reference", link: "/guide/cli-reference" },
+          { text: "CLI output contracts", link: "/guide/output-contracts" },
           { text: "Recipe anatomy", link: "/guide/recipe-anatomy" },
           { text: "Verification", link: "/guide/verification" },
           { text: "Authoring", link: "/guide/authoring" },

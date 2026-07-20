@@ -37,10 +37,11 @@ awf install review-pull-request --dry-run
 awf install review-pull-request --dry-run --show-content
 ```
 
-The first preview lists every create, replace, and retire action.
+The first preview lists every create, replace, unchanged, and retire action.
 Add `--show-content` when you also want to inspect the complete generated files.
 Remove `--dry-run` after reviewing the plan to install the workflow.
 The package exposes both `awf` and `agentic-workflows` as command names, but this documentation uses the shorter `awf` form.
+Run `awf completion bash`, `awf completion zsh`, `awf completion fish`, or `awf completion pwsh` to generate tab completion for your shell.
 
 To try the latest release without installing it globally, use either package runner:
 

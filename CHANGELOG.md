@@ -4,7 +4,20 @@ All notable project changes will be documented here.
 
 ## Unreleased
 
-No changes have been assigned to a later version.
+### Added
+
+- First-run help, package-root detection, actionable empty states, and workflow ID suggestions.
+- Complete lifecycle dry runs with optional generated-content previews.
+- Installation health reporting through `awf status` and consumer diagnostics through `awf doctor`.
+- Bash, Zsh, Fish, and PowerShell completion through `awf completion <shell>`.
+- Versioned lifecycle plan, validation, diagnostic, and JSON error contracts.
+- Resumable npm and GitHub release synchronization with exact tarball integrity checks.
+
+### Changed
+
+- No-op updates identify and preserve unchanged managed files instead of rewriting them.
+- Package smoke tests now exercise local, package-runner, global-install, completion, status, and lifecycle paths while rejecting test artifacts.
+- Acceptance coverage now verifies safe `SIGINT` and `SIGTERM` handling on supported POSIX runners.
 
 ## 0.1.0
 

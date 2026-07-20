@@ -38,6 +38,38 @@ Add `--show-content` to inspect the complete generated content after the concise
 
 The applied installation prints the entrypoint, installed files, required inputs, declared approval gates, declared effects, validation command, and removal command.
 
+## Enable shell completion
+
+Generate completion from the exact catalog version installed on your machine.
+
+For Bash:
+
+```bash
+source <(awf completion bash)
+```
+
+For Zsh after `compinit` is enabled:
+
+```zsh
+source <(awf completion zsh)
+```
+
+For Fish:
+
+```fish
+awf completion fish | source
+```
+
+For PowerShell:
+
+```powershell
+awf completion pwsh | Out-String | Invoke-Expression
+```
+
+Add the command for your shell to its profile to enable completion in future sessions.
+
+Regenerate the completion after upgrading the CLI so newly bundled workflow IDs become available.
+
 ## Run without installing globally
 
 Use the full package scope with `npx` or `bunx`:

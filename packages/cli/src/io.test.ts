@@ -75,6 +75,7 @@ describe("terminal output", () => {
     const rendered = String(write.mock.calls[0]?.[0]);
     expect(rendered).not.toContain("\u001b");
     expect(JSON.parse(rendered)).toMatchObject({
+      schema_version: 1,
       error: "AwfError",
       code: "INVALID_PATH",
       message: "unsafe\u001b[31m path",

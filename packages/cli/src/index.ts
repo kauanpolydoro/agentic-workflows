@@ -33,8 +33,9 @@ import {
   verificationEvidenceSchema,
   verificationStatuses,
 } from "@kauanpolydoro/agentic-workflows-core";
-import { Command, CommanderError, Option } from "commander";
+import { Argument, Command, CommanderError, Option } from "commander";
 import { parse, stringify } from "yaml";
+import { completionShells, renderCompletion, type CompletionShell } from "./completion.js";
 import { catalogRoot, findProjectRoot, generatedCatalogPath } from "./context.js";
 import {
   installRecipe,
@@ -47,6 +48,7 @@ import {
   validateInstallation,
 } from "./install.js";
 import { fail, output } from "./io.js";
+import { documentationOpenCommand } from "./platform.js";
 import { inspectInstallations, type InstallationStatus } from "./status.js";
 import { CLI_VERSION } from "./version.js";
 
@@ -316,12 +318,7 @@ async function openDocumentation(
   const documentation = (await hasRegularFile(localDocumentation, "the local documentation page"))
     ? localDocumentation
     : `https://kauanpolydoro.github.io/agentic-workflows/catalog/${id}`;
-  const [command, args] =
-    process.platform === "darwin"
-      ? ["open", [documentation]]
-      : process.platform === "win32"
-        ? ["rundll32.exe", ["url.dll,FileProtocolHandler", documentation]]
-        : ["xdg-open", [documentation]];
+  const { command, args } = documentationOpenCommand(documentation);
   const opened = await new Promise<boolean>((resolve, reject) => {
     const child = spawn(command, args, { signal, stdio: "ignore" });
     child.once("error", (error) => {
@@ -1374,6 +1371,24 @@ function renderProposedFiles(
   ];
 }
 
+function versionedLifecyclePlan(
+  operation: "install" | "update" | "remove",
+  plan: {
+    requiresForce: boolean;
+    changes: object;
+    proposedFiles?: readonly { path: string; role: string; content: string }[];
+  },
+) {
+  return {
+    schema_version: 1,
+    operation,
+    dry_run: true,
+    requires_force: plan.requiresForce,
+    changes: plan.changes,
+    ...(plan.proposedFiles ? { proposed_files: plan.proposedFiles } : {}),
+  };
+}
+
 function renderInstallPlan(
   id: string,
   agent: AgentId,
@@ -1386,6 +1401,7 @@ function renderInstallPlan(
     ...renderChangeSections([
       ["Create", plan.changes.create],
       ["Replace", plan.changes.replace],
+      ["Unchanged", plan.changes.unchanged],
       ["Retire", plan.changes.retire],
       ["Modified managed files", plan.changes.modifiedManagedFiles],
       ["Missing managed files", plan.changes.missingManagedFiles],
@@ -1404,6 +1420,7 @@ function renderUpdatePlan(id: string, plan: Awaited<ReturnType<typeof planUpdate
   const sections: Array<[string, readonly string[]]> = [
     ["Create", plan.changes.create],
     ["Replace", plan.changes.replace],
+    ["Unchanged", plan.changes.unchanged],
     ["Retire", plan.changes.retire],
     ["Modified managed files", plan.changes.modifiedManagedFiles],
     ["Missing managed files", plan.changes.missingManagedFiles],
@@ -1528,6 +1545,11 @@ Examples:
   $ awf show review-pull-request
   $ awf init --agent codex
   $ awf install review-pull-request --agent codex --dry-run
+
+Next steps:
+  $ awf status       Inspect installed workflow health
+  $ awf doctor       Diagnose configuration and environment problems
+  $ awf completion zsh  Generate completion for your shell
 
 Start with a dry run before installing a workflow. Run awf <command> --help for command details.`;
 
@@ -1702,14 +1724,7 @@ export function createProgram(options: ProgramOptions = {}): Command {
           options.json
             ? {
                 ...plan.manifest,
-                plan: {
-                  schema_version: 1,
-                  operation: "install",
-                  dry_run: true,
-                  requires_force: plan.requiresForce,
-                  changes: plan.changes,
-                  ...(plan.proposedFiles ? { proposed_files: plan.proposedFiles } : {}),
-                },
+                plan: versionedLifecyclePlan("install", plan),
               }
             : renderInstallPlan(id, agent, plan, recipe, target),
           Boolean(options.json),
@@ -1752,7 +1767,12 @@ export function createProgram(options: ProgramOptions = {}): Command {
           ...(signal ? { signal } : {}),
         });
         throwIfAborted(signal);
-        output(options.json ? plan : renderUpdatePlan(id, plan), Boolean(options.json));
+        output(
+          options.json
+            ? { ...plan, plan: versionedLifecyclePlan("update", plan) }
+            : renderUpdatePlan(id, plan),
+          Boolean(options.json),
+        );
         return;
       }
       const result = await updateRecipe(
@@ -1790,7 +1810,12 @@ export function createProgram(options: ProgramOptions = {}): Command {
           signal ? { signal } : {},
         );
         throwIfAborted(signal);
-        output(options.json ? plan : renderRemovePlan(id, plan), Boolean(options.json));
+        output(
+          options.json
+            ? { ...plan, plan: versionedLifecyclePlan("remove", plan) }
+            : renderRemovePlan(id, plan),
+          Boolean(options.json),
+        );
         return;
       }
       const result = await removeRecipe(
@@ -1816,6 +1841,13 @@ export function createProgram(options: ProgramOptions = {}): Command {
       const target = await safeTarget(root, options.target ?? config.default_target);
       const statuses = await inspectInstallations(catalogRoot(), target, id);
       throwIfAborted(signal);
+      if (id !== undefined && statuses.length === 0) {
+        throw new AwfError("NOT_FOUND", `Workflow ${JSON.stringify(id)} is not installed.`, {
+          workflow: id,
+          target,
+          remediation: `Preview it with \`awf install ${id} --dry-run\` or run \`awf status\` to inspect every installation.`,
+        });
+      }
       output(
         options.json
           ? {
@@ -1843,7 +1875,7 @@ export function createProgram(options: ProgramOptions = {}): Command {
       }
       output(
         options.json
-          ? result
+          ? { schema_version: 1, ...result }
           : `Valid: ${result.recipes} recipe(s), ${result.installations} installation(s); strict=${result.strict}.`,
         Boolean(options.json),
       );
@@ -2169,6 +2201,7 @@ export function createProgram(options: ProgramOptions = {}): Command {
         }
       }
       const result = {
+        schema_version: 1 as const,
         healthy: checks.every((check) => check.status !== "fail"),
         projectRoot: root,
         checks,
@@ -2250,6 +2283,19 @@ export function createProgram(options: ProgramOptions = {}): Command {
         await safeTarget(root, options.target ?? config.default_target),
       );
       output(options.json ? manifest : stringify(manifest), Boolean(options.json));
+    });
+
+  program
+    .command("completion")
+    .description("Generate tab completion for a supported shell.")
+    .addArgument(
+      new Argument("<shell>", "Shell whose completion script should be generated").choices([
+        ...completionShells,
+      ]),
+    )
+    .action(async (shell: CompletionShell) => {
+      const catalog = await loadGeneratedCatalog();
+      output(renderCompletion(shell, catalog).trimEnd());
     });
 
   return program;

@@ -48,7 +48,7 @@ Generate and copy a complete workflow bundle into a project.
 
 `--agent` selects the destination format, and `--target` selects a directory inside the project root.
 
-`--dry-run` prints create, replace, retire, modified, and missing file sets without changing the target.
+`--dry-run` prints create, replace, unchanged, retire, modified, and missing file sets without changing the target.
 
 Add `--show-content` to an install dry run to print the complete proposed generated files.
 
@@ -74,7 +74,9 @@ Installing files does not execute a workflow, approve its declared effects, or p
 
 Rebuild an installed bundle using the adapter recorded at installation time.
 
-`--dry-run` prints create, replace, retire, modified, and missing file sets without changing the target.
+`--dry-run` prints create, replace, unchanged, retire, modified, and missing file sets without changing the target.
+
+Files whose generated content and retained hash are identical appear under `unchanged` and are not rewritten.
 
 Add `--show-content` to print the complete proposed generated files after the human plan or inside the JSON plan.
 
@@ -107,6 +109,8 @@ Use `--target` to inspect another project-local target.
 Use `--json` for a report with `schema_version`, `target`, and `installations` fields.
 
 The command exits with code `1` when any selected installation is drifted or invalid.
+
+Selecting a workflow that is not installed returns `NOT_FOUND` with a preview command instead of an empty report.
 
 ## `awf validate [path]`
 
@@ -142,6 +146,14 @@ Inspect and validate an installed workflow manifest.
 
 Use `--target` to select another project-local target and `--json` to print JSON instead of YAML.
 
+## `awf completion <shell>`
+
+Generate deterministic tab completion for `bash`, `zsh`, `fish`, or PowerShell (`pwsh`).
+
+The generated script includes commands, options, agents, shell names, and the workflow IDs bundled with the installed CLI version.
+
+The command performs no network access and can be regenerated after upgrading the package.
+
 ## Output and error contract
 
 Human-readable output contains no terminal control sequences and remains plain when `NO_COLOR` is set.
@@ -153,3 +165,5 @@ With `--json`, successful commands print exactly one JSON value to stdout and no
 With `--json`, failures print exactly one object to stderr and leave stdout empty.
 
 Every JSON error contains `error` and `message`, includes a stable `code` when available, and includes `details` for structured diagnostics.
+
+See the [CLI output contracts](./output-contracts) for the schema owner and compatibility rules of every JSON mode.

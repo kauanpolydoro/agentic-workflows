@@ -69,13 +69,13 @@ function globalBinary(prefix: string, name: string): string {
 }
 
 function failureCode(result: { stderr: string }, expected: string): void {
-  let value: { code?: unknown };
+  let value: { schema_version?: unknown; code?: unknown };
   try {
-    value = JSON.parse(result.stderr) as { code?: unknown };
+    value = JSON.parse(result.stderr) as { schema_version?: unknown; code?: unknown };
   } catch {
     throw new Error(`Expected a JSON error with code ${expected}, received: ${result.stderr}`);
   }
-  if (value.code !== expected) {
+  if (value.schema_version !== 1 || value.code !== expected) {
     throw new Error(`Expected error code ${expected}, received: ${String(value.code)}.`);
   }
 }
@@ -234,7 +234,16 @@ assertPackedContents(
 assertPackedContents(
   cliPack,
   ["LICENSE", "README.md", "catalog", "catalog.json", "dist", "docs", "package.json"],
-  ["context.js", "index.js", "install.js", "io.js", "status.js", "version.js"],
+  [
+    "completion.js",
+    "context.js",
+    "index.js",
+    "install.js",
+    "io.js",
+    "platform.js",
+    "status.js",
+    "version.js",
+  ],
 );
 const tarballs = (await readdir(artifacts)).filter((file) => file.endsWith(".tgz"));
 const core = tarballs.find((file) => file.includes("agentic-workflows-core-"));
@@ -316,6 +325,13 @@ const globalHelp = run(globalAwf, [], workspace);
 if (!globalHelp.includes("awf init --agent codex") || !globalHelp.includes("awf list")) {
   throw new Error("The globally installed awf command omitted actionable first-run help.");
 }
+const globalCompletion = run(globalAwf, ["completion", "bash"], workspace);
+if (
+  !globalCompletion.includes("review-pull-request") ||
+  !globalCompletion.includes("agentic-workflows")
+) {
+  throw new Error("The globally installed awf command returned incomplete Bash completion.");
+}
 const globalCatalog = JSON.parse(run(globalAwf, ["list", "--json"], workspace)) as unknown[];
 if (globalCatalog.length !== 20) {
   throw new Error(`Globally installed awf returned ${globalCatalog.length} recipes.`);
@@ -328,6 +344,12 @@ const shown = JSON.parse(
   id?: string;
 };
 if (shown.id !== "write-release-notes") throw new Error("Packaged recipe lookup failed.");
+for (const shell of ["bash", "zsh", "fish", "pwsh"]) {
+  const completion = runCli(entrypoint, ["completion", shell], consumer);
+  if (!completion.includes("review-pull-request") || !completion.includes("agentic-workflows")) {
+    throw new Error(`Packaged ${shell} completion is incomplete.`);
+  }
+}
 const dryRun = JSON.parse(
   runCli(
     entrypoint,
@@ -382,6 +404,10 @@ if (
 ) {
   throw new Error("The packaged CLI did not report its healthy installation.");
 }
+failureCode(
+  runCliFailure(entrypoint, ["status", "review-pull-request", "--json"], consumer),
+  "NOT_FOUND",
+);
 
 failureCode(
   runCliFailure(
@@ -435,10 +461,16 @@ const removePlan = JSON.parse(
     ["remove", "write-release-notes", "--target", installationTarget, "--dry-run", "--json"],
     consumer,
   ),
-) as { requiresForce?: boolean; changes?: { modifiedManagedFiles?: string[] } };
+) as {
+  requiresForce?: boolean;
+  changes?: { modifiedManagedFiles?: string[] };
+  plan?: { schema_version?: number; operation?: string };
+};
 if (
   removePlan.requiresForce !== true ||
-  !removePlan.changes?.modifiedManagedFiles?.includes(installed.entrypoint)
+  !removePlan.changes?.modifiedManagedFiles?.includes(installed.entrypoint) ||
+  removePlan.plan?.schema_version !== 1 ||
+  removePlan.plan?.operation !== "remove"
 ) {
   throw new Error("The packaged remove dry-run omitted its modified-file force requirement.");
 }
@@ -472,8 +504,8 @@ if (inspectedManifest.recipe !== "write-release-notes") {
 }
 const installationValidation = JSON.parse(
   runCli(entrypoint, ["validate", installationTarget, "--strict", "--json"], consumer),
-) as { installations?: number };
-if (installationValidation.installations !== 1) {
+) as { schema_version?: number; installations?: number };
+if (installationValidation.schema_version !== 1 || installationValidation.installations !== 1) {
   throw new Error("The packaged lifecycle did not pass strict installation validation.");
 }
 const catalog = path.join(
@@ -485,8 +517,10 @@ const catalog = path.join(
 );
 const validated = JSON.parse(
   runCli(entrypoint, ["validate", catalog, "--strict", "--json"], consumer),
-) as { recipes?: number };
-if (validated.recipes !== 20) throw new Error("Packaged catalog strict validation failed.");
+) as { schema_version?: number; recipes?: number };
+if (validated.schema_version !== 1 || validated.recipes !== 20) {
+  throw new Error("Packaged catalog strict validation failed.");
+}
 const packageRoot = path.dirname(catalog);
 for (const recipe of await readdir(catalog)) {
   const readmePath = path.join(catalog, recipe, "README.md");
@@ -521,10 +555,12 @@ const corePackage = JSON.parse(
 ) as InstalledPackageMetadata;
 const installedScope = path.join(consumer, "node_modules", "@kauanpolydoro");
 await assertPackageContents(path.join(installedScope, "agentic-workflows"), [
+  "completion.js",
   "context.js",
   "index.js",
   "install.js",
   "io.js",
+  "platform.js",
   "status.js",
   "version.js",
 ]);
@@ -577,7 +613,7 @@ await assertMissing(
 );
 
 process.stdout.write(
-  `Package smoke test passed for ${listed.length} bundled recipes and the install lifecycle.\n`,
+  `Package smoke test passed for ${listed.length} bundled recipes, shell completion, and the install lifecycle.\n`,
 );
 cleanup();
 process.removeListener("exit", cleanup);

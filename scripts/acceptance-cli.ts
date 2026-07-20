@@ -1,6 +1,6 @@
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { rmSync } from "node:fs";
-import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { access, chmod, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -42,12 +42,75 @@ function failure(args: string[], code?: string): Result {
     if (result.stdout.trim() !== "") {
       throw new Error(`Expected JSON failure stdout to stay empty, received: ${result.stdout}`);
     }
-    const payload = JSON.parse(result.stderr) as { code?: string };
-    if (payload.code !== code) {
+    const payload = JSON.parse(result.stderr) as { schema_version?: number; code?: string };
+    if (payload.schema_version !== 1 || payload.code !== code) {
       throw new Error(`Expected ${code}, received ${payload.code ?? "no error code"}.`);
     }
   }
   return result;
+}
+
+async function waitForFile(file: string): Promise<void> {
+  for (let attempt = 0; attempt < 300; attempt += 1) {
+    try {
+      await access(file);
+      return;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+    await new Promise<void>((resolve) => setTimeout(resolve, 10));
+  }
+  throw new Error(`Timed out waiting for subprocess readiness marker ${file}.`);
+}
+
+async function verifyInterruption(
+  signal: "SIGINT" | "SIGTERM",
+  expectedExitCode: 130 | 143,
+): Promise<void> {
+  if (process.platform === "win32") return;
+  const bin = path.join(project, `signal-${signal.toLowerCase()}`);
+  const ready = path.join(bin, "ready");
+  await mkdir(bin);
+  const opener = path.join(bin, process.platform === "darwin" ? "open" : "xdg-open");
+  await writeFile(opener, '#!/bin/sh\n: > "$AWF_SIGNAL_READY"\nexec /bin/sleep 30\n');
+  await chmod(opener, 0o755);
+
+  const child = spawn(
+    process.execPath,
+    [cli, "--project-root", project, "show", "write-release-notes", "--open"],
+    {
+      cwd: project,
+      env: { ...process.env, PATH: bin, AWF_SIGNAL_READY: ready },
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
+  child.stdout.setEncoding("utf8");
+  child.stderr.setEncoding("utf8");
+  let childStdout = "";
+  let childStderr = "";
+  child.stdout.on("data", (chunk: string) => {
+    childStdout += chunk;
+  });
+  child.stderr.on("data", (chunk: string) => {
+    childStderr += chunk;
+  });
+  const closed = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>(
+    (resolve, reject) => {
+      child.once("error", reject);
+      child.once("close", (code, closeSignal) => resolve({ code, signal: closeSignal }));
+    },
+  );
+  await waitForFile(ready);
+  if (!child.kill(signal)) throw new Error(`Could not deliver ${signal} to the CLI subprocess.`);
+  const result = await closed;
+  if (result.code !== expectedExitCode || result.signal !== null || childStdout !== "") {
+    throw new Error(
+      `${signal} returned code=${String(result.code)} signal=${String(result.signal)} stdout=${JSON.stringify(childStdout)} stderr=${JSON.stringify(childStderr)}.`,
+    );
+  }
+  if (!childStderr.includes(`${signal} received`) || !childStderr.includes("awf doctor")) {
+    throw new Error(`${signal} did not print the documented safe-recovery guidance.`);
+  }
 }
 
 const firstRun = success([]);
@@ -60,7 +123,16 @@ if (
 }
 const recipes = JSON.parse(success(["list", "--json"]).stdout) as unknown[];
 if (recipes.length !== 20) throw new Error(`Expected 20 recipes, received ${recipes.length}.`);
-success(["validate", path.resolve("packages/cli/catalog"), "--strict", "--json"]);
+for (const shell of ["bash", "zsh", "fish", "pwsh"]) {
+  const completion = success(["completion", shell]).stdout;
+  if (!completion.includes("review-pull-request") || !completion.includes("agentic-workflows")) {
+    throw new Error(`${shell} completion omitted a workflow or executable alias.`);
+  }
+}
+const validation = JSON.parse(
+  success(["validate", path.resolve("packages/cli/catalog"), "--strict", "--json"]).stdout,
+) as { schema_version?: number };
+if (validation.schema_version !== 1) throw new Error("Validation output is not versioned.");
 success(["init", "--agent", "codex", "--target", "managed files"]);
 await mkdir(path.join(project, "managed files"), { recursive: true });
 const installPlan = JSON.parse(
@@ -89,6 +161,7 @@ if (
 ) {
   throw new Error("Installation status did not report the healthy installed workflow.");
 }
+failure(["status", "review-pull-request", "--json"], "NOT_FOUND");
 failure(["install", "write-release-notes", "--json"], "CONFLICT");
 const checklist = manifest.files.find((file) => file.role === "checklist");
 if (!checklist) throw new Error("Acceptance bundle omitted its checklist.");
@@ -96,20 +169,32 @@ const checklistPath = path.join(project, "managed files", checklist.path);
 await writeFile(checklistPath, `${await readFile(checklistPath, "utf8")}local edit\n`);
 const updatePlan = JSON.parse(
   success(["update", "write-release-notes", "--dry-run", "--json"]).stdout,
-) as { requiresForce?: boolean; changes?: { modifiedManagedFiles?: string[] } };
+) as {
+  requiresForce?: boolean;
+  changes?: { modifiedManagedFiles?: string[] };
+  plan?: { schema_version?: number; operation?: string };
+};
 if (
   updatePlan.requiresForce !== true ||
-  !updatePlan.changes?.modifiedManagedFiles?.includes(checklist.path)
+  !updatePlan.changes?.modifiedManagedFiles?.includes(checklist.path) ||
+  updatePlan.plan?.schema_version !== 1 ||
+  updatePlan.plan?.operation !== "update"
 ) {
   throw new Error("Update dry-run did not report the modified managed file and force requirement.");
 }
 failure(["update", "write-release-notes", "--json"], "MODIFIED_FILE");
 const removePlan = JSON.parse(
   success(["remove", "write-release-notes", "--dry-run", "--json"]).stdout,
-) as { requiresForce?: boolean; changes?: { modifiedManagedFiles?: string[] } };
+) as {
+  requiresForce?: boolean;
+  changes?: { modifiedManagedFiles?: string[] };
+  plan?: { schema_version?: number; operation?: string };
+};
 if (
   removePlan.requiresForce !== true ||
-  !removePlan.changes?.modifiedManagedFiles?.includes(checklist.path)
+  !removePlan.changes?.modifiedManagedFiles?.includes(checklist.path) ||
+  removePlan.plan?.schema_version !== 1 ||
+  removePlan.plan?.operation !== "remove"
 ) {
   throw new Error("Remove dry-run did not report the modified file and force requirement.");
 }
@@ -137,9 +222,11 @@ const parserFailure = failure([`--unknown\u001b[2J\rrewritten`]);
 if (parserFailure.stderr.includes("\u001b") || parserFailure.stderr.includes("\r")) {
   throw new Error("Commander parser output contains terminal control sequences.");
 }
+await verifyInterruption("SIGINT", 130);
+await verifyInterruption("SIGTERM", 143);
 
 process.stdout.write(
-  "CLI acceptance passed for onboarding, JSON, NO_COLOR, spaced paths, and lifecycle safety.\n",
+  "CLI acceptance passed for onboarding, completion, versioned JSON, signals, NO_COLOR, spaced paths, and lifecycle safety.\n",
 );
 cleanup();
 process.removeListener("exit", cleanup);

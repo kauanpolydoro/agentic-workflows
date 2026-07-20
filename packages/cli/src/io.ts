@@ -43,6 +43,7 @@ export function fail(error: unknown, json = false, exitCode = 1): never {
   const value =
     error instanceof Error
       ? {
+          schema_version: 1,
           error: error.name,
           message: error.message,
           ...("code" in error ? { code: error.code } : {}),
@@ -50,7 +51,7 @@ export function fail(error: unknown, json = false, exitCode = 1): never {
             ? { details: error.details }
             : {}),
         }
-      : { error: "UnknownError", message: String(error) };
+      : { schema_version: 1, error: "UnknownError", message: String(error) };
   if (json) process.stderr.write(`${JSON.stringify(value)}\n`);
   else process.stderr.write(`${humanError(value)}\n`);
   process.exitCode = exitCode;

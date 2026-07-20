@@ -37,9 +37,11 @@ awf install review-pull-request --dry-run
 awf install review-pull-request --dry-run --show-content
 ```
 
-A primeira simulação lista cada criação, substituição e retirada prevista.
+A primeira simulação lista cada criação, substituição, arquivo inalterado e retirada prevista.
 Adicione `--show-content` quando também quiser inspecionar o conteúdo completo dos arquivos gerados.
 Remova `--dry-run` depois de revisar o plano.
+
+Use `awf completion bash`, `awf completion zsh`, `awf completion fish` ou `awf completion pwsh` para gerar o autocomplete do seu shell.
 
 Depois da instalação, verifique a saúde dos arquivos gerenciados com:
 

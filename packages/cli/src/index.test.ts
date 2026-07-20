@@ -194,7 +194,21 @@ describe.sequential("CLI command contracts", () => {
     expect(stdout).toContain("Usage: awf [options] [command]");
     expect(stdout).toContain("awf init --agent codex");
     expect(stdout).toContain("awf install review-pull-request --agent codex --dry-run");
+    expect(stdout).toContain("awf status");
+    expect(stdout).toContain("awf doctor");
+    expect(stdout).toContain("awf completion zsh");
     expect(process.exitCode).toBeUndefined();
+  });
+
+  it("generates completion for every supported shell", async () => {
+    for (const shell of ["bash", "zsh", "fish", "pwsh"]) {
+      stdout = "";
+      await run("completion", shell);
+      expect(stdout).toContain("review-pull-request");
+      expect(stdout).toContain("agentic-workflows");
+    }
+
+    await expect(run("completion", "unsupported")).rejects.toMatchObject({ exitCode: 1 });
   });
 
   it("documents safety-relevant options in command help", async () => {
@@ -285,6 +299,13 @@ describe.sequential("CLI command contracts", () => {
     stdout = "";
     await run("status", "--json");
     expect(JSON.parse(stdout)).toMatchObject({ schema_version: 1, installations: [] });
+    await expect(run("status", "write-release-notes")).rejects.toMatchObject({
+      code: "NOT_FOUND",
+      details: {
+        workflow: "write-release-notes",
+        remediation: expect.stringContaining("awf install write-release-notes --dry-run"),
+      },
+    });
   });
 
   it("suggests nearby workflow IDs without weakening ID validation", async () => {
@@ -431,15 +452,19 @@ describe.sequential("CLI command contracts", () => {
     stdout = "";
     await run("update", "write-release-notes", "--dry-run", "--json");
     const plan = JSON.parse(stdout) as {
-      changes: { create: string[]; replace: string[]; retire: string[] };
+      changes: { create: string[]; replace: string[]; unchanged: string[]; retire: string[] };
+      plan: { schema_version: number; operation: string };
     };
+    expect(plan.plan).toEqual(expect.objectContaining({ schema_version: 1, operation: "update" }));
     expect(plan.changes.create).toEqual([]);
     expect(plan.changes.retire).toEqual([]);
-    expect(plan.changes.replace.length).toBeGreaterThan(0);
+    expect(plan.changes.replace).toEqual([]);
+    expect(plan.changes.unchanged.length).toBeGreaterThan(0);
     stdout = "";
     await run("update", "write-release-notes", "--dry-run");
     expect(stdout).toContain("Would update write-release-notes:");
     expect(stdout).toContain("Create:\n- none");
+    expect(stdout).toContain("Unchanged:\n-");
     expect(stdout).toContain("No files were changed.");
     await run("update", "write-release-notes");
     stdout = "";
@@ -455,6 +480,7 @@ describe.sequential("CLI command contracts", () => {
     expect(JSON.parse(stdout)).toMatchObject({
       requiresForce: false,
       changes: { modifiedManagedFiles: [], missingManagedFiles: [] },
+      plan: { schema_version: 1, operation: "remove", dry_run: true },
     });
     stdout = "";
     await run("remove", "write-release-notes");
@@ -644,6 +670,7 @@ describe.sequential("CLI command contracts", () => {
     stdout = "";
     await run("validate", project, "--strict", "--json");
     expect(JSON.parse(stdout)).toEqual({
+      schema_version: 1,
       valid: true,
       recipes: 0,
       installations: 0,
@@ -654,6 +681,7 @@ describe.sequential("CLI command contracts", () => {
   it("reports doctor checks as structured records", async () => {
     await run("--project-root", project, "doctor", "--json");
     const result = JSON.parse(stdout) as {
+      schema_version: number;
       healthy: boolean;
       checks: Array<{ check: string; status: string }>;
     };
@@ -671,6 +699,7 @@ describe.sequential("CLI command contracts", () => {
       ]),
     );
     expect(typeof result.healthy).toBe("boolean");
+    expect(result.schema_version).toBe(1);
     expect((await readdir(project)).some((entry) => entry.startsWith(".awf-doctor-"))).toBe(false);
   });
 

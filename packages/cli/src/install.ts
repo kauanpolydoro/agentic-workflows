@@ -42,6 +42,7 @@ interface FileMutation {
   relative: string;
   content: string | null;
   expected: FilePrecondition;
+  verifyOnly?: boolean;
 }
 
 interface BundleFingerprint {
@@ -76,6 +77,8 @@ interface LifecycleOptions {
   onLockAcquired?: () => void | Promise<void>;
   /** Test-only hook used to reproduce a change between planning and commit. */
   beforeMutation?: (relative: string, index: number) => void | Promise<void>;
+  /** Test-only hook used to observe actual writes without counting verify-only preconditions. */
+  beforeWrite?: (relative: string, index: number) => void | Promise<void>;
 }
 
 interface PlanOptions extends LifecycleOptions {
@@ -103,6 +106,7 @@ export interface UpdatePlan {
   changes: {
     create: string[];
     replace: string[];
+    unchanged: string[];
     retire: string[];
     modifiedManagedFiles: string[];
     missingManagedFiles: string[];
@@ -122,6 +126,7 @@ export interface InstallPlan {
   changes: {
     create: string[];
     replace: string[];
+    unchanged: string[];
     retire: string[];
     modifiedManagedFiles: string[];
     missingManagedFiles: string[];
@@ -855,7 +860,8 @@ async function applyTransaction(
 ): Promise<void> {
   const transactionId = randomUUID();
   const stagingRoot = resolveInside(root, transactionRelative(transactionId));
-  const snapshots: FileSnapshot[] = [];
+  const snapshots = new Map<string, FileSnapshot>();
+  const appliedSnapshots: FileSnapshot[] = [];
   const stagedFiles = new Map<string, string>();
   const replacementBackups = new Set<string>();
   let applied = 0;
@@ -866,7 +872,7 @@ async function applyTransaction(
     await mkdir(stagingRoot, { recursive: false });
     for (const [index, mutation] of mutations.entries()) {
       throwIfAborted(options.signal);
-      if (mutation.content !== null) {
+      if (!mutation.verifyOnly && mutation.content !== null) {
         const staged = path.join(stagingRoot, `${index}.staged`);
         await syncFile(staged, mutation.content);
         stagedFiles.set(mutation.relative, staged);
@@ -878,7 +884,9 @@ async function applyTransaction(
     }
     for (const mutation of mutations) {
       throwIfAborted(options.signal);
-      snapshots.push(await snapshotForMutation(root, mutation));
+      if (!mutation.verifyOnly) {
+        snapshots.set(mutation.relative, await snapshotForMutation(root, mutation));
+      }
     }
     throwIfAborted(options.signal);
     await revalidateTargetRoot(root);
@@ -888,6 +896,11 @@ async function applyTransaction(
       await options.beforeMutation?.(mutation.relative, index);
       throwIfAborted(options.signal);
       await assertPrecondition(root, mutation);
+      if (mutation.verifyOnly) continue;
+      await options.beforeWrite?.(mutation.relative, index);
+      throwIfAborted(options.signal);
+      const snapshot = snapshots.get(mutation.relative);
+      if (!snapshot) throw new Error(`Missing transaction snapshot for ${mutation.relative}.`);
       const destination = await assertSafeDestination(root, mutation.relative);
       if (
         options.faultAtStage === "before-manifest" &&
@@ -898,6 +911,7 @@ async function applyTransaction(
       if (mutation.content === null) {
         await rm(destination, { force: true });
         applied += 1;
+        appliedSnapshots.push(snapshot);
       } else {
         const staged = stagedFiles.get(mutation.relative);
         if (!staged) throw new Error(`Missing staged content for ${mutation.relative}.`);
@@ -906,6 +920,7 @@ async function applyTransaction(
         }
         const replacementBackup = await replaceFile(root, destination, staged);
         applied += 1;
+        appliedSnapshots.push(snapshot);
         if (replacementBackup) replacementBackups.add(replacementBackup);
         if (options.faultAtStage === "after-replacement") {
           throw new Error("Injected transaction failure after replacement.");
@@ -922,7 +937,7 @@ async function applyTransaction(
     }
   } catch (error) {
     const rollbackErrors: string[] = [];
-    for (const snapshot of snapshots.slice(0, applied).reverse()) {
+    for (const snapshot of appliedSnapshots.reverse()) {
       try {
         await restoreSnapshot(root, snapshot);
       } catch (rollbackError) {
@@ -937,7 +952,7 @@ async function applyTransaction(
     }
     await cleanEmptyParents(
       root,
-      mutations.slice(0, applied).map((mutation) => mutation.relative),
+      appliedSnapshots.map((snapshot) => snapshot.path),
     );
     throw error;
   } finally {
@@ -975,6 +990,7 @@ async function plannedInstall(
   const manifestPath = manifestRelative(recipe.id);
   const manifestDestination = await assertSafeDestination(root, manifestPath);
   const oldPaths = new Set<string>();
+  const oldHashes = new Map<string, string>();
   const oldPreconditions = new Map<string, FilePrecondition>();
   let previousStates = new Map<string, "unmodified" | "modified" | "missing">();
   let manifestPrecondition: FilePrecondition = { state: "absent" };
@@ -993,6 +1009,7 @@ async function plannedInstall(
     previousStates = new Map(statesFromObservations(previous, observations));
     for (const file of previous.files) {
       oldPaths.add(file.path);
+      oldHashes.set(file.path, file.hash);
       oldPreconditions.set(file.path, observations.get(file.path) ?? { state: "absent" });
     }
   }
@@ -1006,8 +1023,20 @@ async function plannedInstall(
   }
   const manifest = createManifest(recipe, adapters[options.agent], bundle, CLI_VERSION);
   const desired = new Set(bundle.files.map((file) => file.path));
+  const unchangedFiles = bundle.files
+    .filter(
+      (file) =>
+        oldPaths.has(file.path) &&
+        previousStates.get(file.path) === "unmodified" &&
+        oldHashes.get(file.path) === hashContent(file.content),
+    )
+    .map((file) => file.path)
+    .sort();
+  const unchanged = new Set(unchangedFiles);
   const createdFiles = [...desired].filter((file) => !oldPaths.has(file)).sort();
-  const replacedFiles = [...desired].filter((file) => oldPaths.has(file)).sort();
+  const replacedFiles = [...desired]
+    .filter((file) => oldPaths.has(file) && !unchanged.has(file))
+    .sort();
   const retiredFiles = [...oldPaths].filter((file) => !desired.has(file)).sort();
   const modifiedManagedFiles = [...previousStates]
     .filter(([, state]) => state === "modified")
@@ -1018,6 +1047,7 @@ async function plannedInstall(
       relative: file.path,
       content: file.content,
       expected: oldPreconditions.get(file.path) ?? { state: "absent" as const },
+      ...(unchanged.has(file.path) ? { verifyOnly: true } : {}),
     })),
     ...[...oldPaths]
       .filter((file) => !desired.has(file))
@@ -1035,6 +1065,7 @@ async function plannedInstall(
     changes: {
       create: createdFiles,
       replace: replacedFiles,
+      unchanged: unchangedFiles,
       retire: retiredFiles,
       modifiedManagedFiles,
       missingManagedFiles: [...previousStates]
@@ -1158,6 +1189,7 @@ async function plannedUpdate(
   const { bundle } = await recipeBundle(recipeDirectory, agent);
   const desired = new Set(bundle.files.map((file) => file.path));
   const currentPaths = new Set(current.files.map((file) => file.path));
+  const currentHashes = new Map(current.files.map((file) => [file.path, file.hash]));
   for (const file of bundle.files) {
     const observed = observations.get(file.path) ?? (await observePrecondition(root, file.path));
     if (!currentPaths.has(file.path) && observed.state === "present") {
@@ -1165,8 +1197,20 @@ async function plannedUpdate(
     }
     observations.set(file.path, observed);
   }
+  const unchangedFiles = bundle.files
+    .filter(
+      (file) =>
+        currentPaths.has(file.path) &&
+        states.get(file.path) === "unmodified" &&
+        currentHashes.get(file.path) === hashContent(file.content),
+    )
+    .map((file) => file.path)
+    .sort();
+  const unchanged = new Set(unchangedFiles);
   const createdFiles = [...desired].filter((file) => !currentPaths.has(file)).sort();
-  const replacedFiles = [...desired].filter((file) => currentPaths.has(file)).sort();
+  const replacedFiles = [...desired]
+    .filter((file) => currentPaths.has(file) && !unchanged.has(file))
+    .sort();
   const retiredFiles = [...currentPaths].filter((file) => !desired.has(file)).sort();
   const previousAgent = current.schema_version === 1 ? current.agent : current.adapter.id;
   const previousAdapterVersion = current.schema_version === 1 ? null : current.adapter.version;
@@ -1202,6 +1246,7 @@ async function plannedUpdate(
     changes: {
       create: createdFiles,
       replace: replacedFiles,
+      unchanged: unchangedFiles,
       retire: retiredFiles,
       modifiedManagedFiles,
       missingManagedFiles: [...states]
@@ -1223,6 +1268,7 @@ async function plannedUpdate(
         relative: file.path,
         content: file.content,
         expected: observations.get(file.path) ?? { state: "absent" as const },
+        ...(unchanged.has(file.path) ? { verifyOnly: true } : {}),
       })),
       ...current.files
         .filter((file) => !desired.has(file.path))
