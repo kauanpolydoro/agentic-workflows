@@ -12,13 +12,14 @@ function run(command: string, args: string[], cwd: string): string {
   const requiresCommandProcessor = process.platform === "win32" && command !== process.execPath;
   const executable = requiresCommandProcessor ? (process.env.ComSpec ?? "cmd.exe") : command;
   const executableArguments = requiresCommandProcessor
-    ? ["/d", "/c", [command, ...args].map(quoteWindowsCommandArgument).join(" ")]
+    ? ["/d", "/s", "/c", `"${[command, ...args].map(quoteWindowsCommandArgument).join(" ")}"`]
     : args;
   const result = spawnSync(executable, executableArguments, {
     cwd,
     encoding: "utf8",
     env: { ...process.env, NO_COLOR: "1" },
     shell: false,
+    windowsVerbatimArguments: requiresCommandProcessor,
   });
   if (result.status !== 0) {
     throw new Error(
