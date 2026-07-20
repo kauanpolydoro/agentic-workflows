@@ -1,0 +1,23 @@
+name: Adapter issue
+description: Report a documented agent-format compatibility problem.
+title: "adapter: "
+labels: [adapter]
+body:
+  - type: dropdown
+    id: agent
+    attributes:
+      label: Agent
+      options: [Claude Code, OpenAI Codex, Cursor, Gemini CLI, OpenCode, Generic Markdown]
+    validations: { required: true }
+  - type: input
+    id: version
+    attributes: { label: Agent version }
+    validations: { required: true }
+  - type: input
+    id: source
+    attributes: { label: Official documentation URL }
+    validations: { required: true }
+  - type: textarea
+    id: problem
+    attributes: { label: Generated file and observed behavior }
+    validations: { required: true }

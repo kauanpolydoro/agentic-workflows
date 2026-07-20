@@ -1,0 +1,88 @@
+# Retained command log
+
+Repository revision: `398c307a753070159ee88c2902b48af50fd2ed23`.
+
+Recipe bundle SHA-256: `296903ad63d3f64b52ae2a39d2f784939aa2196b49085dd3639317162511f7cf`.
+
+## Version
+
+Command:
+
+```text
+codex --version
+```
+
+Exact stdout:
+
+```text
+codex-cli 0.144.4
+```
+
+The version command exited with code `0`.
+
+## Installation
+
+The command ran from the repository root with `<repository-root>` and `<temporary-project>` substituted by the actual isolated paths.
+
+```text
+AWF_CATALOG_ROOT=<repository-root>/recipes NO_COLOR=1 node <repository-root>/packages/cli/dist/index.js --project-root <temporary-project> install review-pull-request --agent codex --target . --json
+```
+
+The installation exited with code `0` and produced the retained manifest.
+
+The following strict validation command exited with code `0` and returned `valid: true`, `recipes: 0`, `installations: 1`, and `strict: true`.
+
+```text
+AWF_CATALOG_ROOT=<repository-root>/recipes NO_COLOR=1 node <repository-root>/packages/cli/dist/index.js --project-root <temporary-project> validate <temporary-project> --strict --json
+```
+
+## External execution
+
+```text
+NO_COLOR=1 timeout 600 codex exec --sandbox read-only --ephemeral --ignore-user-config --skip-git-repo-check --color never -C <temporary-project> -o <temporary-project>/agent-output.md - < <temporary-project>/prompt.txt > <temporary-project>/agent-stdout.txt 2> <temporary-project>/agent-stderr.raw.txt
+```
+
+Started at `2026-07-15T21:00:30Z` and finished at `2026-07-15T21:01:37Z` with exit code `0`.
+
+The exact stdin prompt was:
+
+```text
+Use the installed `$review-pull-request` skill explicitly.
+
+Work only in this temporary project under the read-only sandbox.
+You may use read-only local shell commands only to inspect these installed files:
+
+- `.agents/skills/review-pull-request/SKILL.md`
+- `.agents/skills/review-pull-request/checklist.md`
+- `.agents/skills/review-pull-request/recipe.yml`
+- `.agents/skills/review-pull-request/output.schema.json`
+- `.agents/skills/review-pull-request/agents/openai.yaml`
+- `.agents/skills/review-pull-request/examples/input.md`
+
+Do not read `.agents/skills/review-pull-request/examples/expected-output.md`.
+Do not inspect any other file, edit files, execute mutating commands, or access the network.
+Use no facts outside the supplied synthetic evidence.
+
+Produce a newly reasoned, complete Markdown pull-request review artifact that follows the installed workflow and output contract.
+Separate observations from inferences, trace every material claim to supplied evidence IDs, preserve approval boundaries, and state limitations.
+Use ordinary hyphens and do not use em dashes.
+Return only the artifact Markdown, with no preamble or commentary.
+```
+
+The retained `prompt.txt` SHA-256 is `e3de08bf699b4f1730f89812249e03a9d897841ad49844ce17cf7d1ac7d03a03`.
+
+The retained stderr preserves the agent trace after replacing only the temporary project path and the ephemeral session identifier with explicit markers.
+
+## Validation
+
+The source output-contract validator returned zero issues.
+
+The artifact references exactly E1 through E8, all of which are defined in the retained input, and it references no unknown evidence ID.
+
+The artifact contains no em dash.
+
+The artifact SHA-256 is `bf08e9a7633bfba281f2b2bb2d68100ad9fb1608cd1685ef86c55c77853a8d62`.
+
+The installed reference output SHA-256 is `6d5bba7d8643baca8278e4748d53cb973ac994788074887495bcc9eace58aded`, so the produced artifact is distinct from the reference.
+
+No human outcome review was performed.

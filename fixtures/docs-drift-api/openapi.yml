@@ -1,0 +1,8 @@
+openapi: 3.1.0
+info: { title: Fixture Items API, version: 1.1.0 }
+paths:
+  /items/{id}:
+    get:
+      responses:
+        "200": { description: Item found }
+        "404": { description: Structured ITEM_NOT_FOUND error }

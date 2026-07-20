@@ -1,0 +1,13 @@
+{
+  "name": "awf-fixture-broken-typescript-ci",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "node scripts/lint.js"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
+  }
+}

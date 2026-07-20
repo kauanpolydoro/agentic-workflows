@@ -1,0 +1,20 @@
+name: Workflow request
+description: Propose a repeatable coding-agent workflow.
+title: "workflow: "
+labels: [workflow]
+body:
+  - type: textarea
+    id: job
+    attributes: { label: Developer job, description: What repeatable outcome should the workflow produce? }
+    validations: { required: true }
+  - type: textarea
+    id: evidence
+    attributes: { label: Inputs and completion evidence }
+    validations: { required: true }
+  - type: textarea
+    id: safety
+    attributes: { label: Risks and human approval gates }
+    validations: { required: true }
+  - type: textarea
+    id: fixtures
+    attributes: { label: Reproducible fixture ideas }

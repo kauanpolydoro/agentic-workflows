@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-workflows.dev/output-contracts/incident-postmortem/1.0.0",
+  "title": "Incident postmortem output contract",
+  "description": "Validates the impact statement, UTC timeline, causal assessment, contributing conditions, corrective actions, uncertainty, approvals, and traceability in the reference Markdown output.",
+  "type": "string",
+  "contentMediaType": "text/markdown",
+  "x-awf-output-contract": {
+    "container": "document",
+    "artifacts": [
+      {
+        "path": "incident-postmortem.md",
+        "audience": "Engineering, operations, and incident stakeholders",
+        "requires_title": true,
+        "required_headings": [
+          "Executive summary",
+          "Scope and impact",
+          "UTC timeline",
+          "Trigger and technical-cause assessment",
+          "Contributing factors",
+          "Organizational conditions",
+          "Detection, response, and recovery",
+          "Proposed corrective actions",
+          "Open questions and uncertainty",
+          "Assumptions and limitations",
+          "Approval record",
+          "Traceability"
+        ],
+        "required_literals": [
+          "| Boundary | Value | Evidence |",
+          "| Time | Event | Evidence |",
+          "| Action | Risk and evidence | Owner role | Priority | Dependency | Exit criterion | Verification signal | Safe-stop or rollback | Status |",
+          "| Question | Evidence gap | Owner role | Required evidence | Disposition |",
+          "| Review | Status | Evidence |",
+          "| Artifact element | Evidence |"
+        ],
+        "evidence_references": "required",
+        "minimum_distinct_evidence_references": 2
+      }
+    ]
+  }
+}

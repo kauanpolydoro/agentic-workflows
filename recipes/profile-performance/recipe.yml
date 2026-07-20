@@ -1,0 +1,105 @@
+schema_version: 3
+id: profile-performance
+title: Measure and assess a performance change
+summary: Measure a performance change and produce a reproducible assessment when the evidence is complete, or an explicit blocked handoff when required measurement or profile records are missing.
+version: 1.2.0
+category: performance
+difficulty: advanced
+risk_level: medium
+estimated_duration: 2h
+tags:
+  - performance
+  - profiling
+  - benchmarking
+inputs:
+  required:
+    - immutable baseline revision benchmark target workload fixture and code scope
+    - controlled environment command warm-up sample-count and statistics protocol
+    - numeric success noise and resource thresholds or explicit not-applicable dispositions
+    - correctness oracle with baseline result
+    - retained evidence inventory identifying every available and unavailable raw measurement and profile artifact
+  optional:
+    - sanitized production profile tied to an identified workload
+    - immutable known-good revision and regression range
+outputs:
+  - final recalculable performance assessment or explicit evidence-gap handoff
+  - retained observations missing-artifact inventory decision limits and recovery criteria
+prerequisites:
+  - the benchmark protocol and evidence availability can be evaluated against the declared noise threshold
+  - baseline and candidate behavior can be checked by the same correctness oracle
+  - measurement runs are authorized in an isolated environment
+safety:
+  destructive: false
+  requires_human_approval:
+    - accepting a memory infrastructure-cost or latency tradeoff
+    - changing user-visible behavior for performance
+    - running load against a production environment
+  forbidden_actions:
+    - cherry-picking fastest benchmark runs
+    - removing or weakening correctness checks
+    - claiming production impact from an unrepresentative benchmark
+effects:
+  writes_code: true
+  writes_configuration: false
+  writes_documentation: false
+  changes_dependencies: false
+  changes_database: false
+  changes_issue_tracker: false
+  changes_production_traffic: false
+  deletes_state: false
+  publishes_artifacts: false
+agent_requirements:
+  capabilities:
+    - repository-read
+    - repository-write
+    - shell
+    - git
+    - test-execution
+  manual_invocation_required: true
+output_contract:
+  schema: output.schema.json
+canonical:
+  file: workflow.md
+agents:
+  generic:
+    bundle_compatibility: compatible
+    capability_status: not-applicable
+    limitations:
+      - Generic Markdown provides no agent execution capability assessment.
+  claude-code:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  codex:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  cursor:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  gemini-cli:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  opencode:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+verification:
+  structural:
+    status: derived
+  installation:
+    status: untested
+  execution:
+    status: untested
+  outcome:
+    status: untested
+maintainers:
+  - project-maintainers
+license: MIT

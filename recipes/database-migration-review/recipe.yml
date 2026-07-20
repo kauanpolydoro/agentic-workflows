@@ -1,0 +1,106 @@
+schema_version: 3
+id: database-migration-review
+title: Review a database migration
+summary: Assess a proposed database migration statement by statement for the exact engine version, then plan a staged rollout with approval gates and a rollback or roll-forward recovery package.
+version: 1.2.1
+category: database
+difficulty: advanced
+risk_level: critical
+estimated_duration: 2h
+tags:
+  - database
+  - migration
+  - deployment
+inputs:
+  required:
+    - complete ordered migration SQL current schema and affected invariants
+    - target database engine exact version environment and engine-behavior evidence
+    - table size row count write rate traffic window and approved abort thresholds
+    - old and new application behavior with mixed-version deployment sequence
+  optional:
+    - representative rehearsal timings lock observations and query plans
+    - backup restore RTO RPO and prior recovery evidence
+outputs:
+  - statement-level migration risk and compatibility assessment
+  - staged rollout with checkpoints monitoring owners and approvals
+  - rollback or roll-forward recovery package
+prerequisites:
+  - engine version target environment SQL and current schema are identified
+  - workload and mixed-version application behavior are measured or explicitly unavailable
+  - review and rehearsal cannot execute against production
+safety:
+  destructive: false
+  requires_human_approval:
+    - production execution
+    - irreversible data transformation
+    - contracting old columns
+  forbidden_actions:
+    - running migration or destructive SQL against production during review
+    - running destructive rehearsal SQL outside an approved disposable database
+    - assuming rollback is lossless
+    - ignoring mixed-version deployment
+effects:
+  writes_code: false
+  writes_configuration: false
+  writes_documentation: false
+  changes_dependencies: false
+  changes_database: true
+  changes_issue_tracker: false
+  changes_production_traffic: false
+  deletes_state: false
+  publishes_artifacts: false
+agent_requirements:
+  capabilities:
+    - repository-read
+    - shell
+    - git
+    - test-execution
+    - database
+  manual_invocation_required: true
+output_contract:
+  schema: output.schema.json
+canonical:
+  file: workflow.md
+agents:
+  generic:
+    bundle_compatibility: compatible
+    capability_status: not-applicable
+    limitations:
+      - Generic Markdown provides no agent execution capability assessment.
+  claude-code:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  codex:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  cursor:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  gemini-cli:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  opencode:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+verification:
+  structural:
+    status: derived
+  installation:
+    status: untested
+  execution:
+    status: untested
+  outcome:
+    status: untested
+maintainers:
+  - project-maintainers
+license: MIT

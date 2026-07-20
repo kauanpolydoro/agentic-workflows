@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-workflows.dev/output-contracts/refactor-large-module/1.0.0",
+  "title": "Large-module refactor output contract",
+  "description": "Validates the Markdown delivery record for protected contracts, immutable retained-diff identities, implemented boundaries, reversible checkpoints, changed files, verification, rollback, residual risk, and traceability; source and test files remain repository effects outside this serialized artifact.",
+  "type": "string",
+  "contentMediaType": "text/markdown",
+  "x-awf-output-contract": {
+    "container": "document",
+    "artifacts": [
+      {
+        "path": "refactor-delivery-record.md",
+        "audience": "Repository maintainers and refactor reviewers",
+        "requires_title": true,
+        "required_headings": [
+          "Status and scope",
+          "Protected contract",
+          "Implemented boundary map",
+          "Checkpoint record",
+          "Final changed-file inventory",
+          "Behavior and performance verification",
+          "Compatibility, approvals, and rollback",
+          "Residual risks and follow-up",
+          "Traceability summary"
+        ],
+        "required_literals": [
+          "| File | Owned responsibility | Dependency result | Evidence |",
+          "| Checkpoint | Exact changed paths | Cohesive change | Validation result | Rollback result | Evidence |",
+          "| Risk or limitation | Impact | Owner role | Exit condition | Evidence |"
+        ],
+        "evidence_references": "required",
+        "minimum_distinct_evidence_references": 2
+      }
+    ]
+  }
+}

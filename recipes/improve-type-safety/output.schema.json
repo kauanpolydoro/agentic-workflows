@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-workflows.dev/output-contracts/improve-type-safety/1.0.0",
+  "title": "Type-safety improvement output contract",
+  "description": "Validates the trust-boundary analysis, implemented narrowing patch, negative cases, before-and-after inventory, validation, compatibility, limitations, and traceability in the reference Markdown output.",
+  "type": "string",
+  "contentMediaType": "text/markdown",
+  "x-awf-output-contract": {
+    "container": "document",
+    "artifacts": [
+      {
+        "path": "type-safety-change-record.md",
+        "audience": "Repository maintainers and type-system reviewers",
+        "requires_title": true,
+        "required_headings": [
+          "Status and scope",
+          "Baseline facts",
+          "Boundary analysis",
+          "Implemented boundary-narrowing patch",
+          "Added behavior and negative cases",
+          "Before-and-after safety inventory",
+          "Validation record",
+          "Compatibility and approval disposition",
+          "Recommendation",
+          "Residual uncertainty and limitations",
+          "Traceability"
+        ],
+        "required_literals": [
+          "| Construct or boundary | Before | After | Disposition |",
+          "| Check | Baseline | Post-change | Result | Evidence |",
+          "| Material claim or decision | Evidence |"
+        ],
+        "evidence_references": "required",
+        "minimum_distinct_evidence_references": 2
+      }
+    ]
+  }
+}

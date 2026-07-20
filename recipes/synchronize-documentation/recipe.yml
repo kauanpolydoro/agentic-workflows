@@ -1,0 +1,102 @@
+schema_version: 3
+id: synchronize-documentation
+title: Synchronize documentation with verified behavior
+summary: Compare documentation claims with authoritative evidence at one immutable
+  revision, then deliver a bounded patch, a claim-to-evidence drift register, and
+  a verification report.
+version: 1.2.0
+category: documentation
+difficulty: intermediate
+risk_level: medium
+estimated_duration: 45m
+tags:
+  - documentation
+  - drift
+  - traceability
+inputs:
+  required:
+    - exact documentation file paths and immutable source revision
+    - authoritative source, configuration, command, or test evidence for every scoped claim
+  optional:
+    - approved release records for the immutable revision
+    - sanitized support reports with provenance and redaction status
+outputs:
+  - bounded documentation patch
+  - claim-to-evidence drift register
+  - verification report with executed and unexecuted checks
+prerequisites:
+  - every scoped path exists at the recorded immutable revision
+  - any command selected for execution is safe in an isolated non-production environment
+safety:
+  destructive: false
+  requires_human_approval:
+    - publishing a change to a documented public commitment
+  forbidden_actions:
+    - inventing commands
+    - using fake URLs
+    - claiming an example was run when it was not
+effects:
+  writes_code: false
+  writes_configuration: false
+  writes_documentation: true
+  changes_dependencies: false
+  changes_database: false
+  changes_issue_tracker: false
+  changes_production_traffic: false
+  deletes_state: false
+  publishes_artifacts: false
+agent_requirements:
+  capabilities:
+    - repository-read
+    - repository-write
+    - shell
+    - git
+    - test-execution
+  manual_invocation_required: true
+output_contract:
+  schema: output.schema.json
+canonical:
+  file: workflow.md
+agents:
+  generic:
+    bundle_compatibility: compatible
+    capability_status: not-applicable
+    limitations:
+      - Generic Markdown provides no agent execution capability assessment.
+  claude-code:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  codex:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  cursor:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  gemini-cli:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  opencode:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+verification:
+  structural:
+    status: derived
+  installation:
+    status: untested
+  execution:
+    status: untested
+  outcome:
+    status: untested
+maintainers:
+  - project-maintainers
+license: MIT

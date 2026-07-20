@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-workflows.dev/output-contracts/write-release-notes/1.0.0",
+  "title": "Write release notes output contract",
+  "description": "Validates the public release notes and the separate internal evidence package represented by the reference Markdown output.",
+  "type": "string",
+  "contentMediaType": "text/markdown",
+  "x-awf-output-contract": {
+    "container": "fenced-files",
+    "artifacts": [
+      {
+        "path": "release-notes.md",
+        "audience": "public",
+        "requires_title": true,
+        "required_headings": [
+          "Highlights",
+          "Breaking changes",
+          "Added",
+          "Changed",
+          "Fixed",
+          "Deprecated",
+          "Security",
+          "Known limitations",
+          "Upgrade checklist"
+        ],
+        "required_literals": ["SYNTHETIC EXAMPLE - NOT A REAL PROJECT RELEASE"],
+        "evidence_references": "forbidden",
+        "minimum_distinct_evidence_references": 0
+      },
+      {
+        "path": "release-evidence.md",
+        "audience": "internal",
+        "requires_title": true,
+        "required_headings": [
+          "Release boundary and status",
+          "Included change ledger",
+          "Excluded change ledger",
+          "Artifact verification",
+          "Upgrade instruction approval",
+          "Security disposition",
+          "Approval state",
+          "Traceability",
+          "Assumptions and unresolved items"
+        ],
+        "required_literals": [
+          "SYNTHETIC EXAMPLE - NOT A REAL PROJECT RELEASE",
+          "| Field | Recorded value | Evidence |",
+          "| Change | Category | Shipping basis | User impact | Verification |",
+          "| Change | Disposition | Public treatment | Evidence |",
+          "| Artifact | Target | SHA-256 | Source revision | Disposition |",
+          "| Gate | Status | Evidence required or reviewed | Evidence |",
+          "| Material public claim | Evidence | Inclusion or decision basis | Verification basis |"
+        ],
+        "evidence_references": "required",
+        "minimum_distinct_evidence_references": 2
+      }
+    ]
+  }
+}

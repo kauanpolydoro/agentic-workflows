@@ -1,0 +1,141 @@
+[
+  { "name": "valid-recipe", "kind": "valid", "expected": null },
+  {
+    "name": "missing-evidence-inventory",
+    "kind": "remove-evidence-inventory",
+    "expected": "TRIVIAL_EXAMPLE_INPUT"
+  },
+  {
+    "name": "unknown-output-evidence",
+    "kind": "append-unknown-evidence",
+    "expected": "UNKNOWN_EVIDENCE_ID"
+  },
+  {
+    "name": "duplicate-evidence-definition",
+    "kind": "duplicate-evidence",
+    "expected": "DUPLICATE_EVIDENCE_ID"
+  },
+  {
+    "name": "output-without-evidence",
+    "kind": "remove-output-evidence",
+    "expected": "MISSING_OUTPUT_EVIDENCE"
+  },
+  {
+    "name": "unlabeled-synthetic-input",
+    "kind": "remove-input-synthetic-label",
+    "expected": "UNLABELED_SYNTHETIC_INPUT"
+  },
+  {
+    "name": "unlabeled-synthetic-output",
+    "kind": "remove-output-synthetic-label",
+    "expected": "UNLABELED_SYNTHETIC_OUTPUT"
+  },
+  { "name": "empty-required-section", "kind": "empty-objective", "expected": "EMPTY_SECTION" },
+  { "name": "placeholder", "kind": "append-placeholder", "expected": "PLACEHOLDER" },
+  { "name": "approval-missing", "kind": "empty-approval", "expected": "EMPTY_SECTION" },
+  { "name": "forbidden-action-missing", "kind": "empty-guardrail", "expected": "EMPTY_SECTION" },
+  { "name": "trivial-output", "kind": "trivial-output", "expected": "TRIVIAL_EXPECTED_OUTPUT" },
+  { "name": "canonical-file-missing", "kind": "remove-canonical", "expected": "MISSING_FILE" },
+  { "name": "broken-relative-link", "kind": "broken-link", "expected": "BROKEN_RELATIVE_LINK" },
+  {
+    "name": "duplicate-level-one-title",
+    "kind": "duplicate-title",
+    "expected": "INVALID_TITLE_COUNT"
+  },
+  {
+    "name": "nonconditional-decision",
+    "kind": "nonconditional-decision",
+    "expected": "NON_CONDITIONAL_DECISION"
+  },
+  { "name": "trivial-checklist", "kind": "trivial-checklist", "expected": "TRIVIAL_CHECKLIST" },
+  {
+    "name": "incoherent-verification-readme",
+    "kind": "incoherent-verification-readme",
+    "expected": "INCOHERENT_VERIFICATION_README"
+  },
+  {
+    "name": "empty-required-readme-section",
+    "kind": "empty-readme-required-section",
+    "expected": "EMPTY_README_SECTION"
+  },
+  { "name": "unbounded-phrase", "kind": "unbounded-phrase", "expected": "UNBOUNDED_PHRASE" },
+  {
+    "name": "unpaired-recovery",
+    "kind": "unpaired-recovery",
+    "expected": "UNPAIRED_FAILURE_RECOVERY"
+  },
+  {
+    "name": "invalid-output-schema",
+    "kind": "invalid-output-schema",
+    "expected": "INVALID_OUTPUT_SCHEMA"
+  },
+  {
+    "name": "missing-workflow-section",
+    "kind": "missing-workflow-section",
+    "expected": "MISSING_SECTION"
+  },
+  {
+    "name": "unrepresented-required-input",
+    "kind": "unrepresented-required-input",
+    "expected": "MISSING_REQUIRED_INPUT"
+  },
+  { "name": "unrepresented-output", "kind": "unrepresented-output", "expected": "MISSING_OUTPUT" },
+  {
+    "name": "unrepresented-forbidden-action",
+    "kind": "unrepresented-forbidden-action",
+    "expected": "MISSING_FORBIDDEN_ACTION"
+  },
+  {
+    "name": "unrepresented-approval",
+    "kind": "unrepresented-approval",
+    "expected": "MISSING_APPROVAL"
+  },
+  { "name": "orphan-recovery", "kind": "orphan-recovery", "expected": "ORPHAN_RECOVERY" },
+  {
+    "name": "duplicate-failure-id",
+    "kind": "duplicate-failure-id",
+    "expected": "DUPLICATE_FAILURE_ID"
+  },
+  {
+    "name": "duplicate-recovery-id",
+    "kind": "duplicate-recovery-id",
+    "expected": "DUPLICATE_RECOVERY_ID"
+  },
+  {
+    "name": "missing-readme-section",
+    "kind": "missing-readme-section",
+    "expected": "INCOMPLETE_README"
+  },
+  {
+    "name": "checklist-copies-workflow",
+    "kind": "checklist-copies-workflow",
+    "expected": "CHECKLIST_COPIES_WORKFLOW"
+  },
+  { "name": "descriptive-output", "kind": "descriptive-output", "expected": "DESCRIPTIVE_OUTPUT" },
+  {
+    "name": "trivial-evidence-record",
+    "kind": "trivial-evidence-record",
+    "expected": "TRIVIAL_EVIDENCE_RECORD"
+  },
+  {
+    "name": "missing-evidence-definitions",
+    "kind": "missing-evidence-definitions",
+    "expected": "MISSING_EVIDENCE"
+  },
+  {
+    "name": "invalid-link-encoding",
+    "kind": "invalid-link-encoding",
+    "expected": "INVALID_RELATIVE_LINK_ENCODING"
+  },
+  {
+    "name": "absolute-filesystem-link",
+    "kind": "absolute-filesystem-link",
+    "expected": "UNSAFE_RELATIVE_LINK"
+  },
+  {
+    "name": "broken-link-anchor",
+    "kind": "broken-link-anchor",
+    "expected": "BROKEN_RELATIVE_LINK_ANCHOR"
+  },
+  { "name": "too-many-links", "kind": "too-many-links", "expected": "TOO_MANY_RELATIVE_LINKS" }
+]

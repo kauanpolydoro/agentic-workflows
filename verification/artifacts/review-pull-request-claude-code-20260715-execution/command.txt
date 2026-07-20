@@ -1,0 +1,35 @@
+# Retained command log
+
+Repository revision: `398c307a753070159ee88c2902b48af50fd2ed23`.
+
+## Installation
+
+Command:
+
+```text
+AWF_CATALOG_ROOT=<repository-root>/recipes NO_COLOR=1 node <repository-root>/packages/cli/dist/index.js --project-root <temporary-project> install review-pull-request --agent claude-code --target . --json
+```
+
+Started at `2026-07-15T20:16:52Z` and finished at `2026-07-15T20:16:52Z` with exit code `0`.
+
+Strict installation validation returned `valid: true`, `recipes: 0`, `installations: 1`, and `strict: true` with exit code `0`.
+
+## External execution
+
+Command:
+
+```text
+timeout 600 claude --print --output-format text --permission-mode plan --tools Read,Glob,Grep,Skill --allowedTools Read,Glob,Grep,Skill --setting-sources project --no-session-persistence --max-turns 8
+```
+
+The prompt explicitly invoked `/review-pull-request`, selected the installed synthetic example input, prohibited edits, shell commands, and network tools, and requested only the complete Markdown artifact.
+
+Started at `2026-07-15T20:16:52Z` and finished at `2026-07-15T20:18:12Z` with exit code `0`.
+
+Agent version: `2.1.209 (Claude Code)`.
+
+The retained stdout was copied byte-for-byte to `output.md`.
+
+The source output-contract validator returned zero issues.
+
+No human outcome review was performed.

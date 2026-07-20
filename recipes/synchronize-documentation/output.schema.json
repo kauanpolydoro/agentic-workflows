@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-workflows.dev/output-contracts/synchronize-documentation/1.0.0",
+  "title": "Documentation synchronization output contract",
+  "description": "Validates the bounded documentation patch, claim drift register, verification report, decision and approval record, limitations, follow-up, and traceability in the reference Markdown output.",
+  "type": "string",
+  "contentMediaType": "text/markdown",
+  "x-awf-output-contract": {
+    "container": "document",
+    "artifacts": [
+      {
+        "path": "documentation-synchronization-package.md",
+        "audience": "Documentation maintainers and repository reviewers",
+        "requires_title": true,
+        "required_headings": [
+          "Scope",
+          "Approved patch",
+          "Drift register",
+          "Verification report",
+          "Decision and approval record",
+          "Assumptions and limitations",
+          "Follow-up",
+          "Traceability summary"
+        ],
+        "required_literals": [
+          "| Boundary | Value | Evidence |",
+          "| Claim ID | Previous text | Disposition | Evidence | Patch location |",
+          "| Check | Execution status | Result | Evidence |",
+          "| Artifact element | Evidence |"
+        ],
+        "evidence_references": "required",
+        "minimum_distinct_evidence_references": 2
+      }
+    ]
+  }
+}

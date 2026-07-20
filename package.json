@@ -1,0 +1,68 @@
+{
+  "name": "agentic-workflows",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Evidence-oriented workflow bundles and locally verified agent exporters.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kauanpolydoro/agentic-workflows.git"
+  },
+  "homepage": "https://kauanpolydoro.github.io/agentic-workflows/",
+  "bugs": {
+    "url": "https://github.com/kauanpolydoro/agentic-workflows/issues"
+  },
+  "type": "module",
+  "packageManager": "pnpm@10.28.2",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "awf": "node packages/cli/dist/index.js",
+    "build": "pnpm generate && pnpm -r build",
+    "dev": "pnpm docs:dev",
+    "demo": "pnpm build && tsx scripts/demo-cli.ts",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "typecheck": "pnpm -r typecheck && tsc -p tsconfig.tools.json",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "validate": "pnpm validate:recipes && pnpm validate:content",
+    "validate:recipes": "node packages/cli/dist/index.js validate recipes --strict",
+    "validate:content": "tsx scripts/validate-content.ts",
+    "audit:similarity": "tsx scripts/audit-similarity.ts",
+    "generate": "tsx scripts/generate.ts",
+    "generate:catalog": "tsx scripts/generate.ts catalog",
+    "generate:schema": "tsx scripts/generate.ts schema",
+    "generate:docs": "tsx scripts/generate.ts docs",
+    "generate:compatibility": "tsx scripts/generate.ts compatibility",
+    "generate:check": "tsx scripts/generate.ts all --check",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "pnpm generate && vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "check:links": "tsx scripts/check-links.ts",
+    "check:links:external": "tsx scripts/check-external-links.ts",
+    "check:clean": "tsx scripts/check-clean-worktree.ts",
+    "new:recipe": "tsx scripts/new-recipe.ts",
+    "test:fixtures": "tsx scripts/test-fixtures.ts",
+    "test:acceptance": "tsx scripts/acceptance-cli.ts",
+    "test:package": "tsx scripts/package-smoke.ts",
+    "pack:smoke": "pnpm build && pnpm test:package"
+  },
+  "devDependencies": {
+    "@kauanpolydoro/agentic-workflows-core": "workspace:*",
+    "@biomejs/biome": "2.5.4",
+    "@types/node": "26.1.1",
+    "@vitest/coverage-v8": "4.1.10",
+    "smol-toml": "1.7.0",
+    "tsx": "4.23.1",
+    "typescript": "7.0.2",
+    "vite": "8.1.5",
+    "vitepress": "1.6.4",
+    "vitest": "4.1.10",
+    "yaml": "2.9.0",
+    "zod": "4.4.3"
+  }
+}

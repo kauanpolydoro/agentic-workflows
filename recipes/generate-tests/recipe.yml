@@ -1,0 +1,104 @@
+schema_version: 3
+id: generate-tests
+title: Add behavior-focused regression tests
+summary: Write regression tests at observable boundaries for the highest-risk behaviors, then prove each test fails when its target behavior breaks, without coupling to private implementation.
+version: 1.2.0
+category: testing
+difficulty: intermediate
+risk_level: low
+estimated_duration: 1h
+tags:
+  - testing
+  - regression
+  - mutation-check
+inputs:
+  required:
+    - attributable behavior contract with inputs outputs invariants boundaries and errors
+    - named target code paths public test seam framework and deterministic dependencies
+    - focused and project test commands with immutable baseline results
+    - ranked regression risks and existing coverage inventory
+  optional:
+    - coverage report tied to the target revision
+    - incident defect and mutation history
+outputs:
+  - risk-to-test traceability matrix
+  - implemented test changes at named paths
+  - focused project and mutation-validation record
+prerequisites:
+  - expected behavior has an attributable source or approval
+  - the test runner completes in the target environment
+  - mutable state and external side effects can be isolated
+safety:
+  destructive: false
+  requires_human_approval:
+    - encoding behavior not established by the supplied contract
+    - adding destructive or externally billed test setup
+  forbidden_actions:
+    - mocking the unit under test
+    - asserting private call order without contractual value
+    - inflating coverage with duplicate cases
+effects:
+  writes_code: true
+  writes_configuration: false
+  writes_documentation: false
+  changes_dependencies: false
+  changes_database: false
+  changes_issue_tracker: false
+  changes_production_traffic: false
+  deletes_state: false
+  publishes_artifacts: false
+agent_requirements:
+  capabilities:
+    - repository-read
+    - repository-write
+    - shell
+    - git
+    - test-execution
+  manual_invocation_required: true
+output_contract:
+  schema: output.schema.json
+canonical:
+  file: workflow.md
+agents:
+  generic:
+    bundle_compatibility: compatible
+    capability_status: not-applicable
+    limitations:
+      - Generic Markdown provides no agent execution capability assessment.
+  claude-code:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  codex:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  cursor:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  gemini-cli:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  opencode:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+verification:
+  structural:
+    status: derived
+  installation:
+    status: untested
+  execution:
+    status: untested
+  outcome:
+    status: untested
+maintainers:
+  - project-maintainers
+license: MIT

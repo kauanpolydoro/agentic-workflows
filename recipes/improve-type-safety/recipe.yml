@@ -1,0 +1,104 @@
+schema_version: 3
+id: improve-type-safety
+title: Harden an untrusted TypeScript boundary
+summary: Replace unchecked type assumptions at an untrusted TypeScript boundary with runtime narrowing and verified state models, keeping documented public behavior and compatibility intact.
+version: 1.2.0
+category: refactoring
+difficulty: intermediate
+risk_level: medium
+estimated_duration: 1h
+tags:
+  - typescript
+  - type-safety
+  - boundary-validation
+inputs:
+  required:
+    - immutable target revision named files symbols and unsafe-construct inventory
+    - runtime input contract with accepted invalid and error-precedence cases
+    - public signatures consumer inventory and compatibility boundary
+    - baseline typecheck behavior-test and unsafe-search commands with results
+  optional:
+    - authoritative runtime schema and sanitized boundary fixtures
+    - third-party declaration source and observed runtime mismatch
+outputs:
+  - implemented boundary-narrowing patch at named paths
+  - before-and-after unsafe-construct and compatibility report
+  - typecheck behavior and negative-case validation record
+prerequisites:
+  - runtime input shapes and error behavior have attributable evidence
+  - baseline compiler and behavior results are recorded
+  - public consumers and file scope are identified
+safety:
+  destructive: false
+  requires_human_approval:
+    - changing a public type or accepted runtime shape
+    - changing documented public error behavior
+  forbidden_actions:
+    - introducing explicit or implicit any
+    - using double casts non-null assertions or suppression comments to hide uncertainty
+    - changing runtime behavior silently
+effects:
+  writes_code: true
+  writes_configuration: false
+  writes_documentation: false
+  changes_dependencies: false
+  changes_database: false
+  changes_issue_tracker: false
+  changes_production_traffic: false
+  deletes_state: false
+  publishes_artifacts: false
+agent_requirements:
+  capabilities:
+    - repository-read
+    - repository-write
+    - shell
+    - git
+    - test-execution
+  manual_invocation_required: true
+output_contract:
+  schema: output.schema.json
+canonical:
+  file: workflow.md
+agents:
+  generic:
+    bundle_compatibility: compatible
+    capability_status: not-applicable
+    limitations:
+      - Generic Markdown provides no agent execution capability assessment.
+  claude-code:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  codex:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  cursor:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  gemini-cli:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  opencode:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+verification:
+  structural:
+    status: derived
+  installation:
+    status: untested
+  execution:
+    status: untested
+  outcome:
+    status: untested
+maintainers:
+  - project-maintainers
+license: MIT

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-workflows.dev/output-contracts/generate-tests/1.0.0",
+  "title": "Test generation output contract",
+  "description": "Validates the implemented test change, risk mapping, mutation evidence, validation record, approval state, residual risk, and traceability in the reference Markdown output.",
+  "type": "string",
+  "contentMediaType": "text/markdown",
+  "x-awf-output-contract": {
+    "container": "document",
+    "artifacts": [
+      {
+        "path": "test-delivery-record.md",
+        "audience": "Repository maintainers and test reviewers",
+        "requires_title": true,
+        "required_headings": [
+          "Status and scope",
+          "Facts and risk analysis",
+          "Implemented test change",
+          "Mutation experiments and results",
+          "Validation record",
+          "Recommendation and approval record",
+          "Assumptions, exclusions, and residual risk",
+          "Traceability"
+        ],
+        "required_literals": [
+          "| Behavior | Regression risk | Test level and seam | Existing coverage | Evidence |",
+          "| Test | Temporary mutation | Predicted failure | Observed result | Restoration |",
+          "| Command | State | Result | Evidence |",
+          "| Material claim or decision | Evidence |"
+        ],
+        "evidence_references": "required",
+        "minimum_distinct_evidence_references": 2
+      }
+    ]
+  }
+}

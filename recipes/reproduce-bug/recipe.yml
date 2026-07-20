@@ -1,0 +1,103 @@
+schema_version: 3
+id: reproduce-bug
+title: Build a bounded bug reproduction
+summary: Turn a bug report into a sanitized repository-bound reproduction, a regression test that fails for the reported behavior, and a repeatability record, all without changing product behavior.
+version: 1.2.0
+category: debugging
+difficulty: intermediate
+risk_level: low
+estimated_duration: 45m
+tags:
+  - bug
+  - reproduction
+  - regression-test
+inputs:
+  required:
+    - approved expected behavior and exact observed behavior
+    - immutable affected revision runtime dependency and operating-system versions
+    - sanitized triggering input setup command and state-reset procedure
+    - repeated reproduction results at the closest authorized user boundary
+  optional:
+    - immutable known-good revision with comparable environment
+    - sanitized logs traces screenshots and minimization history
+outputs:
+  - repository-bound minimal reproduction record with explicit setup dependencies
+  - behavior-specific failing regression test at a named path
+  - repeatability boundary and residual-uncertainty record
+prerequisites:
+  - expected behavior has an attributable contract or approval
+  - the affected revision and required dependencies are available
+  - the reproduction environment is isolated from production state
+safety:
+  destructive: false
+  requires_human_approval:
+    - accepting clarified expected behavior before encoding a regression test
+  forbidden_actions:
+    - using production credentials or unsanitized customer data
+    - changing product behavior before capturing the failure
+    - accepting a regression test that fails for an unrelated reason
+effects:
+  writes_code: true
+  writes_configuration: false
+  writes_documentation: false
+  changes_dependencies: false
+  changes_database: false
+  changes_issue_tracker: false
+  changes_production_traffic: false
+  deletes_state: false
+  publishes_artifacts: false
+agent_requirements:
+  capabilities:
+    - repository-read
+    - repository-write
+    - shell
+    - git
+    - test-execution
+  manual_invocation_required: true
+output_contract:
+  schema: output.schema.json
+canonical:
+  file: workflow.md
+agents:
+  generic:
+    bundle_compatibility: compatible
+    capability_status: not-applicable
+    limitations:
+      - Generic Markdown provides no agent execution capability assessment.
+  claude-code:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  codex:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  cursor:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  gemini-cli:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  opencode:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+verification:
+  structural:
+    status: derived
+  installation:
+    status: untested
+  execution:
+    status: untested
+  outcome:
+    status: untested
+maintainers:
+  - project-maintainers
+license: MIT

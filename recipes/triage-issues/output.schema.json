@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-workflows.dev/output-contracts/triage-issues/1.0.0",
+  "title": "Issue triage output contract",
+  "description": "Validates the policy-bound issue dispositions, duplicate evidence, proposed responses and actions, approval state, limitations, and traceability in the reference Markdown output.",
+  "type": "string",
+  "contentMediaType": "text/markdown",
+  "x-awf-output-contract": {
+    "container": "document",
+    "artifacts": [
+      {
+        "path": "issue-triage-package.md",
+        "audience": "Repository maintainers, product owners, and support triagers",
+        "requires_title": true,
+        "required_headings": [
+          "Scope and policy",
+          "Disposition register",
+          "Duplicate evidence map",
+          "Proposed responses",
+          "Proposed next actions and closure criteria",
+          "Approval and security state",
+          "Assumptions and limitations",
+          "Traceability"
+        ],
+        "required_literals": [
+          "| Boundary | Value | Evidence |",
+          "| Issue | Record facts | Reporter claim or expectation | Policy-linked classification | Proposed state and labels | Confidence | Owner role |",
+          "| Candidate | Canonical issue | Shared evidence | Distinguishing evidence | Policy threshold | Confidence | Recommendation |",
+          "| Issue | Proposed action | Owner role | Dependency | Exit or closure criterion | Approval and mutation status |",
+          "| Artifact element | Evidence |"
+        ],
+        "evidence_references": "required",
+        "minimum_distinct_evidence_references": 2
+      }
+    ]
+  }
+}

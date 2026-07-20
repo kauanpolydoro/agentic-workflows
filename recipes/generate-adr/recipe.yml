@@ -1,0 +1,104 @@
+schema_version: 3
+id: generate-adr
+title: Record an evidence-backed architecture decision
+summary: Write an ADR worth trusting, one that separates facts from assumptions, compares real options on the same criteria, records who approved it, and says when to revisit it.
+version: 1.2.0
+category: architecture
+difficulty: intermediate
+risk_level: medium
+estimated_duration: 2h
+tags:
+  - architecture
+  - adr
+  - decision
+  - governance
+inputs:
+  required:
+    - stable decision boundary affected systems current state and explicit exclusions
+    - attributable facts constraints assumptions open questions and decision drivers
+    - viable alternatives evaluated against common criteria with concrete disadvantages
+    - accountable decision owner approval state related decisions and supersession relationship
+  optional:
+    - reproducible benchmark incident or cost evidence with method and provenance
+    - implementation sequencing migration constraints and reversible experiment results
+outputs:
+  - complete proposed accepted rejected or superseded architecture decision record
+  - common-criteria alternatives comparison with evidence uncertainty and disposition
+  - consequence action ownership approval and revisit record
+prerequisites:
+  - one accountable architecture decision owner role is identified
+  - the decision boundary is stable enough to compare at least two viable alternatives
+  - evidence assumptions preferences and unknowns can be distinguished
+  - existing related decisions have been searched and their relationship is known
+safety:
+  destructive: false
+  requires_human_approval:
+    - architecture owner approval before marking the ADR accepted or rejected
+    - architecture owner approval before superseding an existing decision
+  forbidden_actions:
+    - fabricating measurements dates consensus implementation status or approval
+    - hiding material disadvantages uncertainty or a viable alternative to favor one option
+    - marking an ADR accepted rejected or superseded without retained owner evidence
+effects:
+  writes_code: false
+  writes_configuration: false
+  writes_documentation: true
+  changes_dependencies: false
+  changes_database: false
+  changes_issue_tracker: false
+  changes_production_traffic: false
+  deletes_state: false
+  publishes_artifacts: false
+agent_requirements:
+  capabilities:
+    - repository-read
+    - repository-write
+    - git
+  manual_invocation_required: true
+output_contract:
+  schema: output.schema.json
+canonical:
+  file: workflow.md
+agents:
+  generic:
+    bundle_compatibility: compatible
+    capability_status: not-applicable
+    limitations:
+      - Generic Markdown provides no agent execution capability assessment.
+  claude-code:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  codex:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  cursor:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  gemini-cli:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  opencode:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+verification:
+  structural:
+    status: derived
+  installation:
+    status: untested
+  execution:
+    status: untested
+  outcome:
+    status: untested
+maintainers:
+  - project-maintainers
+license: MIT

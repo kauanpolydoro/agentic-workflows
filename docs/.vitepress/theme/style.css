@@ -1,0 +1,143 @@
+:root {
+  --vp-c-brand-1: #0c7663;
+  --vp-c-brand-2: #075d50;
+  --vp-c-brand-3: #06483e;
+  --awf-ink: #101b18;
+  --awf-accent: #e36f3d;
+}
+.dark {
+  --vp-c-brand-1: #63d6b4;
+  --vp-c-brand-2: #41b897;
+  --vp-c-brand-3: #2a9c7f;
+}
+body {
+  font-family: "IBM Plex Sans", "Aptos", "Segoe UI", sans-serif;
+}
+code,
+pre,
+.card-index {
+  font-family: "IBM Plex Mono", "Cascadia Code", monospace;
+}
+.VPHome {
+  background-image:
+    radial-gradient(
+      circle at 86% 12%,
+      color-mix(in srgb, var(--vp-c-brand-1) 16%, transparent) 0,
+      transparent 34%
+    ),
+    linear-gradient(
+      135deg,
+      transparent 0 49.7%,
+      color-mix(in srgb, var(--vp-c-divider) 45%, transparent) 50%,
+      transparent 50.3%
+    );
+  background-size:
+    auto,
+    28px 28px;
+}
+.VPHero .name {
+  letter-spacing: -0.045em;
+}
+.VPHome .VPHero .text {
+  max-width: 760px;
+}
+.VPHero .tagline {
+  max-width: 650px;
+}
+.filter-grid {
+  display: grid;
+  grid-template-columns: 2fr repeat(3, 1fr);
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg-soft);
+}
+.filter-grid label {
+  display: grid;
+  gap: 6px;
+  color: var(--vp-c-text-2);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.filter-grid input,
+.filter-grid select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 3px;
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
+  padding: 8px 10px;
+  font: inherit;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.result-count {
+  font-family: "IBM Plex Mono", "Cascadia Code", monospace;
+  color: var(--vp-c-text-2);
+}
+.workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.workflow-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 230px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 4px;
+  padding: 24px;
+  color: inherit;
+  text-decoration: none;
+  background: var(--vp-c-bg);
+  box-shadow: 5px 5px 0 color-mix(in srgb, var(--vp-c-brand-1) 18%, transparent);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.workflow-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 9px 9px 0 color-mix(in srgb, var(--vp-c-brand-1) 24%, transparent);
+}
+.workflow-card h2 {
+  border: 0;
+  margin: 18px 0 8px;
+  padding: 0;
+  font-size: 22px;
+}
+.workflow-card p {
+  color: var(--vp-c-text-2);
+  flex: 1;
+}
+.card-index {
+  color: var(--vp-c-brand-1);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.card-link {
+  font-weight: 700;
+  color: var(--vp-c-brand-1);
+}
+@media (max-width: 800px) {
+  .filter-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .workflow-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 520px) {
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto;
+    transition: none;
+  }
+}

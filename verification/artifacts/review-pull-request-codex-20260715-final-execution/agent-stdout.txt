@@ -1,0 +1,82 @@
+# Pull request review: synthetic PR #42
+
+## Scope and verdict
+
+- **Review boundary:** Base and merge base `a100000000000000000000000000000000000000`; head `b200000000000000000000000000000000000000`. The supplied revision record states that these revisions resolve locally and that the diff and command record identify the reviewed head. [E1]
+- **Intent:** Retry one transport timeout only when duplicate invoice creation is prevented, while preserving all non-timeout errors. [E2]
+- **Changed files:** `src/delivery.ts` and `src/delivery.test.ts`, with no other changed, renamed, deleted, or generated paths. [E2]
+- **Governing rules:** The external-write safety rule applies to `src/delivery.ts`; the test-coverage and merge policy applies to `src/delivery.test.ts`. No nested or conflicting instructions are recorded. [E5]
+- **Provisional verdict:** **Request changes.** The timeout retry can plausibly create a duplicate invoice because it repeats an external write after an unknown outcome without an idempotency key. This is an unresolved High-severity finding and therefore blocks merge under repository policy. [E3, E5, E7]
+- **Approval boundary:** This recommendation is not an authorized submission or merge approval. The repository maintainer has not approved the immutable range, findings, checks, residual risks, or exact report artifact. [E8]
+
+## Findings
+
+| Severity | Confidence | Finding | Evidence | Impact | Recommendation | Verification | Disposition |
+|---|---|---|---|---|---|---|---|
+| High | High. The complete production diff, provider contract, and repository rule directly establish the retry behavior and missing deduplication mechanism. | **Observation:** After `ETIMEDOUT`, `deliverInvoice` calls `client.post(invoice)` a second time with unchanged arguments, and the changed production file creates no idempotency key. **Inference:** Because the timeout does not establish whether the provider accepted the first request, both calls can create invoices. | E3, E5 | A single delivery attempt can plausibly create duplicate external invoices. Repository policy classifies this as High severity and blocking until prevented or disproved. [E5, E7] | Reuse one stable `Idempotency-Key` across the initial request and retry, or do not retry when the first write has an unknown outcome. Preserve the existing rethrow behavior for non-timeout errors. | Add a regression test simulating an accepted first request followed by a local timeout, then verify that both calls carry the same idempotency key and produce one logical provider invoice. | Open, blocking |
+| Medium | High. The complete test diff explicitly covers only retry count, while the evidence inventory explicitly records the absent safety assertions. | **Observation:** The added test verifies that `ETIMEDOUT` causes two calls and eventually resolves, but it does not model an accepted first request or inspect an idempotency key. **Inference:** The required duplicate-prevention property can regress while this test remains passing. | E2, E4, E5 | The changed timeout branch lacks regression protection for the acceptance criterion's required safety property. Repository policy classifies this as Medium when a separate blocking finding already prevents merge. [E2, E7] | Extend the test suite to cover unknown-outcome semantics and assert stable idempotency across both attempts. | Run the focused test suite after adding the safety-property test and retain the command, reviewed head, environment, and result. | Open, non-blocking independently; must be resolved with the High finding |
+
+No separate finding is raised for non-timeout error preservation. The production diff explicitly rethrows errors whose code is not `ETIMEDOUT`, and no supplied evidence demonstrates a regression in that branch. [E2, E3]
+
+## Checks
+
+### Executed
+
+| Command | Revision | Environment | Result | Coverage interpretation | Evidence |
+|---|---|---|---|---|---|
+| `pnpm test delivery` | `b200000000000000000000000000000000000000` | Local Node.js test environment | Exit 0; 8 tests passed | Confirms the recorded unit suite passes. It does not verify duplicate prevention, an accepted-first-request scenario, or provider end-to-end behavior. | E6 |
+
+### Proposed
+
+| Check | Purpose | Status | Evidence |
+|---|---|---|---|
+| Simulate the provider accepting the first creation request while the client receives `ETIMEDOUT`, then exercise the retry. | Reproduce or disprove the plausible duplicate-write path. | Proposed, not executed. | E4, E5, E6 |
+| Assert that the initial request and retry use the same non-empty `Idempotency-Key`. | Verify the provider's documented deduplication precondition. | Proposed, not executed. | E3, E5 |
+| Assert that representative non-timeout errors are rethrown without retry. | Protect the acceptance criterion requiring preservation of non-timeout errors. | Proposed, not executed. | E2, E3 |
+| Re-run `pnpm test delivery` against the corrected immutable head and retain its result. | Confirm focused regression coverage on the revision considered for merge. | Proposed, not executed for any corrected head. | E6 |
+| Recompute the immutable range, merge base, complete diff, and path inventory immediately before submission. | Detect a changed head or inconsistent review boundary. | Proposed, not executed under the supplied inspection restrictions. | E1, E2 |
+
+## Coverage disposition
+
+| Changed file | Reviewed behavior | Evidence | Disposition |
+|---|---|---|---|
+| `src/delivery.ts` | Awaits the initial external invoice write, rethrows non-`ETIMEDOUT` errors, and retries `ETIMEDOUT` once using the same invoice argument without creating an idempotency key. | E2, E3, E5 | Behavior change reviewed. Duplicate-prevention requirement is violated by the supplied implementation evidence; High finding remains open. |
+| `src/delivery.test.ts` | Adds a successful two-call timeout-retry test but does not exercise an accepted first request or assert idempotency. | E2, E4, E7 | Test change reviewed. Required safety-property coverage is missing; Medium finding remains open. |
+
+The two paths in the supplied complete inventory are accounted for by the two complete diff records, with no reported renames, deletions, generated artifacts, or additional paths. [E2, E3, E4]
+
+## Assumptions and limitations
+
+- This review uses only the supplied synthetic evidence. No external provider, network resource, repository source file, or expected-output example was consulted.
+- Revision resolution, merge-base computation, diff regeneration, path-inventory regeneration, and final head recheck were not independently executed. Their consistency is reported as an observation from the immutable revision and integrity records. [E1, E2, E3, E4]
+- The evidence defines `ETIMEDOUT` as an unknown provider outcome. The duplicate-write conclusion is therefore a supported risk inference, not an observation that a duplicate was actually reproduced. [E5, E6]
+- The passing unit command is not treated as evidence for the unexercised duplicate-prevention property. [E4, E6]
+- No specialist review is required on the supplied record because the provider contract and repository rule fully define the external-write concern. This disposition is limited to the synthetic evidence. [E5, E8]
+- If the head changes, this verdict and any line-dependent findings become stale and the review must restart against the new immutable comparison. [E1]
+
+## Approval and next decision
+
+The next technical decision is to keep the PR unmerged until the duplicate-write path is prevented or disproved and the required safety property has regression coverage. Under the supplied policy, the unresolved High finding requires `request changes`. [E5, E7]
+
+Before any review is submitted, the repository maintainer must approve the exact immutable range, path inventory, finding dispositions, executed and proposed checks, residual risks, and this report artifact. That approval is currently absent. [E8]
+
+After correction, the review must use a new immutable head, regenerate the comparison evidence, execute the relevant checks against that head, and reassess the findings. [E1, E6, E7]
+
+## Traceability
+
+| Material conclusion | Evidence |
+|---|---|
+| The reviewed comparison is base and merge base `a100000000000000000000000000000000000000` to head `b200000000000000000000000000000000000000`. | E1 |
+| The acceptance criterion conditions timeout retry on duplicate prevention and requires preservation of non-timeout errors. | E2 |
+| The complete changed-file scope contains only `src/delivery.ts` and `src/delivery.test.ts`. | E2, E3, E4 |
+| The implementation retries `client.post(invoice)` after `ETIMEDOUT` without creating an idempotency key. | E3 |
+| The provider deduplicates only when both requests carry the same `Idempotency-Key`. | E5 |
+| `ETIMEDOUT` does not establish whether the first external write succeeded. | E5 |
+| The retry therefore creates a plausible duplicate external-write risk. | E3, E5 |
+| The timeout test covers two calls and eventual success but not the required duplicate-prevention property. | E4 |
+| The focused unit command passed on the reviewed head but did not exercise the blocking scenario. | E6 |
+| The duplicate-write risk is High severity and blocks merge under repository policy. | E7 |
+| Missing safety-property coverage is Medium severity while the separate High finding remains open. | E7 |
+| The policy-derived provisional verdict is `request changes`. | E7 |
+| Specialist review is not required by the supplied evidence. | E5, E8 |
+| Maintainer approval of the exact report package remains pending. | E8 |

@@ -1,0 +1,26 @@
+name: Bug report
+description: Report reproducible incorrect behavior in the CLI, core, recipes, or documentation.
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include secrets. Follow SECURITY.md for vulnerabilities.
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Observed behavior
+      description: What happened, and what did you expect?
+    validations: { required: true }
+  - type: input
+    id: version
+    attributes: { label: Version or commit }
+    validations: { required: true }
+  - type: textarea
+    id: reproduction
+    attributes: { label: Minimal reproduction, description: Include safe commands and synthetic data. }
+    validations: { required: true }
+  - type: textarea
+    id: environment
+    attributes: { label: Environment, description: Operating system, Node version, and relevant filesystem details. }
+    validations: { required: true }

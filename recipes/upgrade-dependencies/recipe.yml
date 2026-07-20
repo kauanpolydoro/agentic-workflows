@@ -1,0 +1,108 @@
+schema_version: 3
+id: upgrade-dependencies
+title: Upgrade dependencies with provenance and rollback
+summary: Deliver a scoped dependency upgrade backed by a reviewed version-range contract, a deterministic lockfile diff, results across the supported environments, and a rollback that has been exercised.
+version: 1.2.0
+category: maintenance
+difficulty: intermediate
+risk_level: high
+estimated_duration: 4h
+tags:
+  - dependencies
+  - supply-chain
+  - compatibility
+  - rollback
+inputs:
+  required:
+    - immutable manifest and lockfile with package manager registry integrity and exact resolved versions
+    - exact target versions with complete official release migration runtime security and license evidence
+    - repository usage inventory public behavior contract supported environment matrix and exact changed-file boundary
+    - reproducible baseline commands approval state and executable rollback pin
+  optional:
+    - applicable vulnerability advisory with affected and fixed version boundaries
+    - software composition policy and deployment observation signals
+outputs:
+  - direct and transitive dependency lockfile diff with provenance review
+  - breaking-change usage compatibility and license disposition register
+  - implementation validation approval rollback and residual-risk record
+prerequisites:
+  - current dependencies install reproducibly from approved sources at the immutable revision
+  - baseline build type test and public behavior checks pass or have explicit dispositions
+  - the complete current-to-target vendor guidance is retained and attributable
+  - the previous manifest and lockfile can be restored in an isolated environment
+safety:
+  destructive: false
+  requires_human_approval:
+    - repository maintainer approval before any major-version implementation
+    - platform owner approval before changing supported runtime or platform requirements
+    - legal or compliance owner approval before accepting a new dependency license
+  forbidden_actions:
+    - using an untrusted registry or accepting unexplained source and integrity changes
+    - hand-editing resolved lockfile data or omitting the complete lockfile diff
+    - disabling install script audit type test signature or security checks to obtain a passing result
+effects:
+  writes_code: true
+  writes_configuration: true
+  writes_documentation: false
+  changes_dependencies: true
+  changes_database: false
+  changes_issue_tracker: false
+  changes_production_traffic: false
+  deletes_state: false
+  publishes_artifacts: false
+agent_requirements:
+  capabilities:
+    - repository-read
+    - repository-write
+    - shell
+    - git
+    - network
+    - test-execution
+  manual_invocation_required: true
+output_contract:
+  schema: output.schema.json
+canonical:
+  file: workflow.md
+agents:
+  generic:
+    bundle_compatibility: compatible
+    capability_status: not-applicable
+    limitations:
+      - Generic Markdown provides no agent execution capability assessment.
+  claude-code:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  codex:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  cursor:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  gemini-cli:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  opencode:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+verification:
+  structural:
+    status: derived
+  installation:
+    status: untested
+  execution:
+    status: untested
+  outcome:
+    status: untested
+maintainers:
+  - project-maintainers
+license: MIT

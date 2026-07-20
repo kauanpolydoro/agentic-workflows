@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-workflows.dev/output-contracts/generate-adr/1.0.0",
+  "title": "Architecture decision record output contract",
+  "description": "Validates the decision boundary, evidence, common-criteria option analysis, consequences, follow-up, approvals, revisit triggers, and traceability in the reference Markdown output.",
+  "type": "string",
+  "contentMediaType": "text/markdown",
+  "x-awf-output-contract": {
+    "container": "document",
+    "artifacts": [
+      {
+        "path": "architecture-decision-record.md",
+        "audience": "Architecture owners and repository maintainers",
+        "requires_title": true,
+        "required_headings": [
+          "Status",
+          "Decision boundary",
+          "Context and evidence",
+          "Decision drivers",
+          "Options considered",
+          "Decision",
+          "Consequences",
+          "Positive",
+          "Negative",
+          "Neutral",
+          "Implementation follow-up",
+          "Approval and related decisions",
+          "Revisit triggers",
+          "Assumptions and limitations",
+          "Evidence traceability"
+        ],
+        "required_literals": [
+          "| Option | Contract consistency | Offline operation | Typed errors | Core boundary | Maintenance and migration | Disposition |",
+          "| Action | Owner role | Dependency | Exit criterion | Verification signal | Recovery |"
+        ],
+        "evidence_references": "required",
+        "minimum_distinct_evidence_references": 2
+      }
+    ]
+  }
+}

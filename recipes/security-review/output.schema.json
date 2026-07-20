@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-workflows.dev/output-contracts/security-review/1.0.0",
+  "title": "Security review output contract",
+  "description": "Validates the authorized scope, threat summary, evidence-ranked findings, remediation order, safe verification plan, residual risk, disclosure approval, limitations, and traceability in the reference Markdown output.",
+  "type": "string",
+  "contentMediaType": "text/markdown",
+  "x-awf-output-contract": {
+    "container": "document",
+    "artifacts": [
+      {
+        "path": "security-review.md",
+        "audience": "Authorized security reviewers and system owners",
+        "requires_title": true,
+        "required_headings": [
+          "Scope and threat summary",
+          "Findings",
+          "Remediation order",
+          "Verification plan",
+          "Executed",
+          "Residual risk and disposition",
+          "Assumptions and limitations",
+          "Approval and disclosure",
+          "Traceability"
+        ],
+        "required_literals": [
+          "| Severity | Confidence | Finding | Evidence | Impact | Recommendation | Verification | Disposition |",
+          "### Proposed",
+          "| Material conclusion | Evidence |"
+        ],
+        "evidence_references": "required",
+        "minimum_distinct_evidence_references": 2
+      }
+    ]
+  }
+}

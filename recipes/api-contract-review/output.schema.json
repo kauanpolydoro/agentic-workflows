@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-workflows.dev/output-contracts/api-contract-review/1.0.0",
+  "title": "API contract review output contract",
+  "description": "Validates the compatibility report, client-impact register, decision record, and rollout controls in the reference Markdown output.",
+  "type": "string",
+  "contentMediaType": "text/markdown",
+  "x-awf-output-contract": {
+    "container": "document",
+    "artifacts": [
+      {
+        "path": "api-contract-review.md",
+        "audience": "API owners, client owners, and reviewers",
+        "requires_title": true,
+        "required_headings": [
+          "Scope",
+          "Compatibility matrix",
+          "Findings",
+          "Recommendation",
+          "Verification plan",
+          "Executed",
+          "Proposed",
+          "Limitations",
+          "Decision record",
+          "Monitoring and rollback",
+          "Client-impact register",
+          "Traceability"
+        ],
+        "required_literals": [
+          "| Difference | Released form | Candidate form | Producer direction | Consumer direction | Evidence |",
+          "| Severity | Confidence | Finding | Evidence | Impact | Recommendation | Verification | Disposition |",
+          "| Client | Retained parser contract | Impact | Owner and migration status | Evidence |",
+          "| Material conclusion | Evidence |"
+        ],
+        "evidence_references": "required",
+        "minimum_distinct_evidence_references": 2
+      }
+    ]
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-workflows.dev/output-contracts/document-api/1.0.0",
+  "title": "API documentation output contract",
+  "description": "Validates the operation reference, request and response examples, execution report, discrepancy register, approvals, limitations, and traceability in the reference Markdown output.",
+  "type": "string",
+  "contentMediaType": "text/markdown",
+  "x-awf-output-contract": {
+    "container": "document",
+    "artifacts": [
+      {
+        "path": "api-reference.md",
+        "audience": "API integrators and API owners",
+        "requires_title": true,
+        "required_headings": [
+          "Operation",
+          "Authentication",
+          "Request example",
+          "Success response",
+          "Error response",
+          "Behavior, limits, and side effects",
+          "Example execution report",
+          "Contract discrepancy register",
+          "Approval state",
+          "Follow-up",
+          "Assumptions and limitations",
+          "Traceability"
+        ],
+        "required_literals": [
+          "| Property | Value | Evidence |",
+          "| Field | Type | Required | Allowed values | Evidence |",
+          "| Status | Media type | Code | Body | Evidence |",
+          "| Check | Status | Environment | Result | Evidence |",
+          "| Action | Owner role | Dependency | Exit criterion | Status |",
+          "| Claim group | Evidence | Disposition |"
+        ],
+        "evidence_references": "required",
+        "minimum_distinct_evidence_references": 2
+      }
+    ]
+  }
+}

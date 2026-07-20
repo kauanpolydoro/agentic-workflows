@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-workflows.dev/output-contracts/debug-failing-ci/1.0.0",
+  "title": "CI debugging output contract",
+  "description": "Validates the anchored CI diagnosis, causal experiments, minimal patch, verification matrix, rollback, and traceability in the reference Markdown output.",
+  "type": "string",
+  "contentMediaType": "text/markdown",
+  "x-awf-output-contract": {
+    "container": "document",
+    "artifacts": [
+      {
+        "path": "ci-diagnosis.md",
+        "audience": "Repository maintainers and CI owners",
+        "requires_title": true,
+        "required_headings": [
+          "Status and run identity",
+          "Facts",
+          "Environment and command-order comparison",
+          "Hypotheses and experiments",
+          "Supported root cause",
+          "Minimal causal patch",
+          "Verification matrix",
+          "Safety, approval, and rollback",
+          "Residual uncertainty and next action",
+          "Traceability"
+        ],
+        "required_literals": [
+          "| Dimension | Failing CI | Controlled local experiment | Assessment |",
+          "| Hypothesis | Prediction | Experiment | Result | Disposition |",
+          "| Check | Revision or run | Result | Verification class | Evidence |",
+          "| Material claim or decision | Evidence |"
+        ],
+        "evidence_references": "required",
+        "minimum_distinct_evidence_references": 2
+      }
+    ]
+  }
+}

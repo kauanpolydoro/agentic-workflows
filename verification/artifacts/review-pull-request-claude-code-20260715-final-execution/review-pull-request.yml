@@ -1,0 +1,36 @@
+schema_version: 2
+recipe: review-pull-request
+recipe_version: 1.2.0
+adapter:
+  id: claude-code
+  version: 1.0.0
+entrypoint: .claude/skills/review-pull-request/SKILL.md
+invocation:
+  mode: manual
+  command: /review-pull-request
+  implicit_invocation_control: enforced
+  warning: Model invocation is disabled. Invoke this workflow explicitly; declared
+    approval gates remain advisory.
+installed_at: 2026-07-15T20:53:51.071Z
+target: .
+files:
+  - path: .claude/skills/review-pull-request/SKILL.md
+    hash: e8bf759857610b89e4127824733670de1976cba1667ae741ece7eb38dcbcc7eb
+    role: entrypoint
+  - path: .claude/skills/review-pull-request/checklist.md
+    hash: 904c38a2690ac7103bbdc684937d17ef48f12fc6764ae0a5cec6885640d42645
+    role: checklist
+  - path: .claude/skills/review-pull-request/examples/input.md
+    hash: d256e21e30d30076d8925bb7512bcdc3499e1dffdf19d3a953bbb1f8d729bc85
+    role: example-input
+  - path: .claude/skills/review-pull-request/examples/expected-output.md
+    hash: 6d5bba7d8643baca8278e4748d53cb973ac994788074887495bcc9eace58aded
+    role: example-output
+  - path: .claude/skills/review-pull-request/recipe.yml
+    hash: e8a0799aebbb7e687a3ae52d542c7d7f2e3a1b5c6201d5b6ec0bd2154bfcad92
+    role: metadata
+  - path: .claude/skills/review-pull-request/output.schema.json
+    hash: 8525e989c7a02ce8c0d15fcc2745edaf4c241078e11d318def8c82d5349d0f66
+    role: output-schema
+migration: null
+cli_version: 0.1.0

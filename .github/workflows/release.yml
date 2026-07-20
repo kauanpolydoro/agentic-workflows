@@ -1,0 +1,94 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  actions: read
+  attestations: write
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          run_install: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm generate:check
+      - run: pnpm format:check && pnpm lint && pnpm typecheck
+      - run: pnpm test:coverage && pnpm test:integration
+      - run: pnpm build && pnpm validate:recipes && pnpm validate:content && pnpm test:acceptance && pnpm test:fixtures
+      - run: pnpm test:package
+      - run: pnpm docs:build && pnpm check:links
+      - run: pnpm audit:similarity
+      - name: Ensure tracked and untracked generated artifacts are current
+        run: pnpm check:clean
+      - name: Prepare source archives
+        run: |
+          pnpm exec tsx scripts/release-artifacts.ts prepare \
+            --tag "$GITHUB_REF_NAME" \
+            --output "$RUNNER_TEMP/release"
+          mkdir -p "$RUNNER_TEMP/sbom-source"
+          tar -xzf "$RUNNER_TEMP/release/agentic-workflows-${GITHUB_REF_NAME}.tar.gz" \
+            -C "$RUNNER_TEMP/sbom-source"
+      - name: Generate SPDX SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0
+        with:
+          path: ${{ runner.temp }}/sbom-source
+          format: spdx-json
+          output-file: ${{ runner.temp }}/release/agentic-workflows-${{ github.ref_name }}.sbom.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+          syft-version: v1.46.0
+      - name: Attest release subjects
+        id: attest
+        uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661 # v3
+        with:
+          subject-path: |
+            ${{ runner.temp }}/release/agentic-workflows-${{ github.ref_name }}.tar.gz
+            ${{ runner.temp }}/release/agentic-workflows-${{ github.ref_name }}.zip
+            ${{ runner.temp }}/release/agentic-workflows-${{ github.ref_name }}.sbom.spdx.json
+      - name: Finalize checksums and artifact manifest
+        env:
+          PROVENANCE_BUNDLE: ${{ steps.attest.outputs['bundle-path'] }}
+          PROVENANCE_URL: ${{ steps.attest.outputs['attestation-url'] }}
+        run: |
+          pnpm exec tsx scripts/release-artifacts.ts finalize \
+            --tag "$GITHUB_REF_NAME" \
+            --output "$RUNNER_TEMP/release" \
+            --provenance-bundle "$PROVENANCE_BUNDLE" \
+            --provenance-url "$PROVENANCE_URL"
+      - name: Prepare npm packages
+        run: |
+          mkdir -p "$RUNNER_TEMP/npm-packages"
+          pnpm --filter @kauanpolydoro/agentic-workflows-core pack \
+            --pack-destination "$RUNNER_TEMP/npm-packages"
+          pnpm --filter @kauanpolydoro/agentic-workflows pack \
+            --pack-destination "$RUNNER_TEMP/npm-packages"
+      - name: Publish core package to npm
+        run: >-
+          npm publish
+          "$RUNNER_TEMP/npm-packages/kauanpolydoro-agentic-workflows-core-${GITHUB_REF_NAME#v}.tgz"
+          --access public
+      - name: Publish CLI package to npm
+        run: >-
+          npm publish
+          "$RUNNER_TEMP/npm-packages/kauanpolydoro-agentic-workflows-${GITHUB_REF_NAME#v}.tgz"
+          --access public
+      - name: Create draft GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" "$RUNNER_TEMP/release/"* --draft --generate-notes --verify-tag

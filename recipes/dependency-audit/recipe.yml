@@ -1,0 +1,101 @@
+schema_version: 3
+id: dependency-audit
+title: Audit dependency risk
+summary: Turn manifests, lockfiles, and dated advisories into a reproducible dependency inventory, a ranked finding register, and a plan that keeps affected versions separate from actual reachability.
+version: 1.2.1
+category: security
+difficulty: intermediate
+risk_level: medium
+estimated_duration: 1h
+tags:
+  - dependencies
+  - security
+  - supply-chain
+inputs:
+  required:
+    - immutable revision dependency manifests and dependency-group policy
+    - matching lockfiles with complete resolved graph versions and integrity records
+    - dated advisory records with affected ranges conditions and source identity
+  optional:
+    - runtime import call-site and packaged-artifact inventory
+    - software bill of materials license policy and provenance records
+outputs:
+  - reproducible dependency inventory and audit scope
+  - risk-ranked dependency finding register with reachability dispositions
+  - removal upgrade monitoring or acceptance plan
+prerequisites:
+  - manifest and lockfile belong to the same immutable revision
+  - direct transitive production and development dependencies are distinguishable
+  - audit can avoid untrusted lifecycle scripts and secret disclosure
+safety:
+  destructive: false
+  requires_human_approval:
+    - removing a public runtime capability
+    - accepting a vulnerable dependency temporarily
+  forbidden_actions:
+    - running install scripts from unknown packages
+    - claiming exploitability without reachability evidence
+    - printing registry tokens
+effects:
+  writes_code: false
+  writes_configuration: false
+  writes_documentation: false
+  changes_dependencies: false
+  changes_database: false
+  changes_issue_tracker: false
+  changes_production_traffic: false
+  deletes_state: false
+  publishes_artifacts: false
+agent_requirements:
+  capabilities:
+    - repository-read
+    - shell
+    - git
+  manual_invocation_required: true
+output_contract:
+  schema: output.schema.json
+canonical:
+  file: workflow.md
+agents:
+  generic:
+    bundle_compatibility: compatible
+    capability_status: not-applicable
+    limitations:
+      - Generic Markdown provides no agent execution capability assessment.
+  claude-code:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  codex:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  cursor:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  gemini-cli:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+  opencode:
+    bundle_compatibility: compatible
+    capability_status: unknown
+    limitations:
+      - Required capabilities and target-environment permissions have not been verified.
+verification:
+  structural:
+    status: derived
+  installation:
+    status: untested
+  execution:
+    status: untested
+  outcome:
+    status: untested
+maintainers:
+  - project-maintainers
+license: MIT

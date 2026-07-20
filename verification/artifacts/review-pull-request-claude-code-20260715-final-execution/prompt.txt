@@ -1,0 +1,11 @@
+Use the installed `/review-pull-request` skill explicitly.
+
+Work only in this temporary project and use only read-only tools.
+Read the installed `SKILL.md`, `checklist.md`, `recipe.yml`, `output.schema.json`, and `examples/input.md` for `review-pull-request`.
+Do not read `examples/expected-output.md`.
+Do not edit files, execute shell commands, access the network, or use facts outside the supplied synthetic evidence.
+
+Produce a newly reasoned, complete Markdown pull-request review artifact that follows the installed workflow and output contract.
+Separate observations from inferences, trace every material claim to supplied evidence IDs, preserve approval boundaries, and state limitations.
+Use ordinary hyphens and do not use em dashes.
+Return only the artifact Markdown, with no preamble or commentary.

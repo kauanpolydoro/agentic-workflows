@@ -1,0 +1,81 @@
+# Retained command log
+
+Repository revision: `398c307a753070159ee88c2902b48af50fd2ed23`.
+
+Recipe bundle SHA-256: `296903ad63d3f64b52ae2a39d2f784939aa2196b49085dd3639317162511f7cf`.
+
+## Version
+
+Command:
+
+```text
+claude --version
+```
+
+Exact stdout:
+
+```text
+2.1.209 (Claude Code)
+```
+
+The version command exited with code `0`.
+
+## Installation
+
+The command ran from the repository root with `<repository-root>` and `<temporary-project>` substituted by the actual isolated paths.
+
+```text
+AWF_CATALOG_ROOT=<repository-root>/recipes NO_COLOR=1 node <repository-root>/packages/cli/dist/index.js --project-root <temporary-project> install review-pull-request --agent claude-code --target . --json
+```
+
+The installation exited with code `0` and produced the retained manifest.
+
+The following strict validation command exited with code `0` and returned `valid: true`, `recipes: 0`, `installations: 1`, and `strict: true`.
+
+```text
+AWF_CATALOG_ROOT=<repository-root>/recipes NO_COLOR=1 node <repository-root>/packages/cli/dist/index.js --project-root <temporary-project> validate <temporary-project> --strict --json
+```
+
+## External execution
+
+The command ran with `<temporary-project>` as its working directory.
+
+```text
+timeout 600 claude --print --output-format text --permission-mode plan --tools Read,Glob,Grep,Skill --allowedTools Read,Glob,Grep,Skill --setting-sources project --no-session-persistence --max-turns 8 < prompt.txt > agent-output.md 2> agent-stderr.txt
+```
+
+Started at `2026-07-15T20:57:23Z` and finished at `2026-07-15T20:59:04Z` with exit code `0`.
+
+The exact stdin prompt was:
+
+```text
+Use the installed `/review-pull-request` skill explicitly.
+
+Work only in this temporary project and use only read-only tools.
+Read the installed `SKILL.md`, `checklist.md`, `recipe.yml`, `output.schema.json`, and `examples/input.md` for `review-pull-request`.
+Do not read `examples/expected-output.md`.
+Do not edit files, execute shell commands, access the network, or use facts outside the supplied synthetic evidence.
+
+Produce a newly reasoned, complete Markdown pull-request review artifact that follows the installed workflow and output contract.
+Separate observations from inferences, trace every material claim to supplied evidence IDs, preserve approval boundaries, and state limitations.
+Use ordinary hyphens and do not use em dashes.
+Return only the artifact Markdown, with no preamble or commentary.
+```
+
+The retained `prompt.txt` SHA-256 is `14a71f5bbf6779db9f6a27074a40a8e294d1c12588adb563b4d8bd95ed6623ac`.
+
+The retained stdout is the complete agent artifact, and stderr is an empty file because the command emitted no stderr bytes.
+
+## Validation
+
+The source output-contract validator returned zero issues.
+
+The artifact references exactly E1 through E8, all of which are defined in the retained input, and it references no unknown evidence ID.
+
+The artifact contains no em dash.
+
+The artifact SHA-256 is `329c0ac1b4b61013aec9dcbad32570790604a596441c269dc5e8c3ceff3a3f79`.
+
+The installed reference output SHA-256 is `6d5bba7d8643baca8278e4748d53cb973ac994788074887495bcc9eace58aded`, so the produced artifact is distinct from the reference.
+
+No human outcome review was performed.
