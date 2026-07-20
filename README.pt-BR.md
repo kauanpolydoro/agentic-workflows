@@ -73,8 +73,8 @@ Consulte o [registro das avaliações de referência](docs/launch/reference-eval
 ## Compatibilidade
 
 Markdown genérico, Claude Code, OpenAI Codex, Cursor, Gemini CLI e OpenCode possuem exportações suportadas com base em documentação oficial.
-A matriz registra uma execução atual de `review-pull-request` no Claude Code e no Codex, limitada às versões e aos artefatos retidos.
-Cursor, Gemini CLI e OpenCode continuam sem execução externa registrada, e nenhum resultado possui revisão humana.
+Os artefatos históricos de execução de `review-pull-request` no Claude Code e no Codex estão arquivados, mas não promovem um status atual porque o commit de origem saiu do histórico durante o reset intencional.
+Todos os agentes permanecem sem execução externa verificável no histórico atual, e nenhum resultado possui revisão humana.
 
 “Suportado” descreve o formato gerado.
 Não significa que um agente externo executou o fluxo de trabalho nem que o resultado foi revisado.

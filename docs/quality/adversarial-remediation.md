@@ -78,9 +78,9 @@ Future review criterion: reopen this decision when the catalog reaches 40 recipe
 Local tests parse the repository's generated YAML and TOML, validate required frontmatter and policy fields, resolve complete bundle assets, reject unsafe interpolation, and exercise installation in temporary directories.
 Those are project-owned serializer and installation contracts, not proof that a vendor consumer parsed or discovered the result.
 Consumer parsing, fresh-session discovery, explicit-only invocation behavior, external execution, and outcome review require the corresponding vendor binaries, exact versions, and retained run artifacts.
-Retained Claude Code and Codex runs now prove explicit discovery, parsing, and execution for `review-pull-request` at the recorded versions.
-They do not prove implicit-invocation blocking, every recipe, future versions, Cursor, Gemini CLI, OpenCode, or any human outcome review.
-AWF-018 therefore remains `blocked-external` for complete vendor coverage without weakening the passing local and recipe-specific external facts.
+Historical Claude Code and Codex artifacts record explicit discovery, parsing, and execution for `review-pull-request`, but their source revision left the repository history during the intentional reset.
+They are archived context and no longer promote current consumer parsing, external execution, or tested-version facts.
+AWF-018 therefore remains `blocked-external` for verifiable vendor coverage without weakening the passing local contracts.
 
 ### AWF-021
 
@@ -122,7 +122,7 @@ The retained reference record traces a material claim in each output to its supp
 The demonstration also invokes an explicit deterministic fixture agent to produce a new `review-pull-request` artifact and validates that artifact before exercising lifecycle protections.
 These checks establish source-level editorial and contract quality only.
 The fake-agent demonstration itself does not promote external execution or human outcome review.
-Separate retained Claude Code and Codex records promote only the recipe-specific execution stage, while outcome remains `untested`.
+The historical Claude Code and Codex records were retired after their source revision left the current repository history, so every external execution and outcome remains `untested`.
 
 ## Focused verification for this re-evaluation
 
@@ -148,7 +148,7 @@ After external evidence integration and the two resulting CLI fixture correction
 - Generation: catalog, schema, full artifact generation, and the deterministic freshness check passed.
 - Delivery: build, documentation build, CLI acceptance, fixture verification, package smoke tests, tarball smoke tests, and the deterministic demo passed.
 - Links: all internal paths and anchors in 50 Markdown files passed, and all 16 allowlisted external links had fresh passing cache records.
-- External execution: retained Claude Code 2.1.209 and Codex CLI 0.144.4 runs passed explicit `review-pull-request` execution and deterministic output-contract validation.
+- External execution: historical Claude Code 2.1.209 and Codex CLI 0.144.4 artifacts record successful `review-pull-request` runs, but they no longer promote a current status because their source revision is outside the reset history.
 - Outcome review: every external outcome remains `untested`, and no compatibility claim was promoted from execution alone.
 
 The documentation build retained a non-blocking chunk-size warning covered by accepted risk AWF-042.

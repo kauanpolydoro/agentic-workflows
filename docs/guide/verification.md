@@ -86,7 +86,9 @@ If you consume these records with JSON Schema alone, do not treat a shape-valid 
 
 ## Current limitations
 
-Retained Claude Code and Codex execution records exist only for `review-pull-request`, and each record is tied to the exact recipe content that was tested.
-The recipe's text has since been revised, so those records are now stale: they stay visible for auditing, but the matrix reports no current external execution until the agents are re-run against the current content.
+Historical Claude Code and Codex artifacts exist only for `review-pull-request`.
+Their active evidence records were retired after the intentional repository history reset made the cited source commit unavailable from the current history.
+The artifacts remain archived for context, but they cannot promote installation, parsing, execution, tested-version, or outcome claims.
+The matrix reports no current external execution until the agents are re-run against the current content and commit history.
 No retained human outcome review exists yet, so every outcome stage remains `untested`.
-Cursor, Gemini CLI, and OpenCode have no retained external execution or tested agent version at all.
+No agent currently has retained, source-verifiable external execution or a tested agent version.

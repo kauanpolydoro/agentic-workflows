@@ -88,7 +88,7 @@
     },
     {
       "path": "docs/compatibility.md",
-      "sha256": "fac6b15697ef957f67b97f5a1dc57104b58a1d7e80d9bd1b4e204f1bbd7fa04c"
+      "sha256": "068a06009c1db913b24e7d96edbc4cd96898fdf423378298b0230b66fa2bd3dc"
     },
     {
       "path": "generated/catalog.d.ts",
@@ -96,7 +96,7 @@
     },
     {
       "path": "generated/catalog.json",
-      "sha256": "236113f0bac23fa9c58e29348a12c85cc03a67891d346e72a23c82f67c108312"
+      "sha256": "5233bf51938259ab8fd52ad390648e8770616d0885b66531272b406490951da1"
     },
     {
       "path": "generated/catalog.schema.json",

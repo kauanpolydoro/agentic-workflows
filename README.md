@@ -104,7 +104,7 @@ The project separates four stages:
 - Outcome review records human evaluation against the recipe's completion criteria.
 
 Structural status is derived from the repository validators and generated metadata.
-Retained Claude Code and Codex executions currently cover only `review-pull-request` and the recorded versions.
+Historical Claude Code and Codex execution artifacts are archived, but they no longer promote a current status because their source commit left the repository history during the intentional history reset.
 Every human outcome-review stage remains `untested`.
 
 ## CLI

@@ -42,8 +42,8 @@ describe("adapter registry facts", () => {
     }
   });
 
-  it("retains external facts only for agents with current run evidence", () => {
-    for (const id of ["cursor", "gemini-cli", "opencode"] as const) {
+  it("keeps external facts untested without verifiable current run evidence", () => {
+    for (const id of ["claude-code", "codex", "cursor", "gemini-cli", "opencode"] as const) {
       const adapter = adapterRegistry[id];
       expect(adapter.consumerParseStatus).toBe("untested");
       expect(adapter.executionTestStatus).toBe("untested");
@@ -52,26 +52,6 @@ describe("adapter registry facts", () => {
       expect(adapter.lastExternalExecutionAt).toBeNull();
       expect(adapter.lastOutcomeReviewAt).toBeNull();
     }
-
-    expect(adapterRegistry["claude-code"]).toMatchObject({
-      consumerParseStatus: "passing",
-      executionTestStatus: "passing",
-      outcomeReviewStatus: "untested",
-      testedAgentVersion: "2.1.209 (Claude Code)",
-      lastExternalExecutionAt: "2026-07-15T20:59:04Z",
-      lastOutcomeReviewAt: null,
-    });
-    expect(adapterRegistry.codex).toMatchObject({
-      consumerParseStatus: "passing",
-      executionTestStatus: "passing",
-      outcomeReviewStatus: "untested",
-      testedAgentVersion: "codex-cli 0.144.4",
-      lastExternalExecutionAt: "2026-07-15T21:01:37Z",
-      lastOutcomeReviewAt: null,
-    });
-    expect(adapterRegistry.codex.evidence).toContain(
-      "verification/review-pull-request/codex-20260715-final-execution.yml",
-    );
   });
 
   it("cites repository evidence paths that exist", () => {

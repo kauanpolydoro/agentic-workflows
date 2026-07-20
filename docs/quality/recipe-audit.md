@@ -187,9 +187,9 @@ Recipe effects, adapter serialization, capability assessment, installation, exte
 Structural status is derived from current source and validators rather than manually promoted to an outcome claim.
 Installation, external-agent execution, and outcome status remain `untested` unless separate retained evidence supports the specific state.
 
-Retained evidence now promotes installation and external execution only for `review-pull-request` on Claude Code 2.1.209 and Codex CLI 0.144.4.
-Both produced artifacts passed the deterministic output contract, but neither artifact has a retained human outcome review.
-The other 19 recipes and the Cursor, Gemini CLI, and OpenCode consumers remain externally untested.
+Historical artifacts record installation and external execution for `review-pull-request` on Claude Code 2.1.209 and Codex CLI 0.144.4.
+Their source revision left the repository history during the intentional reset, so they no longer promote current verification claims.
+All recipes and external consumers remain externally untested in the current history, and no artifact has a retained human outcome review.
 
 The current similarity gate provides lexical review currency, not semantic proof.
 The current maintainer matrix provides editorial disposition, not independent outcome approval.
