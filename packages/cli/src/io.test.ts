@@ -55,6 +55,24 @@ describe("terminal output", () => {
     );
   });
 
+  it("renders lifecycle-lock ownership and safe manual recovery for people", () => {
+    const write = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    expect(() =>
+      fail(
+        new AwfError("CONFLICT", "Another installation lifecycle operation owns this target.", {
+          pid: 5150,
+          acquiredAt: "2026-07-20T12:00:00.000Z",
+        }),
+      ),
+    ).toThrow("__AWF_HANDLED__");
+
+    const rendered = String(write.mock.calls[0]?.[0]);
+    expect(rendered).toContain("Owner: PID 5150, acquired at 2026-07-20T12:00:00.000Z");
+    expect(rendered).toContain("Next: Confirm that PID 5150 is no longer active");
+    expect(rendered).toContain("manually removing the lifecycle lock");
+    expect(rendered).toContain("`awf doctor`");
+  });
+
   it("remains colorless when NO_COLOR is set", () => {
     const previous = process.env.NO_COLOR;
     process.env.NO_COLOR = "1";

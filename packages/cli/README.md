@@ -67,6 +67,8 @@ awf remove review-pull-request --dry-run
 
 Use `awf status --failures-only` to focus on drift while retaining complete summary counts.
 
+Use `awf status --json` when automation must also verify the selected project root, its discovery source, and whether current-directory fallback occurred.
+
 If the project configuration uses an unsupported schema, back it up and recreate reviewed values with `awf init --force --no-interactive --agent <agent> --target <directory>`.
 
 Apply `update` or `remove` without `--dry-run` only after reviewing its complete file plan.
@@ -104,5 +106,7 @@ It never overwrites an unmanaged file, including when `--force` is present.
 Run `awf doctor` for consumer health checks, or `awf doctor --maintainer` when developing the Agentic Workflows source repository.
 
 Machine diagnostics expose the selected project-root source and structured remediation while keeping lifecycle-lock recovery manual and fail-closed.
+
+If a lifecycle lock blocks an operation, human output identifies the recorded PID and acquisition time without exposing the ownership token, then explains how to verify staleness before manual removal.
 
 See the [installation guide](https://kauanpolydoro.github.io/agentic-workflows/guide/installation.html) and [CLI reference](https://kauanpolydoro.github.io/agentic-workflows/guide/cli-reference.html) for the complete contract.

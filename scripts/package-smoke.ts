@@ -440,6 +440,27 @@ if (
 ) {
   throw new Error("Packaged init omitted its versioned context or selected defaults.");
 }
+const invalidInitialization = failureCode(
+  runCliFailure(
+    entrypoint,
+    ["init", "--force", "--agent", "claude-code", "--target", "../outside", "--json"],
+    consumer,
+  ),
+  "INVALID_PATH",
+  "init",
+);
+if (invalidInitialization.retryable !== false) {
+  throw new Error("Packaged init reported unsafe project traversal as retryable.");
+}
+failureCode(
+  runCliFailure(
+    entrypoint,
+    ["init", "--force", "--agent", "claude", "--target", installationTarget, "--json"],
+    consumer,
+  ),
+  "commander.invalidArgument",
+  "init",
+);
 const dryRun = JSON.parse(
   runCli(entrypoint, ["install", "write-release-notes", "--dry-run", "--json"], consumer),
 ) as { files?: Array<{ role?: string }> };
@@ -468,8 +489,18 @@ const installedEntrypoint = path.join(targetRoot, installed.entrypoint);
 await access(installedEntrypoint);
 const installationStatus = JSON.parse(
   runCli(entrypoint, ["status", "--target", installationTarget, "--json"], consumer),
-) as { installations?: Array<{ id?: string; status?: string }> };
+) as {
+  project_context?: {
+    project_root?: string;
+    selection_source?: string;
+    project_root_fallback?: boolean;
+  };
+  installations?: Array<{ id?: string; status?: string }>;
+};
 if (
+  installationStatus.project_context?.project_root !== consumer ||
+  installationStatus.project_context.selection_source !== "explicit" ||
+  installationStatus.project_context.project_root_fallback !== false ||
   !installationStatus.installations?.some(
     (installation) =>
       installation.id === "write-release-notes" && installation.status === "healthy",
@@ -542,6 +573,21 @@ if (
   JSON.stringify(lockConflict).includes("package-secret")
 ) {
   throw new Error("The packaged CLI omitted safe lifecycle-lock conflict metadata.");
+}
+const humanLockConflict = runCliFailure(
+  entrypoint,
+  ["update", "write-release-notes", "--target", installationTarget],
+  consumer,
+);
+if (
+  humanLockConflict.stdout !== "" ||
+  !humanLockConflict.stderr.includes("Owner: PID 5150, acquired at 2026-07-20T12:00:00.000Z") ||
+  !humanLockConflict.stderr.includes("Next: Confirm that PID 5150 is no longer active") ||
+  !humanLockConflict.stderr.includes("manually removing the lifecycle lock") ||
+  humanLockConflict.stderr.includes("package-secret") ||
+  humanLockConflict.stderr.includes("\u001b")
+) {
+  throw new Error("The packaged CLI omitted actionable human lifecycle-lock recovery.");
 }
 rmSync(lifecycleLock);
 failureCode(

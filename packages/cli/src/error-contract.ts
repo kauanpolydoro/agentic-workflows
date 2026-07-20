@@ -82,6 +82,17 @@ function defaultRemediation(code: string, command: CommandName | "awf"): string 
   }
 }
 
+function lifecycleConflictRemediation(
+  details: Readonly<Record<string, unknown>> | undefined,
+): string {
+  const pid = details?.pid;
+  const acquiredAt = details?.acquiredAt;
+  if (typeof pid === "number" && Number.isSafeInteger(pid) && typeof acquiredAt === "string") {
+    return `Confirm that PID ${pid} is no longer active and that the lock acquired at ${acquiredAt} is stale before manually removing the lifecycle lock; then run \`awf doctor\` and retry.`;
+  }
+  return "Identify the lifecycle-lock owner and confirm the lock is stale before manually removing it; then run `awf doctor` and retry.";
+}
+
 export function errorContractMetadata(
   value: ErrorMetadataInput,
   args: readonly string[] = process.argv.slice(2),
@@ -89,12 +100,13 @@ export function errorContractMetadata(
   const code = typeof value.code === "string" ? value.code : "UNKNOWN_ERROR";
   const command = commandFromArguments(args);
   const explicitRemediation = value.details?.remediation;
+  const lifecycleConflict =
+    code === "CONFLICT" &&
+    value.message.includes("Another installation lifecycle operation owns this target");
   return {
     code,
     command,
-    retryable:
-      code === "CONFLICT" &&
-      value.message.includes("Another installation lifecycle operation owns this target"),
+    retryable: lifecycleConflict,
     help_url:
       command === "awf"
         ? "https://kauanpolydoro.github.io/agentic-workflows/guide/cli-reference"
@@ -102,6 +114,8 @@ export function errorContractMetadata(
     remediation:
       typeof explicitRemediation === "string"
         ? explicitRemediation
-        : defaultRemediation(code, command),
+        : lifecycleConflict
+          ? lifecycleConflictRemediation(value.details)
+          : defaultRemediation(code, command),
   };
 }

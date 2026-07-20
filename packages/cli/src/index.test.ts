@@ -1,7 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
-  chmod,
   cp,
   mkdir,
   mkdtemp,
@@ -327,7 +326,15 @@ describe.sequential("CLI command contracts", () => {
     expect(stdout).toContain("awf install <workflow-id> --agent <agent> --dry-run");
     stdout = "";
     await run("status", "--json");
-    expect(JSON.parse(stdout)).toMatchObject({ schema_version: 1, installations: [] });
+    expect(JSON.parse(stdout)).toMatchObject({
+      schema_version: 1,
+      project_context: {
+        project_root: project,
+        selection_source: "package",
+        project_root_fallback: false,
+      },
+      installations: [],
+    });
     await expect(run("status", "write-release-notes")).rejects.toMatchObject({
       code: "NOT_FOUND",
       details: {
@@ -347,6 +354,11 @@ describe.sequential("CLI command contracts", () => {
     await run("status", "--failures-only", "--json");
     expect(JSON.parse(stdout)).toMatchObject({
       schema_version: 1,
+      project_context: {
+        project_root: project,
+        selection_source: "config",
+        project_root_fallback: false,
+      },
       filter: "failures-only",
       summary: { total: 1, healthy: 1, drifted: 0, invalid: 0 },
       installations: [],
@@ -393,14 +405,10 @@ describe.sequential("CLI command contracts", () => {
       { recursive: true },
     );
     process.env.AWF_CATALOG_ROOT = packagedCatalog;
-    const previousPath = process.env.PATH;
-    process.env.PATH = "";
-    try {
-      await run("show", "write-release-notes", "--open");
-    } finally {
-      if (previousPath === undefined) delete process.env.PATH;
-      else process.env.PATH = previousPath;
-    }
+    await createProgram({ documentationOpener: async () => false }).parseAsync(
+      ["show", "write-release-notes", "--open"],
+      { from: "user" },
+    );
     expect(stdout).toContain(
       "https://kauanpolydoro.github.io/agentic-workflows/catalog/write-release-notes",
     );
@@ -408,67 +416,46 @@ describe.sequential("CLI command contracts", () => {
   });
 
   it("waits for the documentation opener to report its real exit status", async () => {
-    if (process.platform === "win32") return;
-    const bin = path.join(project, "bin");
-    await mkdir(bin);
-    const opener = path.join(bin, process.platform === "darwin" ? "open" : "xdg-open");
-    await writeFile(opener, "#!/bin/sh\nexit 7\n");
-    await chmod(opener, 0o755);
-    const previousPath = process.env.PATH;
-    process.env.PATH = bin;
-    try {
-      await run("show", "write-release-notes", "--open");
-    } finally {
-      if (previousPath === undefined) delete process.env.PATH;
-      else process.env.PATH = previousPath;
-    }
+    const documentationOpener = vi.fn().mockResolvedValue(false);
+    await createProgram({ documentationOpener }).parseAsync(
+      ["show", "write-release-notes", "--open"],
+      { from: "user" },
+    );
+    expect(documentationOpener).toHaveBeenCalledOnce();
     expect(stdout).toContain("Could not launch a browser");
     expect(stdout).not.toContain("Opened ");
   });
 
   it("reports a successful documentation opener only after exit zero", async () => {
-    if (process.platform === "win32") return;
-    const bin = path.join(project, "bin");
-    await mkdir(bin);
-    const opener = path.join(bin, process.platform === "darwin" ? "open" : "xdg-open");
-    await writeFile(opener, "#!/bin/sh\nexit 0\n");
-    await chmod(opener, 0o755);
-    const previousPath = process.env.PATH;
-    process.env.PATH = bin;
-    try {
-      await run("show", "write-release-notes", "--open");
-    } finally {
-      if (previousPath === undefined) delete process.env.PATH;
-      else process.env.PATH = previousPath;
-    }
+    const documentationOpener = vi.fn().mockResolvedValue(true);
+    await createProgram({ documentationOpener }).parseAsync(
+      ["show", "write-release-notes", "--open"],
+      { from: "user" },
+    );
+    expect(documentationOpener).toHaveBeenCalledOnce();
     expect(stdout).toContain("Opened ");
     expect(stdout).toContain("docs/catalog/write-release-notes.md");
   });
 
   it("propagates cancellation while a documentation opener is active", async () => {
-    if (process.platform === "win32") return;
-    const bin = path.join(project, "bin");
-    await mkdir(bin);
-    const opener = path.join(bin, process.platform === "darwin" ? "open" : "xdg-open");
-    await writeFile(opener, "#!/bin/sh\nexec /bin/sleep 30\n");
-    await chmod(opener, 0o755);
-    const previousPath = process.env.PATH;
-    process.env.PATH = bin;
     const controller = new AbortController();
     const interruption = new Error("synthetic opener cancellation");
     interruption.name = "AbortError";
-    try {
-      const pending = createProgram({ signal: controller.signal }).parseAsync(
-        ["show", "write-release-notes", "--open"],
-        { from: "user" },
-      );
-      await new Promise<void>((resolve) => setTimeout(resolve, 20));
-      controller.abort(interruption);
-      await expect(pending).rejects.toBe(interruption);
-    } finally {
-      if (previousPath === undefined) delete process.env.PATH;
-      else process.env.PATH = previousPath;
-    }
+    const documentationOpener = (_documentation: string, signal?: AbortSignal) =>
+      new Promise<boolean>((_resolve, reject) => {
+        signal?.addEventListener(
+          "abort",
+          () => reject(signal.reason ?? new Error("Documentation opening was aborted.")),
+          { once: true },
+        );
+      });
+    const pending = createProgram({
+      signal: controller.signal,
+      documentationOpener,
+    }).parseAsync(["show", "write-release-notes", "--open"], { from: "user" });
+    await new Promise<void>((resolve) => setTimeout(resolve, 20));
+    controller.abort(interruption);
+    await expect(pending).rejects.toBe(interruption);
   });
 
   it("uses initialized defaults and completes the managed lifecycle", async () => {
@@ -624,7 +611,15 @@ describe.sequential("CLI command contracts", () => {
     stdout = "";
     await run("status", "--json");
     expect(process.stderr.write).not.toHaveBeenCalled();
-    expect(JSON.parse(stdout)).toMatchObject({ schema_version: 1 });
+    expect(JSON.parse(stdout)).toMatchObject({
+      schema_version: 1,
+      project_context: {
+        project_root: project,
+        selection_source: "cwd",
+        project_root_fallback: true,
+        reason: expect.stringContaining("invocation directory"),
+      },
+    });
 
     stdout = "";
     await run("context", "--json");

@@ -127,6 +127,13 @@ if (recipe.id !== "write-release-notes") {
 }
 
 for (const shell of ["bash", "zsh", "fish", "pwsh"]) {
+  const completion = success(["completion", shell]);
+  if (
+    !completion.stdout.includes("review-pull-request") ||
+    !completion.stdout.includes("agentic-workflows")
+  ) {
+    throw new Error(`${shell} completion generation is incomplete.`);
+  }
   const instructions = success(["completion", shell, "--install-instructions"]);
   if (!instructions.stdout.includes(`awf completion ${shell}`)) {
     throw new Error(`${shell} completion installation instructions are incomplete.`);
@@ -147,6 +154,20 @@ if (
   throw new Error("Deterministic initialization did not return its versioned configuration.");
 }
 
+const invalidInitialization = jsonFailure(
+  ["init", "--force", "--agent", "claude-code", "--target", "../outside", "--json"],
+  "init",
+  "INVALID_PATH",
+);
+if (invalidInitialization.retryable !== false) {
+  throw new Error("Unsafe initialization unexpectedly reported itself as retryable.");
+}
+jsonFailure(
+  ["init", "--force", "--agent", "claude", "--target", "managed", "--json"],
+  "init",
+  "commander.invalidArgument",
+);
+
 const installPlan = jsonSuccess<{ plan?: { schema_version?: number; operation?: string } }>([
   "install",
   "write-release-notes",
@@ -160,11 +181,19 @@ if (installPlan.plan?.schema_version !== 1 || installPlan.plan.operation !== "in
 jsonSuccess(["install", "write-release-notes", "--json"]);
 
 const status = jsonSuccess<{
+  project_context?: {
+    project_root?: string;
+    selection_source?: string;
+    project_root_fallback?: boolean;
+  };
   filter?: string;
   summary?: { total?: number; healthy?: number };
   installations?: unknown[];
 }>(["status", "--failures-only", "--json"]);
 if (
+  status.project_context?.project_root !== project ||
+  status.project_context.selection_source !== "explicit" ||
+  status.project_context.project_root_fallback !== false ||
   status.filter !== "failures-only" ||
   status.summary?.total !== 1 ||
   status.summary?.healthy !== 1 ||
@@ -209,6 +238,18 @@ if (
   JSON.stringify(lockConflict).includes("automation-secret")
 ) {
   throw new Error("Lifecycle-lock conflict did not expose safe retry and owner metadata.");
+}
+const humanLockConflict = invoke(["update", "write-release-notes"]);
+if (
+  humanLockConflict.status !== 1 ||
+  humanLockConflict.stdout !== "" ||
+  !humanLockConflict.stderr.includes("Owner: PID 4242, acquired at 2026-07-20T12:00:00.000Z") ||
+  !humanLockConflict.stderr.includes("Next: Confirm that PID 4242 is no longer active") ||
+  !humanLockConflict.stderr.includes("manually removing the lifecycle lock") ||
+  humanLockConflict.stderr.includes("automation-secret") ||
+  humanLockConflict.stderr.includes("\u001b")
+) {
+  throw commandFailure(["update", "write-release-notes"], humanLockConflict);
 }
 rmSync(lifecycleLock);
 

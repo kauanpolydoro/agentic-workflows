@@ -36,6 +36,7 @@ awf context
 awf init --agent codex
 awf install review-pull-request --dry-run
 awf install review-pull-request --dry-run --show-content
+awf status --json
 ```
 
 Run bare `awf init` in an interactive terminal when you prefer to choose the default agent and target through a short wizard.
@@ -150,11 +151,13 @@ Every human outcome-review stage remains `untested`.
 The `awf` binary supports:
 
 - `list` with category, agent, tag, global support, recipe compatibility, and JSON filters;
-- `show` with raw Markdown and JSON output;
+- `context` for explicit project-root discovery and audit output;
+- `show` with raw Markdown, JSON, documentation location, and tested browser opening with a printable fallback;
 - `install` with complete dry-run plans, optional generated content, target, adapter, overwrite, and JSON controls;
-- `status` for local installation health and managed-file drift;
+- `status` for local installation health, managed-file drift, and project-root provenance in JSON;
 - `update` and `remove` with non-mutating plans and modified-file protection;
-- `validate`, `doctor`, and `init` for catalog and project maintenance.
+- `validate`, `doctor`, and `init` for catalog and project maintenance;
+- `completion` for generated Bash, Zsh, Fish, and PowerShell completion.
 
 Read the [CLI reference](docs/guide/cli-reference.md) for flags and exit codes.
 

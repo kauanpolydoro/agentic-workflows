@@ -45,4 +45,22 @@ describe("machine error metadata", () => {
       remediation: "Wait for the recorded owner to finish.",
     });
   });
+
+  it("turns lifecycle-lock ownership into a precise manual recovery", () => {
+    expect(
+      errorContractMetadata(
+        {
+          code: "CONFLICT",
+          message: "Another installation lifecycle operation owns this target.",
+          details: { pid: 5150, acquiredAt: "2026-07-20T12:00:00.000Z" },
+        },
+        ["update"],
+      ),
+    ).toMatchObject({
+      retryable: true,
+      remediation: expect.stringMatching(
+        /PID 5150.*2026-07-20T12:00:00\.000Z.*manually removing.*awf doctor/,
+      ),
+    });
+  });
 });

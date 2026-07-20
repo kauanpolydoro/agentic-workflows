@@ -35,6 +35,15 @@ function humanError(value: {
       )
     : [];
   if (suggestions.length > 0) lines.push(`Suggestions: ${suggestions.join(", ")}`);
+  const ownerPid = value.details?.pid;
+  const ownerAcquiredAt = value.details?.acquiredAt;
+  if (
+    typeof ownerPid === "number" &&
+    Number.isSafeInteger(ownerPid) &&
+    typeof ownerAcquiredAt === "string"
+  ) {
+    lines.push(`Owner: PID ${ownerPid}, acquired at ${ownerAcquiredAt}`);
+  }
   if (typeof value.remediation === "string") {
     lines.push(`Next: ${value.remediation}`);
   } else if (typeof value.details?.remediation === "string") {

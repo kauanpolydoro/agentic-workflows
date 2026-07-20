@@ -50,7 +50,11 @@ Use `--location` to print the local documentation path or public catalog URL wit
 
 Use `--open` to open a repository-local documentation page when available, or the public catalog page from the npm package.
 
-The three output modes are mutually exclusive.
+The CLI waits for the native opener selected for Linux, macOS, or Windows to report success.
+
+If the opener is missing or exits unsuccessfully, the command prints the exact path or URL to open manually instead of claiming success.
+
+The four output modes are mutually exclusive.
 
 An unknown workflow ID reports nearby IDs when a reliable match exists.
 
@@ -118,7 +122,9 @@ Drift details identify each modified or missing managed file.
 
 Use `--target` to inspect another project-local target.
 
-Use `--json` for a report with `schema_version`, `target`, `filter`, `summary`, and `installations` fields.
+Use `--json` for a report with `schema_version`, `target`, `project_context`, `filter`, `summary`, and `installations` fields.
+
+`project_context` contains `project_root`, `selection_source`, `project_root_fallback`, and `reason`, matching the root-selection evidence exposed by `awf context --json`.
 
 Use `--failures-only` to keep complete healthy, drifted, and invalid summary counts while returning only drifted or invalid installation records.
 
@@ -156,6 +162,8 @@ The top-level `status`, `healthy`, and `exit_code` fields provide the same verdi
 
 The CLI never removes a lock automatically; confirm that the recorded process is inactive and the timestamp is stale before manual removal.
 
+Human lifecycle-conflict errors show the sanitized PID and acquisition time, then direct the user to verify both before removing the lock and rerunning `awf doctor`.
+
 Finding an agent command on `PATH` does not establish workflow execution or outcome evidence.
 
 ## `awf init`
@@ -173,6 +181,8 @@ Use `--agent` and `--target` to choose those defaults.
 An existing configuration is never replaced unless `--force` is explicit.
 
 An unsupported configuration schema fails with the detected version, supported versions, and an explicit recreation command.
+
+An unsupported agent value fails during argument parsing, while an absolute, traversing, or symbolic-link target fails with `INVALID_PATH` before the configuration is replaced.
 
 Back up values that must be retained before running `awf init --force --no-interactive --agent <agent> --target <directory>` because recreation replaces the configuration instead of guessing a migration.
 

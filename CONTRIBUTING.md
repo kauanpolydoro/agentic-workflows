@@ -43,7 +43,9 @@ Do not skip a failing command or lower a threshold to make the suite pass.
 
 `pnpm test:automation` validates the public JSON contract across command boundaries in real subprocesses.
 
-CI runs automation, integration, acceptance, and packed-package smoke coverage on Linux, Windows, and macOS, with an additional Node.js 22 compatibility job.
+CI runs unit, automation, integration, acceptance, and packed-package smoke coverage on Linux, Windows, and macOS, with an additional Node.js 22 compatibility job.
+
+The Windows matrix also runs the compiled automation contract from Git Bash so shell invocation, path handling, generated completion, and non-interactive output are checked outside PowerShell.
 
 ## Add a recipe
 

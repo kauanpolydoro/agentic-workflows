@@ -73,6 +73,10 @@ The top-level diagnostic `status` is `pass` or `fail`, `healthy` is its boolean 
 
 `status --failures-only --json` retains `summary` counts for every installation while returning only drifted and invalid records in `installations`.
 
+Every `status --json` result includes `project_context.project_root`, `project_context.selection_source`, `project_context.project_root_fallback`, and `project_context.reason` so automation can verify the root before interpreting installation records.
+
+The status context uses snake-case field names to match `context --json`, while `doctor --json` retains its existing `projectContext` contract.
+
 ## Error schema version 1
 
 Every JSON error includes `schema_version`, `error`, `message`, `code`, `command`, `retryable`, `help_url`, and `remediation`.
@@ -88,6 +92,12 @@ The `command` field identifies the command boundary that failed, and `help_url` 
 The `retryable` field is deliberately conservative and is `true` only when retrying later can be safe without changing the request.
 
 The `remediation` field always contains a next action, while a more specific remediation retained in `details` takes precedence.
+
+An active lifecycle-lock conflict is the only currently retryable failure.
+
+When its record is valid, `details` contains the sanitized `pid` and `acquiredAt`, and remediation requires verifying that owner and timestamp before manual removal.
+
+The lock ownership token is never included in output.
 
 For example, an unsafe install target produces one stderr object and leaves stdout empty:
 

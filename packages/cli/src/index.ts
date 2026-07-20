@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { spawn, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { constants, realpathSync, type Dirent, type Stats } from "node:fs";
 import { access, link, lstat, mkdir, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
@@ -58,7 +58,7 @@ import {
   validateInstallation,
 } from "./install.js";
 import { fail, output } from "./io.js";
-import { documentationOpenCommand } from "./platform.js";
+import { type DocumentationOpener, openDocumentationTarget } from "./platform.js";
 import {
   inspectInstallations,
   type InstallationStatus,
@@ -116,6 +116,7 @@ interface ProgramOptions {
   signal?: AbortSignal;
   interactive?: boolean;
   initWizard?: InitWizard;
+  documentationOpener?: DocumentationOpener;
 }
 
 interface DoctorCheck {
@@ -385,21 +386,12 @@ async function commandExists(command: string): Promise<boolean> {
 
 async function openDocumentation(
   id: string,
+  opener: DocumentationOpener,
   signal?: AbortSignal,
 ): Promise<{ target: string; opened: boolean }> {
   throwIfAborted(signal);
   const documentation = await documentationLocation(id);
-  const { command, args } = documentationOpenCommand(documentation);
-  const opened = await new Promise<boolean>((resolve, reject) => {
-    const child = spawn(command, args, { signal, stdio: "ignore" });
-    child.once("error", (error) => {
-      if (signal?.aborted) reject(signal.reason ?? error);
-      else resolve(false);
-    });
-    child.once("close", (code, closeSignal) => {
-      resolve(code === 0 && closeSignal === null);
-    });
-  });
+  const opened = await opener(documentation, signal);
   throwIfAborted(signal);
   return { target: documentation, opened };
 }
@@ -1645,6 +1637,7 @@ export function createProgram(options: ProgramOptions = {}): Command {
   const { signal } = options;
   const interactive = options.interactive ?? Boolean(process.stdin.isTTY && process.stdout.isTTY);
   const initWizard = options.initWizard ?? promptInitWizard;
+  const documentationOpener = options.documentationOpener ?? openDocumentationTarget;
   const program = new Command()
     .name("awf")
     .description("Browse, inspect, and install step-by-step workflows for coding agents.")
@@ -1803,7 +1796,7 @@ export function createProgram(options: ProgramOptions = {}): Command {
       if (options.raw) return output(source.files["workflow.md"]);
       if (options.location) return output(await documentationLocation(id));
       if (options.open) {
-        const documentation = await openDocumentation(id, signal);
+        const documentation = await openDocumentation(id, documentationOpener, signal);
         return output(
           documentation.opened
             ? `Opened ${documentation.target}.`
@@ -1967,7 +1960,8 @@ export function createProgram(options: ProgramOptions = {}): Command {
     .option("--json", "Print a versioned installation status report as JSON")
     .action(async (id, options) => {
       if (id !== undefined) recipePath(id);
-      const root = await projectRoot(Boolean(options.json));
+      const context = await resolveProjectContext(Boolean(options.json));
+      const root = context.root;
       const config = await loadConfig(root);
       const target = await safeTarget(root, options.target ?? config.default_target);
       const statuses = await inspectInstallations(catalogRoot(), target, id);
@@ -1988,6 +1982,12 @@ export function createProgram(options: ProgramOptions = {}): Command {
           ? {
               schema_version: 1,
               target,
+              project_context: {
+                project_root: root,
+                selection_source: context.source,
+                project_root_fallback: context.source === "cwd",
+                reason: explainProjectRootSource(context.source),
+              },
               filter: options.failuresOnly ? "failures-only" : "all",
               summary,
               installations: reportedStatuses,

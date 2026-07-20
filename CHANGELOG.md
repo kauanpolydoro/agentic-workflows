@@ -19,6 +19,8 @@ All notable project changes will be documented here.
 - Non-mutating shell-profile setup guidance through `awf completion <shell> --install-instructions`.
 - Explicit project-root preflight for humans and automation through `awf context`.
 - Resumable npm and GitHub release synchronization with exact tarball integrity checks.
+- Project-root provenance in every versioned installation status report.
+- Cross-platform documentation-opener contracts without skipped Windows unit coverage.
 
 ### Changed
 
@@ -29,6 +31,8 @@ All notable project changes will be documented here.
 - Doctor checks now expose a normalized per-check schema and equivalent top-level status, health, and exit-code verdicts.
 - Package smoke tests now exercise local, package-runner, global-install, completion, status, and lifecycle paths while rejecting test artifacts.
 - Acceptance coverage now verifies safe `SIGINT` and `SIGTERM` handling on supported POSIX runners.
+- Lifecycle conflicts now provide sanitized PID and acquisition-time guidance in human output while preserving tokens and requiring manual verification.
+- Windows CI now exercises compiled CLI automation from both the default shell and Git Bash.
 
 ## 0.1.0
 

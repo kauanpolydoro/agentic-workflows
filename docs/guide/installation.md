@@ -150,6 +150,8 @@ awf remove review-pull-request
 
 Use `awf status --failures-only` to hide healthy rows while preserving complete summary counts.
 
+Use `awf status --json` when scripts must retain the selected project root and its discovery source alongside those health records.
+
 Update and removal dry runs enumerate modified and missing managed files before any mutation.
 
 The CLI detects modified managed files and refuses to update or remove them unless `--force` is explicit.
@@ -163,6 +165,10 @@ Run consumer checks after installation or when a lifecycle command fails:
 ```bash
 awf doctor
 ```
+
+When a lifecycle lock blocks an operation, read the PID and acquisition time in the error, confirm that the process is inactive and the timestamp is stale, and run `awf doctor` before manually removing the lock.
+
+The CLI never steals or removes a lifecycle lock automatically.
 
 Show only warnings and failures while retaining summary counts with:
 
