@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { rmSync } from "node:fs";
+import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -11,10 +12,12 @@ interface Result {
 
 const cli = path.resolve("packages/cli/dist/index.js");
 const project = await mkdtemp(path.join(os.tmpdir(), "awf acceptance path with spaces "));
+const cleanup = () => rmSync(project, { recursive: true, force: true });
+process.once("exit", cleanup);
 await writeFile(path.join(project, "package.json"), "{}\n");
 
 function invoke(args: string[], noColor = false): Result {
-  const result = spawnSync(process.execPath, [cli, ...args], {
+  const result = spawnSync(process.execPath, [cli, "--project-root", project, ...args], {
     cwd: project,
     encoding: "utf8",
     env: { ...process.env, ...(noColor ? { NO_COLOR: "1" } : {}) },
@@ -59,14 +62,32 @@ const recipes = JSON.parse(success(["list", "--json"]).stdout) as unknown[];
 if (recipes.length !== 20) throw new Error(`Expected 20 recipes, received ${recipes.length}.`);
 success(["validate", path.resolve("packages/cli/catalog"), "--strict", "--json"]);
 success(["init", "--agent", "codex", "--target", "managed files"]);
-await import("node:fs/promises").then(({ mkdir }) =>
-  mkdir(path.join(project, "managed files"), { recursive: true }),
-);
+await mkdir(path.join(project, "managed files"), { recursive: true });
+const installPlan = JSON.parse(
+  success(["install", "write-release-notes", "--dry-run", "--show-content", "--json"]).stdout,
+) as { plan?: { operation?: string; proposed_files?: Array<{ content?: string }> } };
+if (
+  installPlan.plan?.operation !== "install" ||
+  !installPlan.plan.proposed_files?.every((file) => Boolean(file.content))
+) {
+  throw new Error("Install dry-run omitted its operation or proposed generated content.");
+}
 const manifest = JSON.parse(success(["install", "write-release-notes", "--json"]).stdout) as {
   files: Array<{ path: string; role: string }>;
 };
 if (!manifest.files.some((file) => file.role === "policy")) {
   throw new Error("Codex acceptance bundle omitted the invocation policy.");
+}
+const status = JSON.parse(success(["status", "--json"]).stdout) as {
+  installations?: Array<{ id?: string; status?: string }>;
+};
+if (
+  !status.installations?.some(
+    (installation) =>
+      installation.id === "write-release-notes" && installation.status === "healthy",
+  )
+) {
+  throw new Error("Installation status did not report the healthy installed workflow.");
 }
 failure(["install", "write-release-notes", "--json"], "CONFLICT");
 const checklist = manifest.files.find((file) => file.role === "checklist");
@@ -83,6 +104,15 @@ if (
   throw new Error("Update dry-run did not report the modified managed file and force requirement.");
 }
 failure(["update", "write-release-notes", "--json"], "MODIFIED_FILE");
+const removePlan = JSON.parse(
+  success(["remove", "write-release-notes", "--dry-run", "--json"]).stdout,
+) as { requiresForce?: boolean; changes?: { modifiedManagedFiles?: string[] } };
+if (
+  removePlan.requiresForce !== true ||
+  !removePlan.changes?.modifiedManagedFiles?.includes(checklist.path)
+) {
+  throw new Error("Remove dry-run did not report the modified file and force requirement.");
+}
 failure(["remove", "write-release-notes", "--json"], "MODIFIED_FILE");
 success(["update", "write-release-notes", "--force", "--json"]);
 success(["validate", path.join(project, "managed files"), "--strict", "--json"]);
@@ -111,3 +141,5 @@ if (parserFailure.stderr.includes("\u001b") || parserFailure.stderr.includes("\r
 process.stdout.write(
   "CLI acceptance passed for onboarding, JSON, NO_COLOR, spaced paths, and lifecycle safety.\n",
 );
+cleanup();
+process.removeListener("exit", cleanup);

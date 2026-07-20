@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { rmSync } from "node:fs";
 import { access, mkdir, mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -89,6 +90,60 @@ async function assertMissing(file: string): Promise<void> {
   throw new Error(`Expected removal of ${file}.`);
 }
 
+async function recursiveFiles(directory: string): Promise<string[]> {
+  const files: string[] = [];
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const candidate = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...(await recursiveFiles(candidate)));
+    } else if (entry.isFile()) {
+      files.push(candidate);
+    }
+  }
+  return files;
+}
+
+async function assertPackageContents(
+  packageRoot: string,
+  requiredRuntimeFiles: readonly string[],
+): Promise<void> {
+  const dist = path.join(packageRoot, "dist");
+  const testArtifacts = (await recursiveFiles(dist))
+    .map((file) => path.relative(dist, file))
+    .filter((file) => /\.(?:test|integration\.test|fixture)\./.test(file));
+  if (testArtifacts.length > 0) {
+    throw new Error(`Package contains test-only build artifacts: ${testArtifacts.join(", ")}.`);
+  }
+  for (const runtimeFile of requiredRuntimeFiles) await access(path.join(dist, runtimeFile));
+}
+
+interface PackReport {
+  files: Array<{ path: string }>;
+}
+
+function assertPackedContents(
+  report: PackReport,
+  allowedTopLevel: readonly string[],
+  requiredRuntimeFiles: readonly string[],
+): void {
+  const paths = report.files.map((file) => file.path);
+  const unexpected = paths.filter(
+    (file) => !allowedTopLevel.includes(file.split(path.posix.sep)[0] ?? ""),
+  );
+  if (unexpected.length > 0) {
+    throw new Error(`Tarball contains unexpected entries: ${unexpected.join(", ")}.`);
+  }
+  const testArtifacts = paths.filter((file) => /\.(?:test|integration\.test|fixture)\./.test(file));
+  if (testArtifacts.length > 0) {
+    throw new Error(`Tarball contains test-only build artifacts: ${testArtifacts.join(", ")}.`);
+  }
+  for (const runtimeFile of requiredRuntimeFiles) {
+    if (!paths.includes(`dist/${runtimeFile}`)) {
+      throw new Error(`Tarball omitted required runtime file dist/${runtimeFile}.`);
+    }
+  }
+}
+
 interface InstalledPackageMetadata {
   bugs?: { url?: unknown };
   engines?: { node?: unknown };
@@ -135,18 +190,51 @@ const rootPackage = JSON.parse(await readFile(path.join(repository, "package.jso
 if (typeof rootPackage.version !== "string") throw new Error("The root package has no version.");
 const workspace = await mkdtemp(path.join(os.tmpdir(), "awf package smoke with spaces "));
 const artifacts = await mkdtemp(path.join(os.tmpdir(), "awf-package-artifacts-"));
+const cleanup = () => {
+  rmSync(workspace, { recursive: true, force: true });
+  rmSync(artifacts, { recursive: true, force: true });
+};
+process.once("exit", cleanup);
 const consumer = path.join(workspace, "consumer project");
 await mkdir(consumer);
 
-run(
-  "pnpm",
-  ["--filter", "@kauanpolydoro/agentic-workflows-core", "pack", "--pack-destination", artifacts],
-  repository,
+const corePack = JSON.parse(
+  run(
+    "pnpm",
+    [
+      "--filter",
+      "@kauanpolydoro/agentic-workflows-core",
+      "pack",
+      "--pack-destination",
+      artifacts,
+      "--json",
+    ],
+    repository,
+  ),
+) as PackReport;
+const cliPack = JSON.parse(
+  run(
+    "pnpm",
+    [
+      "--filter",
+      "@kauanpolydoro/agentic-workflows",
+      "pack",
+      "--pack-destination",
+      artifacts,
+      "--json",
+    ],
+    repository,
+  ),
+) as PackReport;
+assertPackedContents(
+  corePack,
+  ["LICENSE", "README.md", "dist", "package.json"],
+  ["adapter-registry.js", "index.js"],
 );
-run(
-  "pnpm",
-  ["--filter", "@kauanpolydoro/agentic-workflows", "pack", "--pack-destination", artifacts],
-  repository,
+assertPackedContents(
+  cliPack,
+  ["LICENSE", "README.md", "catalog", "catalog.json", "dist", "docs", "package.json"],
+  ["context.js", "index.js", "install.js", "io.js", "status.js", "version.js"],
 );
 const tarballs = (await readdir(artifacts)).filter((file) => file.endsWith(".tgz"));
 const core = tarballs.find((file) => file.includes("agentic-workflows-core-"));
@@ -223,6 +311,15 @@ for (const alias of ["awf", "agentic-workflows"]) {
     );
   }
 }
+const globalAwf = globalBinary(globalPrefix, "awf");
+const globalHelp = run(globalAwf, [], workspace);
+if (!globalHelp.includes("awf init --agent codex") || !globalHelp.includes("awf list")) {
+  throw new Error("The globally installed awf command omitted actionable first-run help.");
+}
+const globalCatalog = JSON.parse(run(globalAwf, ["list", "--json"], workspace)) as unknown[];
+if (globalCatalog.length !== 20) {
+  throw new Error(`Globally installed awf returned ${globalCatalog.length} recipes.`);
+}
 const listed = JSON.parse(runCli(entrypoint, ["list", "--json"], consumer)) as unknown[];
 if (listed.length !== 20) throw new Error(`Packaged catalog returned ${listed.length} recipes.`);
 const shown = JSON.parse(
@@ -274,6 +371,17 @@ if (
 const targetRoot = path.join(consumer, installationTarget);
 const installedEntrypoint = path.join(targetRoot, installed.entrypoint);
 await access(installedEntrypoint);
+const installationStatus = JSON.parse(
+  runCli(entrypoint, ["status", "--target", installationTarget, "--json"], consumer),
+) as { installations?: Array<{ id?: string; status?: string }> };
+if (
+  !installationStatus.installations?.some(
+    (installation) =>
+      installation.id === "write-release-notes" && installation.status === "healthy",
+  )
+) {
+  throw new Error("The packaged CLI did not report its healthy installation.");
+}
 
 failureCode(
   runCliFailure(
@@ -321,6 +429,19 @@ failureCode(
   ),
   "MODIFIED_FILE",
 );
+const removePlan = JSON.parse(
+  runCli(
+    entrypoint,
+    ["remove", "write-release-notes", "--target", installationTarget, "--dry-run", "--json"],
+    consumer,
+  ),
+) as { requiresForce?: boolean; changes?: { modifiedManagedFiles?: string[] } };
+if (
+  removePlan.requiresForce !== true ||
+  !removePlan.changes?.modifiedManagedFiles?.includes(installed.entrypoint)
+) {
+  throw new Error("The packaged remove dry-run omitted its modified-file force requirement.");
+}
 failureCode(
   runCliFailure(
     entrypoint,
@@ -398,6 +519,19 @@ const corePackage = JSON.parse(
     "utf8",
   ),
 ) as InstalledPackageMetadata;
+const installedScope = path.join(consumer, "node_modules", "@kauanpolydoro");
+await assertPackageContents(path.join(installedScope, "agentic-workflows"), [
+  "context.js",
+  "index.js",
+  "install.js",
+  "io.js",
+  "status.js",
+  "version.js",
+]);
+await assertPackageContents(path.join(installedScope, "agentic-workflows-core"), [
+  "adapter-registry.js",
+  "index.js",
+]);
 assertPackageMetadata(
   "@kauanpolydoro/agentic-workflows",
   cliPackage,
@@ -445,3 +579,5 @@ await assertMissing(
 process.stdout.write(
   `Package smoke test passed for ${listed.length} bundled recipes and the install lifecycle.\n`,
 );
+cleanup();
+process.removeListener("exit", cleanup);
