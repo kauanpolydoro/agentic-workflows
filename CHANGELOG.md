@@ -8,8 +8,8 @@ No changes have been assigned to a later version.
 
 ## 0.1.0
 
-This section records the repository contents prepared for the initial draft release.
-It does not claim that packages or a GitHub release have been published.
+This section records the repository contents published to npm as version `0.1.0`.
+A tagged GitHub release has not yet been created.
 
 ### Added
 

@@ -14,7 +14,7 @@ Cada receita declara entradas, pré-condições, passos observáveis, decisões,
 
 ## Início rápido
 
-Depois da publicação da primeira versão, execute a CLI sem instalação global:
+Execute a CLI publicada sem instalação global:
 
 ```bash
 npx --yes @kauanpolydoro/agentic-workflows@latest list
@@ -28,8 +28,9 @@ npm install --save-dev @kauanpolydoro/agentic-workflows
 npx agentic-workflows list
 ```
 
-A primeira versão ainda não foi publicada no npm.
-Até lá, clone o repositório por HTTPS e execute a CLI local:
+O [pacote da CLI](https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows) e o [núcleo compartilhado](https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows-core) estão públicos no npm.
+
+Para desenvolver a partir do código-fonte, clone o repositório por HTTPS e execute a CLI local:
 
 ```bash
 git clone https://github.com/kauanpolydoro/agentic-workflows.git
@@ -49,8 +50,6 @@ Simule uma instalação sem escrever arquivos:
 ```bash
 pnpm awf install review-pull-request --agent generic --dry-run
 ```
-
-A instalação por pacote fica disponível quando a release marcada for publicada.
 
 ## Veja um resultado completo
 

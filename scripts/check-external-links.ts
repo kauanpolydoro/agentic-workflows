@@ -11,6 +11,7 @@ const allowedHosts = new Set([
   "kauanpolydoro.github.io",
   "learn.chatgpt.com",
   "opencode.ai",
+  "www.npmjs.com",
 ]);
 const maximumCacheBytes = 1024 * 1024;
 

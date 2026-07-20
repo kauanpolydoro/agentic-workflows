@@ -1,7 +1,6 @@
 # Installation
 
-The first npm release is prepared but has not been published yet.
-After it is published, `npx` is the shortest path to the CLI.
+The CLI is public on npm, and `npx` is the shortest path to run it.
 
 ## Run with npx
 
@@ -22,7 +21,7 @@ Every command on this page corresponds to a supported repository workflow.
 
 ## Install from source
 
-Use this path when the npm release is not available yet or when developing the repository.
+Use this path when developing the repository or validating changes that have not been published.
 
 ## What you need
 

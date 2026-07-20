@@ -25,6 +25,18 @@ describe("external link audit", () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
 
+  it("allows official npm package pages", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 200 }));
+
+    await expect(
+      inspectExternalLink("https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows", {
+        timeoutMs: 100,
+        fetcher,
+      }),
+    ).resolves.toMatchObject({ ok: true, status: 200 });
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+
   it("follows bounded redirects and falls back from HEAD to a ranged GET", async () => {
     const calls: Array<{ method: string; url: string }> = [];
     const fetcher = vi.fn<typeof fetch>(async (input, init) => {

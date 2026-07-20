@@ -13,7 +13,7 @@ Every recipe declares inputs, preconditions, observable steps, decision points, 
 
 ## Quick start
 
-After the first public release, run the CLI without a global installation:
+Run the published CLI without a global installation:
 
 ```bash
 npx --yes @kauanpolydoro/agentic-workflows@latest list
@@ -27,8 +27,9 @@ npm install --save-dev @kauanpolydoro/agentic-workflows
 npx agentic-workflows list
 ```
 
-The first npm release has not been published yet.
-Until then, clone the repository over HTTPS and run the local CLI:
+The [CLI package](https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows) and [shared core](https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows-core) are public on npm.
+
+To develop from source, clone the repository over HTTPS and run the local CLI:
 
 ```bash
 git clone https://github.com/kauanpolydoro/agentic-workflows.git
@@ -48,8 +49,6 @@ Preview a local installation without writing files:
 ```bash
 pnpm awf install review-pull-request --agent generic --dry-run
 ```
-
-Package-registry installation becomes available when the tagged release is published.
 
 ## Featured workflows
 
@@ -144,7 +143,7 @@ Use the private reporting process in [SECURITY.md](SECURITY.md) for vulnerabilit
 
 ## Project status
 
-The repository is preparing its initial public release.
+The initial npm packages are public, and the project continues to expand workflow evidence, adapters, and release automation.
 See [ROADMAP.md](ROADMAP.md), [CHANGELOG.md](CHANGELOG.md), and [LAUNCH_PLAN.md](LAUNCH_PLAN.md).
 
 Released under the [MIT License](LICENSE).

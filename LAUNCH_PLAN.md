@@ -6,7 +6,7 @@
 - Review all compatibility and verification claims against committed evidence.
 - Enable GitHub Pages, Issues, Discussions, private vulnerability reporting, and repository topics.
 - Capture a short CLI demonstration using only included fixtures.
-- Prepare the first tagged release without npm publication.
+- Publish the initial npm packages and configure Trusted Publisher before the next package release.
 
 ## Positioning
 

@@ -24,10 +24,9 @@ No.
 Recipes are YAML and Markdown data, and the CLI never executes their content.
 A recipe's text may suggest commands for you or your agent to run, which is exactly why you should read a workflow before using it.
 
-## Why might I not be able to install this from npm yet?
+## How do I run the CLI from npm?
 
-The first npm release has not been published yet.
-After the tagged release is available, use `npx --yes @kauanpolydoro/agentic-workflows@latest list` or install the package as a project dependency.
+Use `npx --yes @kauanpolydoro/agentic-workflows@latest list`, or install the package as a project dependency when you need to pin its version.
 
 ## Can I edit a file after installing it?
 
