@@ -29,6 +29,24 @@ export interface InstallationStatus {
   } | null;
 }
 
+export interface InstallationStatusSummary {
+  total: number;
+  healthy: number;
+  drifted: number;
+  invalid: number;
+}
+
+export function summarizeInstallations(
+  statuses: readonly InstallationStatus[],
+): InstallationStatusSummary {
+  return {
+    total: statuses.length,
+    healthy: statuses.filter((status) => status.status === "healthy").length,
+    drifted: statuses.filter((status) => status.status === "drifted").length,
+    invalid: statuses.filter((status) => status.status === "invalid").length,
+  };
+}
+
 function errorCode(error: unknown): string {
   return error instanceof AwfError
     ? error.code

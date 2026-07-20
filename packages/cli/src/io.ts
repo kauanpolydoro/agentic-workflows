@@ -1,4 +1,5 @@
 import { AwfError, sanitizeTerminal } from "@kauanpolydoro/agentic-workflows-core";
+import { errorContractMetadata } from "./error-contract.js";
 
 export function output(value: unknown, json = false): void {
   if (json) process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
@@ -9,6 +10,7 @@ function humanError(value: {
   message: string;
   code?: unknown;
   details?: Record<string, unknown>;
+  remediation?: string;
 }): string {
   const lines = [
     value.code === undefined
@@ -33,14 +35,16 @@ function humanError(value: {
       )
     : [];
   if (suggestions.length > 0) lines.push(`Suggestions: ${suggestions.join(", ")}`);
-  if (typeof value.details?.remediation === "string") {
+  if (typeof value.remediation === "string") {
+    lines.push(`Next: ${value.remediation}`);
+  } else if (typeof value.details?.remediation === "string") {
     lines.push(`Next: ${value.details.remediation}`);
   }
   return sanitizeTerminal(lines.join("\n"));
 }
 
 export function fail(error: unknown, json = false, exitCode = 1): never {
-  const value =
+  const base =
     error instanceof Error
       ? {
           schema_version: 1,
@@ -52,8 +56,9 @@ export function fail(error: unknown, json = false, exitCode = 1): never {
             : {}),
         }
       : { schema_version: 1, error: "UnknownError", message: String(error) };
-  if (json) process.stderr.write(`${JSON.stringify(value)}\n`);
-  else process.stderr.write(`${humanError(value)}\n`);
+  const metadata = errorContractMetadata(base);
+  if (json) process.stderr.write(`${JSON.stringify({ ...base, ...metadata })}\n`);
+  else process.stderr.write(`${humanError({ ...base, remediation: metadata.remediation })}\n`);
   process.exitCode = exitCode;
   throw new Error("__AWF_HANDLED__");
 }

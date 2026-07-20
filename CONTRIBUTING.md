@@ -24,6 +24,7 @@ pnpm typecheck
 pnpm test
 pnpm test:coverage
 pnpm build
+pnpm test:automation
 pnpm test:integration
 pnpm test:acceptance
 pnpm test:package
@@ -39,6 +40,10 @@ pnpm check:clean
 Run the commands from a clean worktree after `pnpm install --frozen-lockfile`.
 Do not skip a failing command or lower a threshold to make the suite pass.
 `pnpm check:clean` is the final guard: it must see no stale generated artifact and no unintended tracked or untracked file.
+
+`pnpm test:automation` validates the public JSON contract across command boundaries in real subprocesses.
+
+CI runs automation, integration, acceptance, and packed-package smoke coverage on Linux, Windows, and macOS, with an additional Node.js 22 compatibility job.
 
 ## Add a recipe
 

@@ -68,14 +68,33 @@ function globalBinary(prefix: string, name: string): string {
     : path.join(prefix, "bin", name);
 }
 
-function failureCode(result: { stderr: string }, expected: string): void {
-  let value: { schema_version?: unknown; code?: unknown };
+function failureCode(
+  result: { stdout: string; stderr: string },
+  expected: string,
+  command: string,
+): void {
+  let value: {
+    schema_version?: unknown;
+    code?: unknown;
+    command?: unknown;
+    retryable?: unknown;
+    help_url?: unknown;
+    remediation?: unknown;
+  };
   try {
-    value = JSON.parse(result.stderr) as { schema_version?: unknown; code?: unknown };
+    value = JSON.parse(result.stderr) as typeof value;
   } catch {
     throw new Error(`Expected a JSON error with code ${expected}, received: ${result.stderr}`);
   }
-  if (value.schema_version !== 1 || value.code !== expected) {
+  if (
+    result.stdout !== "" ||
+    value.schema_version !== 1 ||
+    value.code !== expected ||
+    value.command !== command ||
+    typeof value.retryable !== "boolean" ||
+    typeof value.help_url !== "string" ||
+    typeof value.remediation !== "string"
+  ) {
     throw new Error(`Expected error code ${expected}, received: ${String(value.code)}.`);
   }
 }
@@ -237,6 +256,7 @@ assertPackedContents(
   [
     "completion.js",
     "context.js",
+    "error-contract.js",
     "index.js",
     "install.js",
     "io.js",
@@ -413,9 +433,29 @@ if (
 ) {
   throw new Error("The packaged CLI did not report its healthy installation.");
 }
+const filteredInstallationStatus = JSON.parse(
+  runCli(
+    entrypoint,
+    ["status", "--target", installationTarget, "--failures-only", "--json"],
+    consumer,
+  ),
+) as {
+  filter?: string;
+  summary?: { total?: number; healthy?: number };
+  installations?: unknown[];
+};
+if (
+  filteredInstallationStatus.filter !== "failures-only" ||
+  filteredInstallationStatus.summary?.total !== 1 ||
+  filteredInstallationStatus.summary?.healthy !== 1 ||
+  filteredInstallationStatus.installations?.length !== 0
+) {
+  throw new Error("The packaged CLI lost summary data while filtering healthy installations.");
+}
 failureCode(
   runCliFailure(entrypoint, ["status", "review-pull-request", "--json"], consumer),
   "NOT_FOUND",
+  "status",
 );
 
 failureCode(
@@ -433,6 +473,7 @@ failureCode(
     consumer,
   ),
   "CONFLICT",
+  "install",
 );
 failureCode(
   runCliFailure(
@@ -449,6 +490,7 @@ failureCode(
     consumer,
   ),
   "INVALID_PATH",
+  "install",
 );
 
 const originalEntrypoint = await readFile(installedEntrypoint, "utf8");
@@ -463,6 +505,7 @@ failureCode(
     consumer,
   ),
   "MODIFIED_FILE",
+  "update",
 );
 const removePlan = JSON.parse(
   runCli(
@@ -490,6 +533,7 @@ failureCode(
     consumer,
   ),
   "MODIFIED_FILE",
+  "remove",
 );
 await writeFile(installedEntrypoint, originalEntrypoint);
 
@@ -566,6 +610,7 @@ const installedScope = path.join(consumer, "node_modules", "@kauanpolydoro");
 await assertPackageContents(path.join(installedScope, "agentic-workflows"), [
   "completion.js",
   "context.js",
+  "error-contract.js",
   "index.js",
   "install.js",
   "io.js",

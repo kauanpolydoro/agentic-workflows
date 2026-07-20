@@ -23,7 +23,9 @@ describe("terminal output", () => {
   it("sanitizes human error messages", () => {
     vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     expect(() => fail(new Error("bad\u001b[31mred"))).toThrow("__AWF_HANDLED__");
-    expect(process.stderr.write).toHaveBeenCalledWith("Error: badred\n");
+    expect(process.stderr.write).toHaveBeenCalledWith(
+      "Error: badred\nNext: Run `awf --help` to verify the command syntax.\n",
+    );
   });
 
   it("preserves codes, remediation, and validation issues in human errors", () => {
@@ -79,6 +81,11 @@ describe("terminal output", () => {
       error: "AwfError",
       code: "INVALID_PATH",
       message: "unsafe\u001b[31m path",
+      command: "awf",
+      retryable: false,
+      help_url: "https://kauanpolydoro.github.io/agentic-workflows/guide/cli-reference",
+      remediation:
+        "Choose a real, project-local path without symbolic-link or traversal boundaries.",
     });
   });
 

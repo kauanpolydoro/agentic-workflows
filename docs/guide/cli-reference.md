@@ -108,7 +108,9 @@ Drift details identify each modified or missing managed file.
 
 Use `--target` to inspect another project-local target.
 
-Use `--json` for a report with `schema_version`, `target`, and `installations` fields.
+Use `--json` for a report with `schema_version`, `target`, `filter`, `summary`, and `installations` fields.
+
+Use `--failures-only` to keep complete healthy, drifted, and invalid summary counts while returning only drifted or invalid installation records.
 
 The command exits with code `1` when any selected installation is drifted or invalid.
 
@@ -148,6 +150,10 @@ Use `--agent` and `--target` to choose those defaults.
 
 An existing configuration is never replaced unless `--force` is explicit.
 
+An unsupported configuration schema fails with the detected version, supported versions, and an explicit recreation command.
+
+Back up values that must be retained before running `awf init --force --no-interactive --agent <agent> --target <directory>` because recreation replaces the configuration instead of guessing a migration.
+
 When no Git, AWF configuration, or package marker exists, human project commands report that the current directory was selected and suggest `--project-root`.
 
 JSON commands stay machine-only and do not emit that notice.
@@ -176,6 +182,6 @@ With `--json`, successful commands print exactly one JSON value to stdout and no
 
 With `--json`, failures print exactly one object to stderr and leave stdout empty.
 
-Every JSON error contains `error` and `message`, includes a stable `code` when available, and includes `details` for structured diagnostics.
+Every JSON error contains `error`, `message`, a stable `code`, `command`, `retryable`, `help_url`, and `remediation`, and includes `details` for structured diagnostics when available.
 
 See the [CLI output contracts](./output-contracts) for the schema owner and compatibility rules of every JSON mode.

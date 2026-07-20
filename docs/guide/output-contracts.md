@@ -61,13 +61,38 @@ The surrounding command result retains its command-specific fields for compatibi
 
 `doctor --failures-only --json` retains `summary` counts for every check while returning only warning and failure records in `checks`.
 
+`status --failures-only --json` retains `summary` counts for every installation while returning only drifted and invalid records in `installations`.
+
 ## Error schema version 1
 
-Every JSON error includes `schema_version`, `error`, and `message`.
+Every JSON error includes `schema_version`, `error`, `message`, `code`, `command`, `retryable`, `help_url`, and `remediation`.
 
-Known operational failures also include a stable `code` such as `NOT_FOUND`, `CONFLICT`, `MODIFIED_FILE`, or `INVALID_PATH`.
+Known operational failures use a stable `code` such as `NOT_FOUND`, `CONFLICT`, `MODIFIED_FILE`, or `INVALID_PATH`.
+
+Unexpected failures use `UNKNOWN_ERROR` instead of omitting the field.
 
 Structured failures include `details` with fields such as remediation, suggestions, affected paths, or validation issues.
+
+The `command` field identifies the command boundary that failed, and `help_url` points to its reference section.
+
+The `retryable` field is deliberately conservative and is `true` only when retrying later can be safe without changing the request.
+
+The `remediation` field always contains a next action, while a more specific remediation retained in `details` takes precedence.
+
+For example, an unsafe install target produces one stderr object and leaves stdout empty:
+
+```json
+{
+  "schema_version": 1,
+  "error": "AwfError",
+  "message": "Target must stay inside the project root.",
+  "code": "INVALID_PATH",
+  "command": "install",
+  "retryable": false,
+  "help_url": "https://kauanpolydoro.github.io/agentic-workflows/guide/cli-reference#awf-install-workflow-id",
+  "remediation": "Choose a real, project-local path without symbolic-link or traversal boundaries."
+}
+```
 
 Consumers should branch on `code`, not on the human-readable `message`.
 

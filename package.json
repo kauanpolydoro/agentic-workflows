@@ -47,6 +47,7 @@
     "check:clean": "tsx scripts/check-clean-worktree.ts",
     "new:recipe": "tsx scripts/new-recipe.ts",
     "test:fixtures": "tsx scripts/test-fixtures.ts",
+    "test:automation": "tsx scripts/automation-contracts.ts",
     "test:acceptance": "tsx scripts/acceptance-cli.ts",
     "test:package": "tsx scripts/package-smoke.ts",
     "pack:smoke": "pnpm build && pnpm test:package"

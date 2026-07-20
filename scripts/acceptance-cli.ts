@@ -43,7 +43,20 @@ function failure(args: string[], code?: string): Result {
       throw new Error(`Expected JSON failure stdout to stay empty, received: ${result.stdout}`);
     }
     const payload = JSON.parse(result.stderr) as { schema_version?: number; code?: string };
-    if (payload.schema_version !== 1 || payload.code !== code) {
+    const contract = payload as typeof payload & {
+      command?: unknown;
+      retryable?: unknown;
+      help_url?: unknown;
+      remediation?: unknown;
+    };
+    if (
+      payload.schema_version !== 1 ||
+      payload.code !== code ||
+      contract.command !== args[0] ||
+      typeof contract.retryable !== "boolean" ||
+      typeof contract.help_url !== "string" ||
+      typeof contract.remediation !== "string"
+    ) {
       throw new Error(`Expected ${code}, received ${payload.code ?? "no error code"}.`);
     }
   }
@@ -164,6 +177,19 @@ if (
   )
 ) {
   throw new Error("Installation status did not report the healthy installed workflow.");
+}
+const filteredStatus = JSON.parse(success(["status", "--failures-only", "--json"]).stdout) as {
+  filter?: string;
+  summary?: { total?: number; healthy?: number };
+  installations?: unknown[];
+};
+if (
+  filteredStatus.filter !== "failures-only" ||
+  filteredStatus.summary?.total !== 1 ||
+  filteredStatus.summary?.healthy !== 1 ||
+  filteredStatus.installations?.length !== 0
+) {
+  throw new Error("Filtered status output omitted its summary or retained healthy records.");
 }
 const diagnostics = JSON.parse(success(["doctor", "--failures-only", "--json"]).stdout) as {
   filter?: string;

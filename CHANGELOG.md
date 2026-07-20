@@ -12,12 +12,16 @@ All notable project changes will be documented here.
 - Bash, Zsh, Fish, and PowerShell completion through `awf completion <shell>`.
 - Interactive `awf init` setup for agent and target selection while retaining deterministic flags.
 - Versioned lifecycle plan, validation, diagnostic, and JSON error contracts.
+- Stable machine-error metadata with command context, conservative retryability, reference links, and remediation.
+- Filtered installation status with complete healthy, drifted, and invalid summary counts.
+- Cross-command automation contract coverage on the Linux, Windows, and macOS CI matrix.
 - Resumable npm and GitHub release synchronization with exact tarball integrity checks.
 
 ### Changed
 
 - No-op updates identify and preserve unchanged managed files instead of rewriting them.
 - Root fallback notices, documentation location output, and filtered doctor diagnostics make ambiguous environments easier to inspect.
+- Unsupported configuration schemas now report a safe, explicit recreation path instead of a generic validation failure.
 - Package smoke tests now exercise local, package-runner, global-install, completion, status, and lifecycle paths while rejecting test artifacts.
 - Acceptance coverage now verifies safe `SIGINT` and `SIGTERM` handling on supported POSIX runners.
 

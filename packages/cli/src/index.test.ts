@@ -314,6 +314,40 @@ describe.sequential("CLI command contracts", () => {
     });
   });
 
+  it("filters healthy status records while retaining complete summary counts", async () => {
+    await run("init", "--agent", "codex", "--target", "status target");
+    stdout = "";
+    await run("install", "write-release-notes", "--json");
+    const manifest = JSON.parse(stdout) as { files: Array<{ path: string }> };
+
+    stdout = "";
+    await run("status", "--failures-only", "--json");
+    expect(JSON.parse(stdout)).toMatchObject({
+      schema_version: 1,
+      filter: "failures-only",
+      summary: { total: 1, healthy: 1, drifted: 0, invalid: 0 },
+      installations: [],
+    });
+    stdout = "";
+    await run("status", "--failures-only");
+    expect(stdout).toContain("No drifted or invalid workflows were found");
+    expect(stdout).toContain("1 healthy, 0 drifted, 0 invalid");
+
+    const managedFile = manifest.files[0]?.path;
+    if (!managedFile) throw new Error("The installed fixture did not contain a managed file.");
+    const installedPath = path.join(project, "status target", managedFile);
+    await writeFile(installedPath, `${await readFile(installedPath, "utf8")}local edit\n`);
+
+    stdout = "";
+    await run("status", "--failures-only", "--json");
+    expect(JSON.parse(stdout)).toMatchObject({
+      filter: "failures-only",
+      summary: { total: 1, healthy: 0, drifted: 1, invalid: 0 },
+      installations: [{ id: "write-release-notes", status: "drifted" }],
+    });
+    expect(process.exitCode).toBe(1);
+  });
+
   it("suggests nearby workflow IDs without weakening ID validation", async () => {
     await expect(run("show", "review-pull-reques")).rejects.toMatchObject({
       code: "MISSING_FILE",
@@ -1070,8 +1104,40 @@ describe.sequential("CLI command contracts", () => {
     });
   });
 
+  it("explains unsupported configuration schemas and supports explicit recreation", async () => {
+    const directory = path.join(project, ".agentic-workflows");
+    await mkdir(directory, { recursive: true });
+    await writeFile(
+      path.join(directory, "config.yml"),
+      "schema_version: 2\ndefault_agent: generic\ndefault_target: .\n",
+    );
+
+    await expect(run("install", "write-release-notes", "--dry-run")).rejects.toMatchObject({
+      code: "INVALID_RECIPE",
+      details: {
+        schemaVersion: 2,
+        supportedSchemaVersions: [1],
+        remediation: expect.stringContaining("awf init --force --no-interactive"),
+      },
+    });
+
+    stdout = "";
+    await run("init", "--force", "--no-interactive", "--agent", "codex", "--target", "managed");
+    expect(parse(await readFile(path.join(directory, "config.yml"), "utf8"))).toEqual({
+      schema_version: 1,
+      default_agent: "codex",
+      default_target: "managed",
+    });
+
+    stdout = "";
+    await run("install", "write-release-notes", "--dry-run", "--json");
+    expect(JSON.parse(stdout)).toMatchObject({
+      recipe: "write-release-notes",
+      adapter: { id: "codex" },
+    });
+  });
+
   it.each([
-    "schema_version: 2\ndefault_agent: generic\ndefault_target: .\n",
     "schema_version: 1\ndefault_agent: unknown\ndefault_target: .\n",
     "schema_version: 1\ndefault_agent: generic\ndefault_target: ../outside\n",
     "schema_version: 1\ndefault_agent: generic\ndefault_target: .\nextra: true\n",

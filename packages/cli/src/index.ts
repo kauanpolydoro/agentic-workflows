@@ -49,7 +49,12 @@ import {
 } from "./install.js";
 import { fail, output } from "./io.js";
 import { documentationOpenCommand } from "./platform.js";
-import { inspectInstallations, type InstallationStatus } from "./status.js";
+import {
+  inspectInstallations,
+  type InstallationStatus,
+  type InstallationStatusSummary,
+  summarizeInstallations,
+} from "./status.js";
 import { CLI_VERSION } from "./version.js";
 import { type InitWizard, promptInitWizard } from "./wizard.js";
 
@@ -188,13 +193,29 @@ function safeRelativeTarget(value: unknown): value is string {
 async function loadConfig(root: string): Promise<ProjectConfig> {
   const file = path.join(root, ".agentic-workflows", "config.yml");
   try {
-    const raw = parse(
+    const parsed = parse(
       (await readBoundedRegularFile(file, MAX_CONFIG_BYTES, root)).toString("utf8"),
       {
         maxAliasCount: 0,
         uniqueKeys: true,
       },
-    ) as Record<string, unknown>;
+    ) as unknown;
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      throw new AwfError("INVALID_RECIPE", "The local AWF configuration is invalid.");
+    }
+    const raw = parsed as Record<string, unknown>;
+    if ("schema_version" in raw && raw.schema_version !== 1) {
+      throw new AwfError(
+        "INVALID_RECIPE",
+        `Unsupported local AWF configuration schema version ${JSON.stringify(raw.schema_version)}.`,
+        {
+          schemaVersion: raw.schema_version,
+          supportedSchemaVersions: [1],
+          remediation:
+            "Back up the configuration, then recreate it with `awf init --force --no-interactive --agent <agent> --target <directory>` using reviewed values.",
+        },
+      );
+    }
     const keys = Object.keys(raw).sort();
     if (
       raw.schema_version !== 1 ||
@@ -1505,12 +1526,21 @@ function renderWorkflowDetails(
   ].join("\n");
 }
 
-function renderInstallationStatus(target: string, statuses: readonly InstallationStatus[]): string {
-  if (statuses.length === 0) {
+function renderInstallationStatus(
+  target: string,
+  statuses: readonly InstallationStatus[],
+  summary: InstallationStatusSummary,
+  failuresOnly: boolean,
+): string {
+  if (summary.total === 0) {
     return `No workflows are installed in ${target}. Preview one with \`awf install <workflow-id> --agent <agent> --dry-run\`.`;
   }
+  if (failuresOnly && statuses.length === 0) {
+    return `No drifted or invalid workflows were found in ${target}. Summary: ${summary.healthy} healthy, 0 drifted, 0 invalid.`;
+  }
   return [
-    `Installed workflows in ${target}:`,
+    `${failuresOnly ? "Drifted or invalid" : "Installed"} workflows in ${target}:`,
+    `Summary: ${summary.healthy} healthy, ${summary.drifted} drifted, ${summary.invalid} invalid.`,
     ...statuses.flatMap((status) => [
       `${status.id.padEnd(28)} ${status.status.padEnd(8)} ${status.agent ?? "unknown"} ${status.recipeVersion ?? "unknown"} ${status.files} file(s)`,
       ...(status.issue ? [`  [${status.issue.code}] ${status.issue.message}`] : []),
@@ -1854,6 +1884,7 @@ export function createProgram(options: ProgramOptions = {}): Command {
     .command("status [workflow-id]")
     .description("Inspect locally installed workflows and report managed-file drift.")
     .option("--target <directory>", "Target inside the project")
+    .option("--failures-only", "Show only drifted and invalid installations with a full summary")
     .option("--json", "Print a versioned installation status report as JSON")
     .action(async (id, options) => {
       if (id !== undefined) recipePath(id);
@@ -1869,14 +1900,25 @@ export function createProgram(options: ProgramOptions = {}): Command {
           remediation: `Preview it with \`awf install ${id} --dry-run\` or run \`awf status\` to inspect every installation.`,
         });
       }
+      const summary = summarizeInstallations(statuses);
+      const reportedStatuses = options.failuresOnly
+        ? statuses.filter((status) => status.status !== "healthy")
+        : statuses;
       output(
         options.json
           ? {
               schema_version: 1,
               target,
-              installations: statuses,
+              filter: options.failuresOnly ? "failures-only" : "all",
+              summary,
+              installations: reportedStatuses,
             }
-          : renderInstallationStatus(target, statuses),
+          : renderInstallationStatus(
+              target,
+              reportedStatuses,
+              summary,
+              Boolean(options.failuresOnly),
+            ),
         Boolean(options.json),
       );
       if (statuses.some((status) => status.status !== "healthy")) process.exitCode = 1;

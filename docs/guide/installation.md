@@ -36,6 +36,16 @@ In an interactive terminal, you can run bare `awf init` and choose the agent and
 
 Passing `--agent`, `--target`, or `--no-interactive` skips the wizard, which keeps scripts and CI deterministic.
 
+If a future or unsupported configuration schema is detected, the CLI reports the detected and supported versions instead of interpreting it loosely.
+
+Back up the existing values, then recreate the configuration explicitly with reviewed values:
+
+```bash
+awf init --force --no-interactive --agent codex --target .
+```
+
+This command replaces the configuration and does not claim to migrate unknown fields.
+
 The dry run generates the proposed bundle in memory and prints every planned file action without changing the target.
 
 Add `--show-content` to inspect the complete generated content after the concise plan.
@@ -118,6 +128,8 @@ awf remove review-pull-request
 ```
 
 `awf status` reports each installed workflow as healthy, drifted, or invalid.
+
+Use `awf status --failures-only` to hide healthy rows while preserving complete summary counts.
 
 Update and removal dry runs enumerate modified and missing managed files before any mutation.
 

@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { installRecipe } from "./install.js";
-import { inspectInstallations } from "./status.js";
+import { inspectInstallations, summarizeInstallations } from "./status.js";
 
 const catalog = path.resolve("recipes");
 const recipe = path.join(catalog, "review-pull-request");
@@ -24,6 +24,16 @@ afterEach(async () => {
 });
 
 describe("installation status", () => {
+  it("summarizes every health state without discarding the total", () => {
+    expect(
+      summarizeInstallations([
+        { id: "one", status: "healthy", agent: null, recipeVersion: null, files: 1, issue: null },
+        { id: "two", status: "drifted", agent: null, recipeVersion: null, files: 1, issue: null },
+        { id: "three", status: "invalid", agent: null, recipeVersion: null, files: 0, issue: null },
+      ]),
+    ).toEqual({ total: 3, healthy: 1, drifted: 1, invalid: 1 });
+  });
+
   it("reports empty, healthy, and drifted targets", async () => {
     const target = await temporaryTarget();
     expect(await inspectInstallations(catalog, target)).toEqual([]);

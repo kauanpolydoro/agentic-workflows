@@ -58,6 +58,10 @@ awf remove review-pull-request --dry-run
 
 `awf status` reports healthy installations, modified or missing managed files, and invalid manifests without changing the project.
 
+Use `awf status --failures-only` to focus on drift while retaining complete summary counts.
+
+If the project configuration uses an unsupported schema, back it up and recreate reviewed values with `awf init --force --no-interactive --agent <agent> --target <directory>`.
+
 Apply `update` or `remove` without `--dry-run` only after reviewing its complete file plan.
 
 ## Run without a global installation
