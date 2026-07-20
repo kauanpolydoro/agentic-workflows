@@ -43,4 +43,30 @@ describe("init wizard choices", () => {
     expect(rendered).toContain("Use a relative path that stays inside the project root.");
     expect(rendered).not.toContain("\u001b");
   });
+
+  it("accepts empty answers through defaults while honoring an abort signal", async () => {
+    const controller = new AbortController();
+    async function* answers() {
+      for (const answer of ["\n", "\n"]) {
+        await new Promise<void>((resolve) => setTimeout(resolve, 5));
+        yield answer;
+      }
+    }
+    const input = Readable.from(answers());
+    const output = new Writable({
+      write(_chunk, _encoding, callback) {
+        callback();
+      },
+    });
+    await expect(
+      promptInitWizard({
+        defaultAgent: "codex",
+        defaultTarget: "managed",
+        isValidTarget: (value) => value === "managed",
+        signal: controller.signal,
+        input,
+        output,
+      }),
+    ).resolves.toEqual({ agent: "codex", target: "managed" });
+  });
 });

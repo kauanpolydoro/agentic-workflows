@@ -20,6 +20,8 @@ awf
 
 Generate tab completion for Bash, Zsh, Fish, or PowerShell with `awf completion <shell>`.
 
+The generated completion is command-specific and completes workflow IDs, agents, categories, tags, adapter status, compatibility, and verification states where they apply.
+
 Run `awf completion <shell> --install-instructions` for persistent profile setup that does not modify the profile automatically.
 
 Run bare `awf init` in an interactive terminal for a guided agent and target setup, or pass `--agent`, `--target`, or `--no-interactive` to keep automation non-interactive.
@@ -108,5 +110,18 @@ Run `awf doctor` for consumer health checks, or `awf doctor --maintainer` when d
 Machine diagnostics expose the selected project-root source and structured remediation while keeping lifecycle-lock recovery manual and fail-closed.
 
 If a lifecycle lock blocks an operation, human output identifies the recorded PID and acquisition time without exposing the ownership token, then explains how to verify staleness before manual removal.
+
+SIGINT and SIGTERM preserve the selected output mode after safe cancellation.
+
+Human commands receive a coded recovery message, while commands using `--json` receive one versioned `INTERRUPTED` object on stderr and leave stdout empty.
+
+Node.js automation can validate the published versioned records with the public subpath export:
+
+```js
+import { parseCliOutput } from "@kauanpolydoro/agentic-workflows/output-contract";
+
+const status = JSON.parse(capturedStdout);
+parseCliOutput("status", status);
+```
 
 See the [installation guide](https://kauanpolydoro.github.io/agentic-workflows/guide/installation.html) and [CLI reference](https://kauanpolydoro.github.io/agentic-workflows/guide/cli-reference.html) for the complete contract.

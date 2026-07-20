@@ -63,4 +63,38 @@ describe("machine error metadata", () => {
       ),
     });
   });
+
+  it.each([
+    ["CONFLICT", ["install"], "conflicting path"],
+    ["MODIFIED_FILE", ["remove"], "dry-run plan"],
+    ["MISSING_FILE", ["show"], "awf list"],
+    ["NOT_FOUND", ["status"], "project root"],
+    ["FILE_TOO_LARGE", ["validate"], "size limit"],
+    ["INVALID_RECIPE", ["validate"], "awf validate --strict"],
+    ["INVALID_MANIFEST", ["manifest"], "awf doctor"],
+    ["INTERRUPTED", ["show"], "awf show --help"],
+  ] as const)("provides default %s recovery", (code, args, expected) => {
+    expect(errorContractMetadata({ code, message: "failure" }, args).remediation).toContain(
+      expected,
+    );
+  });
+
+  it("covers unknown errors and lifecycle locks without valid owner metadata", () => {
+    expect(errorContractMetadata({ code: 42, message: "unknown" }, []).remediation).toContain(
+      "awf --help",
+    );
+    expect(
+      errorContractMetadata(
+        {
+          code: "CONFLICT",
+          message: "Another installation lifecycle operation owns this target.",
+          details: { pid: "invalid" },
+        },
+        ["update"],
+      ),
+    ).toMatchObject({
+      retryable: true,
+      remediation: expect.stringContaining("Identify the lifecycle-lock owner"),
+    });
+  });
 });

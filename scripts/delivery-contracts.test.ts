@@ -67,6 +67,7 @@ describe("delivery contracts", () => {
       "pnpm test",
       "pnpm test:coverage",
       "pnpm build",
+      "pnpm test:completion",
       "pnpm test:integration",
       "pnpm test:acceptance",
       "pnpm test:package",

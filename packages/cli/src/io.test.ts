@@ -137,4 +137,35 @@ describe("terminal output", () => {
       },
     });
   });
+
+  it("normalizes malformed human issue metadata and filters suggestions", () => {
+    const write = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    expect(() =>
+      fail(
+        new AwfError("INVALID_RECIPE", "mixed details", {
+          issues: [{}, { code: 42, path: false }],
+          suggestions: [42, "review-pull-request"],
+          pid: "invalid",
+          acquiredAt: "2026-07-20T12:00:00.000Z",
+        }),
+      ),
+    ).toThrow("__AWF_HANDLED__");
+    const rendered = String(write.mock.calls[0]?.[0]);
+    expect(rendered).toContain("- [ISSUE]");
+    expect(rendered).toContain("Suggestions: review-pull-request");
+    expect(rendered).not.toContain("Owner:");
+  });
+
+  it("renders non-error values through the complete JSON contract", () => {
+    const write = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    expect(() => fail({ reason: "unknown" }, true, 2)).toThrow("__AWF_HANDLED__");
+    expect(JSON.parse(String(write.mock.calls[0]?.[0]))).toMatchObject({
+      schema_version: 1,
+      error: "UnknownError",
+      message: "[object Object]",
+      code: "UNKNOWN_ERROR",
+      command: "awf",
+    });
+    expect(process.exitCode).toBe(2);
+  });
 });

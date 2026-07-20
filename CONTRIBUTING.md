@@ -24,6 +24,7 @@ pnpm typecheck
 pnpm test
 pnpm test:coverage
 pnpm build
+pnpm test:completion
 pnpm test:automation
 pnpm test:integration
 pnpm test:acceptance
@@ -45,7 +46,9 @@ Do not skip a failing command or lower a threshold to make the suite pass.
 
 CI runs unit, automation, integration, acceptance, and packed-package smoke coverage on Linux, Windows, and macOS, with an additional Node.js 22 compatibility job.
 
-The Windows matrix also runs the compiled automation contract from Git Bash so shell invocation, path handling, generated completion, and non-interactive output are checked outside PowerShell.
+The matrix loads generated Bash completion on Linux, Zsh completion on macOS, Fish completion on Linux, and PowerShell completion on Windows, then verifies command-specific candidates in each native shell.
+
+The Windows matrix also runs the compiled automation contract from Git Bash so shell invocation, path handling, and non-interactive output are checked outside PowerShell.
 
 ## Add a recipe
 

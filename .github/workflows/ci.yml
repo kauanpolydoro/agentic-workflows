@@ -30,6 +30,8 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test:coverage
       - run: pnpm build
+      - name: Load native Bash and Zsh completion
+        run: pnpm test:completion
       - name: Verify compiled CLI automation contracts on Linux
         run: pnpm test:automation
       - run: pnpm test:integration
@@ -65,6 +67,21 @@ jobs:
       - name: Exercise unit contracts on ${{ runner.os }}
         run: pnpm test
       - run: pnpm build
+      - name: Load Bash completion on Linux
+        if: runner.os == 'Linux'
+        run: pnpm test:completion -- --shell bash
+      - name: Load Zsh completion on macOS
+        if: runner.os == 'macOS'
+        run: pnpm test:completion -- --shell zsh
+      - name: Load PowerShell completion on Windows
+        if: runner.os == 'Windows'
+        run: pnpm test:completion -- --shell pwsh
+      - name: Install Fish on Linux
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install --yes fish
+      - name: Load Fish completion on Linux
+        if: runner.os == 'Linux'
+        run: pnpm test:completion -- --shell fish
       - name: Exercise compiled CLI on ${{ runner.os }}
         run: pnpm test:automation
       - name: Exercise CLI automation from Git Bash on Windows

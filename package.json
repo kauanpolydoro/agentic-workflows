@@ -49,6 +49,7 @@
     "test:fixtures": "tsx scripts/test-fixtures.ts",
     "test:automation": "tsx scripts/automation-contracts.ts",
     "test:acceptance": "tsx scripts/acceptance-cli.ts",
+    "test:completion": "tsx scripts/completion-smoke.ts",
     "test:package": "tsx scripts/package-smoke.ts",
     "pack:smoke": "pnpm build && pnpm test:package"
   },

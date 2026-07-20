@@ -264,6 +264,7 @@ assertPackedContents(
     "index.js",
     "install.js",
     "io.js",
+    "output-contract.js",
     "platform.js",
     "status.js",
     "version.js",
@@ -295,6 +296,18 @@ await writeFile(
   )}\n`,
 );
 run("pnpm", ["install", "--ignore-scripts"], consumer);
+const outputContractProbe = run(
+  process.execPath,
+  [
+    "--input-type=module",
+    "--eval",
+    "import { parseCliOutput } from '@kauanpolydoro/agentic-workflows/output-contract'; const value = parseCliOutput('documentation_open', { schema_version: 1, target: 'https://example.invalid', opened: false }); process.stdout.write(String(value.opened));",
+  ],
+  consumer,
+).trim();
+if (outputContractProbe !== "false") {
+  throw new Error("The packaged executable output-contract export is unavailable.");
+}
 const entrypoint = path.join(
   consumer,
   "node_modules",

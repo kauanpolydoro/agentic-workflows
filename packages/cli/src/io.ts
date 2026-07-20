@@ -46,8 +46,6 @@ function humanError(value: {
   }
   if (typeof value.remediation === "string") {
     lines.push(`Next: ${value.remediation}`);
-  } else if (typeof value.details?.remediation === "string") {
-    lines.push(`Next: ${value.details.remediation}`);
   }
   return sanitizeTerminal(lines.join("\n"));
 }

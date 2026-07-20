@@ -23,7 +23,7 @@ export function parseAgentChoice(value: string, fallback: AgentId): AgentId | nu
   if (answer.length === 0) return fallback;
   const numeric = Number(answer);
   if (Number.isSafeInteger(numeric) && numeric >= 1 && numeric <= agentIds.length) {
-    return agentIds[numeric - 1] ?? null;
+    return agentIds[numeric - 1] as AgentId;
   }
   return agentIds.find((agent) => agent === answer) ?? null;
 }

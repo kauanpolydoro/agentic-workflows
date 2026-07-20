@@ -318,6 +318,9 @@ describe.sequential("CLI command contracts", () => {
     await expect(run("show", "write-release-notes", "--location", "--open")).rejects.toMatchObject({
       exitCode: 2,
     });
+    await expect(run("show", "write-release-notes", "--location", "--json")).rejects.toMatchObject({
+      exitCode: 2,
+    });
   });
 
   it("reports an actionable empty installation status", async () => {
@@ -435,6 +438,17 @@ describe.sequential("CLI command contracts", () => {
     expect(documentationOpener).toHaveBeenCalledOnce();
     expect(stdout).toContain("Opened ");
     expect(stdout).toContain("docs/catalog/write-release-notes.md");
+
+    stdout = "";
+    await createProgram({ documentationOpener }).parseAsync(
+      ["show", "write-release-notes", "--open", "--json"],
+      { from: "user" },
+    );
+    expect(JSON.parse(stdout)).toEqual({
+      schema_version: 1,
+      target: path.join(repositoryRoot, "docs/catalog/write-release-notes.md"),
+      opened: true,
+    });
   });
 
   it("propagates cancellation while a documentation opener is active", async () => {

@@ -50,11 +50,13 @@ Use `--location` to print the local documentation path or public catalog URL wit
 
 Use `--open` to open a repository-local documentation page when available, or the public catalog page from the npm package.
 
+Combine `--open --json` to receive `schema_version`, `target`, and `opened` without parsing presentation text.
+
 The CLI waits for the native opener selected for Linux, macOS, or Windows to report success.
 
 If the opener is missing or exits unsuccessfully, the command prints the exact path or URL to open manually instead of claiming success.
 
-The four output modes are mutually exclusive.
+`--raw`, `--location`, and the recipe form of `--json` are mutually exclusive, while `--open` may be combined only with `--json` for its structured operation result.
 
 An unknown workflow ID reports nearby IDs when a reliable match exists.
 
@@ -206,6 +208,10 @@ The instruction mode does not modify the profile or any path outside the project
 
 The generated script includes commands, options, agents, shell names, and the workflow IDs bundled with the installed CLI version.
 
+Options are scoped to their commands, and `list` also completes categories, tags, adapter support, compatibility, and installation, execution, and outcome states.
+
+The CI matrix loads generated Bash, Zsh, Fish, and PowerShell scripts in their native shells and verifies returned candidates.
+
 The command performs no network access and can be regenerated after upgrading the package.
 
 ## Output and error contract
@@ -219,5 +225,11 @@ With `--json`, successful commands print exactly one JSON value to stdout and no
 With `--json`, failures print exactly one object to stderr and leave stdout empty.
 
 Every JSON error contains `error`, `message`, a stable `code`, `command`, `retryable`, `help_url`, and `remediation`, and includes `details` for structured diagnostics when available.
+
+SIGINT and SIGTERM use exit codes `130` and `143` after safe cancellation.
+
+When `--json` is active, interruption emits one `INTERRUPTED` error object to stderr and leaves stdout empty.
+
+The `@kauanpolydoro/agentic-workflows/output-contract` export provides executable Zod schemas and `parseCliOutput` for every CLI-owned versioned record.
 
 See the [CLI output contracts](./output-contracts) for the schema owner and compatibility rules of every JSON mode.

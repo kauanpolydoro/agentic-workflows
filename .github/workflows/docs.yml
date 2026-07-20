@@ -35,6 +35,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test:coverage
       - run: pnpm build
+      - run: pnpm test:completion
       - run: pnpm test:integration
       - run: pnpm test:acceptance
       - run: pnpm test:package

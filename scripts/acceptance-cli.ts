@@ -3,6 +3,7 @@ import { rmSync } from "node:fs";
 import { access, chmod, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { parseCliOutput } from "../packages/cli/src/output-contract.js";
 
 interface Result {
   status: number | null;
@@ -43,6 +44,7 @@ function failure(args: string[], code?: string): Result {
       throw new Error(`Expected JSON failure stdout to stay empty, received: ${result.stdout}`);
     }
     const payload = JSON.parse(result.stderr) as { schema_version?: number; code?: string };
+    parseCliOutput("error", payload);
     const contract = payload as typeof payload & {
       command?: unknown;
       retryable?: unknown;
@@ -79,9 +81,11 @@ async function waitForFile(file: string): Promise<void> {
 async function verifyInterruption(
   signal: "SIGINT" | "SIGTERM",
   expectedExitCode: 130 | 143,
+  json: boolean,
 ): Promise<void> {
   if (process.platform === "win32") return;
-  const bin = path.join(project, `signal-${signal.toLowerCase()}`);
+  const mode = json ? "json" : "human";
+  const bin = path.join(project, `signal-${signal.toLowerCase()}-${mode}`);
   const ready = path.join(bin, "ready");
   await mkdir(bin);
   const opener = path.join(bin, process.platform === "darwin" ? "open" : "xdg-open");
@@ -90,7 +94,15 @@ async function verifyInterruption(
 
   const child = spawn(
     process.execPath,
-    [cli, "--project-root", project, "show", "write-release-notes", "--open"],
+    [
+      cli,
+      "--project-root",
+      project,
+      "show",
+      "write-release-notes",
+      "--open",
+      ...(json ? ["--json"] : []),
+    ],
     {
       cwd: project,
       env: { ...process.env, PATH: bin, AWF_SIGNAL_READY: ready },
@@ -121,8 +133,71 @@ async function verifyInterruption(
       `${signal} returned code=${String(result.code)} signal=${String(result.signal)} stdout=${JSON.stringify(childStdout)} stderr=${JSON.stringify(childStderr)}.`,
     );
   }
-  if (!childStderr.includes(`${signal} received`) || !childStderr.includes("awf doctor")) {
-    throw new Error(`${signal} did not print the documented safe-recovery guidance.`);
+  if (json) {
+    const payload = JSON.parse(childStderr) as {
+      schema_version?: unknown;
+      code?: unknown;
+      command?: unknown;
+      message?: unknown;
+      retryable?: unknown;
+      remediation?: unknown;
+      details?: { signal?: unknown };
+    };
+    parseCliOutput("error", payload);
+    if (
+      payload.schema_version !== 1 ||
+      payload.code !== "INTERRUPTED" ||
+      payload.command !== "show" ||
+      payload.message !== `The operation was interrupted by ${signal}.` ||
+      payload.retryable !== false ||
+      typeof payload.remediation !== "string" ||
+      payload.details?.signal !== signal
+    ) {
+      throw new Error(`${signal} did not preserve the JSON error contract.`);
+    }
+  } else if (
+    !childStderr.includes("Error [INTERRUPTED]") ||
+    !childStderr.includes(signal) ||
+    !childStderr.includes("awf doctor")
+  ) {
+    throw new Error(`${signal} did not print the documented human recovery guidance.`);
+  }
+}
+
+async function verifyInteractiveWizardInPty(): Promise<void> {
+  if (process.platform !== "linux") return;
+  const ptyProject = path.join(project, "interactive pty project");
+  await mkdir(ptyProject);
+  await writeFile(path.join(ptyProject, "package.json"), "{}\n");
+  const command = '"$AWF_PTY_NODE" "$AWF_PTY_CLI" --project-root "$AWF_PTY_PROJECT" init';
+  const result = spawnSync("script", ["-qec", command, "/dev/null"], {
+    cwd: ptyProject,
+    encoding: "utf8",
+    env: {
+      ...process.env,
+      AWF_PTY_NODE: process.execPath,
+      AWF_PTY_CLI: cli,
+      AWF_PTY_PROJECT: ptyProject,
+    },
+    input: "unknown-agent\n3\n../outside\npty target\n",
+  });
+  if (
+    result.status !== 0 ||
+    !result.stdout.includes("Configure Agentic Workflows for this project") ||
+    !result.stdout.includes("Choose one of: generic, claude-code, codex") ||
+    !result.stdout.includes("Use a relative path that stays inside the project root") ||
+    !result.stdout.includes("Default agent: codex")
+  ) {
+    throw new Error(
+      `Interactive PTY wizard failed with ${String(result.status)}.\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`,
+    );
+  }
+  const configuration = await readFile(
+    path.join(ptyProject, ".agentic-workflows", "config.yml"),
+    "utf8",
+  );
+  if (!configuration.includes("default_agent: codex") || !configuration.includes("pty target")) {
+    throw new Error("Interactive PTY wizard did not retain the selected defaults.");
   }
 }
 
@@ -134,11 +209,13 @@ if (
 ) {
   throw new Error("Empty invocation did not return clean, actionable first-run help.");
 }
+await verifyInteractiveWizardInPty();
 const context = JSON.parse(success(["context", "--json"]).stdout) as {
   schema_version?: number;
   selection_source?: string;
   project_root_fallback?: boolean;
 };
+parseCliOutput("context", context);
 if (
   context.schema_version !== 1 ||
   context.selection_source !== "explicit" ||
@@ -168,6 +245,7 @@ for (const shell of ["bash", "zsh", "fish", "pwsh"]) {
 const validation = JSON.parse(
   success(["validate", path.resolve("packages/cli/catalog"), "--strict", "--json"]).stdout,
 ) as { schema_version?: number };
+parseCliOutput("validation", validation);
 if (validation.schema_version !== 1) throw new Error("Validation output is not versioned.");
 const initialization = JSON.parse(
   success(["init", "--agent", "codex", "--target", "managed files", "--json"]).stdout,
@@ -176,6 +254,7 @@ const initialization = JSON.parse(
   project_context?: { source?: string };
   configuration?: { default_agent?: string; default_target?: string };
 };
+parseCliOutput("init", initialization);
 if (
   initialization.schema_version !== 1 ||
   initialization.project_context?.source !== "explicit" ||
@@ -188,6 +267,7 @@ await mkdir(path.join(project, "managed files"), { recursive: true });
 const installPlan = JSON.parse(
   success(["install", "write-release-notes", "--dry-run", "--show-content", "--json"]).stdout,
 ) as { plan?: { operation?: string; proposed_files?: Array<{ content?: string }> } };
+parseCliOutput("lifecycle_plan", installPlan.plan);
 if (
   installPlan.plan?.operation !== "install" ||
   !installPlan.plan.proposed_files?.every((file) => Boolean(file.content))
@@ -203,6 +283,7 @@ if (!manifest.files.some((file) => file.role === "policy")) {
 const status = JSON.parse(success(["status", "--json"]).stdout) as {
   installations?: Array<{ id?: string; status?: string }>;
 };
+parseCliOutput("status", status);
 if (
   !status.installations?.some(
     (installation) =>
@@ -237,6 +318,7 @@ const diagnostics = JSON.parse(success(["doctor", "--failures-only", "--json"]).
   status?: string;
   exit_code?: number;
 };
+parseCliOutput("doctor", diagnostics);
 if (
   diagnostics.filter !== "failures-only" ||
   !diagnostics.summary?.pass ||
@@ -314,8 +396,10 @@ const parserFailure = failure([`--unknown\u001b[2J\rrewritten`]);
 if (parserFailure.stderr.includes("\u001b") || parserFailure.stderr.includes("\r")) {
   throw new Error("Commander parser output contains terminal control sequences.");
 }
-await verifyInterruption("SIGINT", 130);
-await verifyInterruption("SIGTERM", 143);
+await verifyInterruption("SIGINT", 130, false);
+await verifyInterruption("SIGINT", 130, true);
+await verifyInterruption("SIGTERM", 143, false);
+await verifyInterruption("SIGTERM", 143, true);
 
 process.stdout.write(
   "CLI acceptance passed for onboarding, completion, versioned JSON, signals, NO_COLOR, spaced paths, and lifecycle safety.\n",

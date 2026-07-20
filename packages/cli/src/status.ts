@@ -9,7 +9,7 @@ import {
   readBoundedRegularFile,
 } from "@kauanpolydoro/agentic-workflows-core";
 import { parse } from "yaml";
-import { validateInstallation } from "./install.js";
+import { validateInstallation as validateInstallationOnDisk } from "./install.js";
 
 const MAX_INSTALLATION_MANIFEST_BYTES = 1024 * 1024;
 const workflowIdPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -135,6 +135,7 @@ async function inspectInstallation(
   target: string,
   id: string,
   manifestFile: string,
+  validateInstallation: typeof validateInstallationOnDisk,
 ): Promise<InstallationStatus> {
   if (!workflowIdPattern.test(id)) {
     return invalidStatus(
@@ -176,6 +177,9 @@ export async function inspectInstallations(
   catalogDirectory: string,
   target: string,
   workflowId?: string,
+  dependencies: {
+    validateInstallation?: typeof validateInstallationOnDisk;
+  } = {},
 ): Promise<InstallationStatus[]> {
   const installationDirectory = path.join(target, ".agentic-workflows", "installations");
   if (!(await optionalDirectory(target, "The installation target"))) return [];
@@ -199,6 +203,7 @@ export async function inspectInstallations(
         target,
         id,
         path.join(installationDirectory, entry.name),
+        dependencies.validateInstallation ?? validateInstallationOnDisk,
       ),
     ),
   );

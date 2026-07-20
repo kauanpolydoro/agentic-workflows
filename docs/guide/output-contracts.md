@@ -14,6 +14,8 @@ Exit code `0` means success, `1` means an operational or validation failure, and
 
 An interrupted process uses `130` for `SIGINT` and `143` for `SIGTERM` after requesting safe cancellation of the active operation.
 
+An interrupted JSON command writes one versioned `INTERRUPTED` object to stderr and leaves stdout empty.
+
 Human output and errors are sanitized before they reach the terminal.
 
 ## Schema ownership
@@ -25,6 +27,7 @@ The following table identifies the version field that owns each machine-readable
 | `context --json` | Project-context report | Top-level `schema_version: 1` |
 | `list --json` | Array of recipe records | Every recipe has `schema_version: 2` |
 | `show --json` | Recipe record | Recipe `schema_version: 2` |
+| `show --open --json` | Documentation opener result | Top-level `schema_version: 1` |
 | Applied `install`, `update`, or `remove` | Installation manifest | Manifest `schema_version: 2` |
 | Lifecycle `--dry-run --json` | Command result with nested `plan` | `plan.schema_version: 1` |
 | `status --json` | Status report | Top-level `schema_version: 1` |
@@ -33,6 +36,25 @@ The following table identifies the version field that owns each machine-readable
 | `init --json` | Configuration result | Top-level `schema_version: 1` |
 | `manifest --json` | Installation manifest | Manifest `schema_version: 2` |
 | Any failed command with `--json` | Error object | Top-level `schema_version: 1` |
+
+## Executable schemas
+
+The CLI package exports strict Zod schemas for every CLI-owned versioned record.
+
+Import the parser through the public package subpath:
+
+```js
+import { parseCliOutput } from "@kauanpolydoro/agentic-workflows/output-contract";
+
+const report = JSON.parse(stdout);
+parseCliOutput("status", report);
+```
+
+Available contracts are `context`, `lifecycle_plan`, `status`, `doctor`, `init`, `validation`, `documentation_open`, and `error`.
+
+Catalog records and installation manifests continue to use the schemas owned by the core package.
+
+The package smoke test imports this public subpath from an installed tarball, and subprocess automation validates real command results against the schemas.
 
 ## Lifecycle plan version 1
 
@@ -98,6 +120,8 @@ An active lifecycle-lock conflict is the only currently retryable failure.
 When its record is valid, `details` contains the sanitized `pid` and `acquiredAt`, and remediation requires verifying that owner and timestamp before manual removal.
 
 The lock ownership token is never included in output.
+
+Interruption uses code `INTERRUPTED`, retains `details.signal`, and preserves the same stream-isolation rules as every other JSON failure.
 
 For example, an unsafe install target produces one stderr object and leaves stdout empty:
 

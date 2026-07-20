@@ -21,6 +21,9 @@ All notable project changes will be documented here.
 - Resumable npm and GitHub release synchronization with exact tarball integrity checks.
 - Project-root provenance in every versioned installation status report.
 - Cross-platform documentation-opener contracts without skipped Windows unit coverage.
+- Strict executable schemas for CLI-owned JSON results through the public `output-contract` package export.
+- Native command-specific completion smoke tests for Bash, Zsh, Fish, and PowerShell.
+- Real PTY acceptance coverage for the interactive initialization wizard.
 
 ### Changed
 
@@ -33,6 +36,9 @@ All notable project changes will be documented here.
 - Acceptance coverage now verifies safe `SIGINT` and `SIGTERM` handling on supported POSIX runners.
 - Lifecycle conflicts now provide sanitized PID and acquisition-time guidance in human output while preserving tokens and requiring manual verification.
 - Windows CI now exercises compiled CLI automation from both the default shell and Git Bash.
+- Completion now scopes every option and enum to its owning command and guards against drift from the Commander surface.
+- SIGINT and SIGTERM now preserve JSON stream isolation through a versioned `INTERRUPTED` error.
+- Branch coverage was restored above the enforced 85 percent release threshold without lowering the gate.
 
 ## 0.1.0
 

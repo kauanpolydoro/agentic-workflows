@@ -3,6 +3,7 @@ import { rmSync } from "node:fs";
 import { mkdtemp, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { parseCliOutput } from "../packages/cli/src/output-contract.js";
 
 interface CommandResult {
   status: number | null;
@@ -100,6 +101,7 @@ function jsonFailure(
       `Command ${args.join(" ")} returned ${String(payload.code)} instead of ${expectedCode}.`,
     );
   }
+  parseCliOutput("error", payload);
   return payload;
 }
 
@@ -113,6 +115,7 @@ const projectContext = jsonSuccess<{
   selection_source?: string;
   project_root_fallback?: boolean;
 }>(["context", "--json"]);
+parseCliOutput("context", projectContext);
 if (
   projectContext.schema_version !== 1 ||
   projectContext.selection_source !== "explicit" ||
@@ -145,6 +148,7 @@ const initialized = jsonSuccess<{
   project_context?: { source?: string };
   configuration?: { default_agent?: string; default_target?: string };
 }>(["init", "--agent", "codex", "--target", "managed", "--json"]);
+parseCliOutput("init", initialized);
 if (
   initialized.schema_version !== 1 ||
   initialized.project_context?.source !== "explicit" ||
@@ -174,6 +178,7 @@ const installPlan = jsonSuccess<{ plan?: { schema_version?: number; operation?: 
   "--dry-run",
   "--json",
 ]);
+parseCliOutput("lifecycle_plan", installPlan.plan);
 if (installPlan.plan?.schema_version !== 1 || installPlan.plan.operation !== "install") {
   throw new Error("Install automation did not receive a versioned lifecycle plan.");
 }
@@ -190,6 +195,7 @@ const status = jsonSuccess<{
   summary?: { total?: number; healthy?: number };
   installations?: unknown[];
 }>(["status", "--failures-only", "--json"]);
+parseCliOutput("status", status);
 if (
   status.project_context?.project_root !== project ||
   status.project_context.selection_source !== "explicit" ||
@@ -259,6 +265,7 @@ const validation = jsonSuccess<{ schema_version?: number; valid?: boolean }>([
   "--strict",
   "--json",
 ]);
+parseCliOutput("validation", validation);
 if (validation.schema_version !== 1 || validation.valid !== true) {
   throw new Error("Validation automation did not receive a successful versioned report.");
 }
@@ -277,6 +284,7 @@ const diagnostics = jsonSuccess<{
     data?: unknown;
   }>;
 }>(["doctor", "--failures-only", "--json"]);
+parseCliOutput("doctor", diagnostics);
 if (
   diagnostics.schema_version !== 1 ||
   diagnostics.filter !== "failures-only" ||

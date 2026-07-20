@@ -49,6 +49,7 @@ Remove `--dry-run` after reviewing the plan to install the workflow.
 The package exposes both `awf` and `agentic-workflows` as command names, but this documentation uses the shorter `awf` form.
 Run `awf completion bash`, `awf completion zsh`, `awf completion fish`, or `awf completion pwsh` to generate tab completion for your shell.
 Add `--install-instructions` to print persistent setup without modifying your shell profile.
+Completion is command-specific and includes the agents, categories, tags, evidence states, and workflow IDs bundled with that CLI version.
 
 To try the latest release without installing it globally, use either package runner:
 
@@ -152,12 +153,14 @@ The `awf` binary supports:
 
 - `list` with category, agent, tag, global support, recipe compatibility, and JSON filters;
 - `context` for explicit project-root discovery and audit output;
-- `show` with raw Markdown, JSON, documentation location, and tested browser opening with a printable fallback;
+- `show` with raw Markdown, JSON, documentation location, tested browser opening, and a structured opener result for automation;
 - `install` with complete dry-run plans, optional generated content, target, adapter, overwrite, and JSON controls;
 - `status` for local installation health, managed-file drift, and project-root provenance in JSON;
 - `update` and `remove` with non-mutating plans and modified-file protection;
 - `validate`, `doctor`, and `init` for catalog and project maintenance;
 - `completion` for generated Bash, Zsh, Fish, and PowerShell completion.
+
+Automation can validate versioned CLI records through the public `@kauanpolydoro/agentic-workflows/output-contract` export.
 
 Read the [CLI reference](docs/guide/cli-reference.md) for flags and exit codes.
 

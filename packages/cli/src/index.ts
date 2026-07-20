@@ -1788,7 +1788,10 @@ export function createProgram(options: ProgramOptions = {}): Command {
     .option("--open", "Open the local page or public catalog page in a browser")
     .option("--location", "Print the local documentation path or public catalog URL")
     .action(async (id, options) => {
-      if ([options.json, options.raw, options.open, options.location].filter(Boolean).length > 1) {
+      if (
+        [options.raw, options.open, options.location].filter(Boolean).length > 1 ||
+        (options.json && (options.raw || options.location))
+      ) {
         throw new CommanderError(2, "awf.conflictingOutput", "Choose one output mode.");
       }
       const source = await loadRecipeSource(await resolveWorkflowPath(id));
@@ -1798,9 +1801,12 @@ export function createProgram(options: ProgramOptions = {}): Command {
       if (options.open) {
         const documentation = await openDocumentation(id, documentationOpener, signal);
         return output(
-          documentation.opened
-            ? `Opened ${documentation.target}.`
-            : `Could not launch a browser. Open ${documentation.target}.`,
+          options.json
+            ? { schema_version: 1, ...documentation }
+            : documentation.opened
+              ? `Opened ${documentation.target}.`
+              : `Could not launch a browser. Open ${documentation.target}.`,
+          Boolean(options.json),
         );
       }
       if (options.json) return output(recipe, true);
@@ -2596,19 +2602,20 @@ export function createProgram(options: ProgramOptions = {}): Command {
 async function run(): Promise<void> {
   const controller = new AbortController();
   let interrupted = false;
-  let interruption: Error | undefined;
+  let interruption: AwfError | undefined;
   let interruptionExitCode: 130 | 143 = 130;
   const interrupt = (signal: "SIGINT" | "SIGTERM") => {
     if (interrupted) return;
     interrupted = true;
     interruptionExitCode = signal === "SIGINT" ? 130 : 143;
     process.exitCode = interruptionExitCode;
-    interruption = new Error(`The operation was interrupted by ${signal}.`);
+    interruption = new AwfError("INTERRUPTED", `The operation was interrupted by ${signal}.`, {
+      signal,
+      remediation:
+        "Wait for the active operation to stop safely, then run `awf doctor` before retrying.",
+    });
     interruption.name = "AbortError";
     controller.abort(interruption);
-    process.stderr.write(
-      `${signal} received. Waiting for the active operation to stop safely; run awf doctor before retrying.\n`,
-    );
   };
   const interruptWithSigint = () => interrupt("SIGINT");
   const interruptWithSigterm = () => interrupt("SIGTERM");
@@ -2627,7 +2634,9 @@ async function run(): Promise<void> {
     process.removeListener("SIGINT", interruptWithSigint);
     process.removeListener("SIGTERM", interruptWithSigterm);
   }
-  if (interrupted) process.exitCode = interruptionExitCode;
+  if (interrupted && interruption) {
+    fail(interruption, process.argv.includes("--json"), interruptionExitCode);
+  }
 }
 
 const mainModule =

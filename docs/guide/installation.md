@@ -103,6 +103,10 @@ awf completion zsh --install-instructions
 
 Regenerate the completion after upgrading the CLI so newly bundled workflow IDs become available.
 
+Completion options are specific to the active command, so `list` filters do not appear on `install`, and enum values are offered only after their matching option.
+
+The repository CI loads all four generated scripts in Bash, Zsh, Fish, and PowerShell before accepting a release candidate.
+
 ## Run without installing globally
 
 Use the full package scope with `npx` or `bunx`:
@@ -169,6 +173,8 @@ awf doctor
 When a lifecycle lock blocks an operation, read the PID and acquisition time in the error, confirm that the process is inactive and the timestamp is stale, and run `awf doctor` before manually removing the lock.
 
 The CLI never steals or removes a lifecycle lock automatically.
+
+If a command using `--json` is interrupted, wait for exit code `130` or `143`, parse the single `INTERRUPTED` object from stderr, and run the returned remediation before retrying.
 
 Show only warnings and failures while retaining summary counts with:
 
