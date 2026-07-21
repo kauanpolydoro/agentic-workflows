@@ -2,7 +2,14 @@ import { access, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-const roots = ["README.md", "README.pt-BR.md", "CONTRIBUTING.md", "SECURITY.md", "docs"];
+const roots = [
+  "README.md",
+  "README.pt-BR.md",
+  "CONTRIBUTING.md",
+  "SECURITY.md",
+  "docs",
+  "release-notes",
+];
 
 async function collect(candidate: string, markdown: string[]): Promise<void> {
   const entries = await readdir(candidate, { withFileTypes: true });

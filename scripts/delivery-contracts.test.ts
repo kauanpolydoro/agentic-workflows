@@ -133,6 +133,7 @@ describe("delivery contracts", () => {
       "package-manager-cache: false",
       "publish-npm-tarball.ts",
       "sync-github-release.ts",
+      "--notes-file",
     ]) {
       expect(workflow, `release workflow is missing ${requirement}`).toContain(requirement);
     }
@@ -146,13 +147,15 @@ describe("delivery contracts", () => {
     ]) {
       expect(npmPublisher, `npm publisher is missing ${requirement}`).toContain(requirement);
     }
-    for (const action of ["view", "create", "download", "upload"]) {
+    for (const action of ["view", "create", "download", "upload", "edit"]) {
       expect(releaseSynchronizer, `release synchronizer is missing ${action}`).toMatch(
         new RegExp(`"release",\\s*"${action}"`),
       );
     }
     expect(releaseSynchronizer).toContain('"--draft"');
+    expect(releaseSynchronizer).toContain('"--notes-file"');
     expect(releaseSynchronizer).toContain('"--verify-tag"');
+    expect(releaseSynchronizer).not.toContain('"--generate-notes"');
     expect(npmPublisher).not.toContain("NODE_AUTH_TOKEN");
     expect(releaseSynchronizer).not.toContain("--clobber");
     expect(workflow.indexOf("pnpm check:clean")).toBeLessThan(

@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 const tagPattern = /^v\d+\.\d+\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 const assetNamePattern = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const MAX_RELEASE_ASSET_BYTES = 512 * 1024 * 1024;
+const MAX_RELEASE_NOTES_BYTES = 256 * 1024;
 
 export interface AssetSyncPlan {
   matching: string[];
@@ -29,6 +30,20 @@ export function planAssetSync(
     missing: [...local].filter((name) => !remote.has(name)).sort(),
     unexpected: [...remote].filter((name) => !local.has(name)).sort(),
   };
+}
+
+function normalizeReleaseNotes(value: string): string {
+  return value.replaceAll("\r\n", "\n").trimEnd();
+}
+
+export function planReleaseNotesSync(
+  localNotes: string,
+  remoteNotes: string,
+  isDraft: boolean,
+): "matching" | "update" {
+  if (normalizeReleaseNotes(localNotes) === normalizeReleaseNotes(remoteNotes)) return "matching";
+  if (!isDraft) throw new Error("Published release notes differ from the versioned notes file.");
+  return "update";
 }
 
 function requiredArgument(name: string): string {
@@ -71,7 +86,11 @@ async function digest(file: string): Promise<string> {
 async function synchronize(): Promise<void> {
   const tag = requiredArgument("--tag");
   const directory = path.resolve(requiredArgument("--directory"));
+  const notesFile = path.resolve(requiredArgument("--notes-file"));
   if (!tagPattern.test(tag)) throw new Error("Release tag must be a v-prefixed semantic version.");
+  if (path.basename(notesFile) !== `${tag}.md`) {
+    throw new Error(`Release notes file must be named ${tag}.md.`);
+  }
   const directoryInformation = await lstat(directory);
   if (directoryInformation.isSymbolicLink() || !directoryInformation.isDirectory()) {
     throw new Error("Release asset directory must be a real directory.");
@@ -87,8 +106,16 @@ async function synchronize(): Promise<void> {
       throw new Error(`Unsafe release asset name: ${asset.name}`);
     await digest(asset.file);
   }
+  const notesInformation = await lstat(notesFile);
+  if (notesInformation.isSymbolicLink() || !notesInformation.isFile()) {
+    throw new Error("Release notes must be a regular Markdown file without symbolic links.");
+  }
+  if (notesInformation.size > MAX_RELEASE_NOTES_BYTES) {
+    throw new Error(`Release notes exceed ${MAX_RELEASE_NOTES_BYTES} bytes.`);
+  }
+  const localNotes = await readFile(notesFile, "utf8");
 
-  const viewed = gh(["release", "view", tag, "--json", "isDraft,assets"], true);
+  const viewed = gh(["release", "view", tag, "--json", "isDraft,assets,body"], true);
   if (viewed.status !== 0) {
     gh([
       "release",
@@ -96,22 +123,28 @@ async function synchronize(): Promise<void> {
       tag,
       ...assets.map((asset) => asset.file),
       "--draft",
-      "--generate-notes",
+      "--notes-file",
+      notesFile,
       "--verify-tag",
     ]);
     process.stdout.write(`Created draft release ${tag} with ${assets.length} verified assets.\n`);
     return;
   }
 
-  let release: { isDraft?: unknown; assets?: Array<{ name?: unknown }> };
+  let release: { isDraft?: unknown; assets?: Array<{ name?: unknown }>; body?: unknown };
   try {
     release = JSON.parse(viewed.stdout) as typeof release;
   } catch {
     throw new Error("gh release view returned invalid JSON.");
   }
-  if (typeof release.isDraft !== "boolean" || !Array.isArray(release.assets)) {
+  if (
+    typeof release.isDraft !== "boolean" ||
+    !Array.isArray(release.assets) ||
+    typeof release.body !== "string"
+  ) {
     throw new Error("gh release view returned an incomplete release record.");
   }
+  const notesPlan = planReleaseNotesSync(localNotes, release.body, release.isDraft);
   const remoteNames = release.assets.map((asset) => {
     if (typeof asset.name !== "string") throw new Error("A remote release asset has no name.");
     return asset.name;
@@ -147,8 +180,11 @@ async function synchronize(): Promise<void> {
     if (!local) throw new Error(`Missing local release asset ${name}.`);
     gh(["release", "upload", tag, local.file]);
   }
+  if (notesPlan === "update") {
+    gh(["release", "edit", tag, "--notes-file", notesFile]);
+  }
   process.stdout.write(
-    `Verified ${plan.matching.length} and uploaded ${plan.missing.length} release assets for ${tag}.\n`,
+    `Verified ${plan.matching.length} and uploaded ${plan.missing.length} release assets for ${tag}; release notes are ${notesPlan}.\n`,
   );
 }
 

@@ -2,7 +2,14 @@ import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/p
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-const markdownRoots = ["README.md", "README.pt-BR.md", "CONTRIBUTING.md", "SECURITY.md", "docs"];
+const markdownRoots = [
+  "README.md",
+  "README.pt-BR.md",
+  "CONTRIBUTING.md",
+  "SECURITY.md",
+  "docs",
+  "release-notes",
+];
 const allowedHosts = new Set([
   "code.claude.com",
   "cursor.com",

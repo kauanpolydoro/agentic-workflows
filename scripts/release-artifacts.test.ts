@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import {
   changelogContainsVersion,
   type ReleaseIdentity,
+  releaseNotesContainTag,
   releaseVersionFromTag,
   verifyReleaseIdentity,
   writeReleaseManifest,
@@ -49,11 +50,18 @@ describe("release artifact contracts", () => {
     expect(changelogContainsVersion("## 1.2.30\n", "1.2.3")).toBe(false);
   });
 
+  it("requires release notes to declare the exact version tag", () => {
+    expect(releaseNotesContainTag("# Agentic Workflows v1.2.3\n", "v1.2.3")).toBe(true);
+    expect(releaseNotesContainTag("# Agentic Workflows v1.2.30\n", "v1.2.3")).toBe(false);
+    expect(releaseNotesContainTag("## Agentic Workflows v1.2.3\n", "v1.2.3")).toBe(false);
+  });
+
   it("accepts only an annotated tag on the authorized branch with matching package versions", async () => {
     const repository = await mkdtemp(path.join(os.tmpdir(), "awf-release-identity-"));
     await Promise.all([
       mkdir(path.join(repository, "packages/cli"), { recursive: true }),
       mkdir(path.join(repository, "packages/core"), { recursive: true }),
+      mkdir(path.join(repository, "release-notes"), { recursive: true }),
     ]);
     for (const relative of [
       "package.json",
@@ -69,6 +77,10 @@ describe("release artifact contracts", () => {
       await writeFile(path.join(repository, relative), JSON.stringify({ name, version: "1.2.3" }));
     }
     await writeFile(path.join(repository, "CHANGELOG.md"), "# Changelog\n\n## 1.2.3\n");
+    await writeFile(
+      path.join(repository, "release-notes/v1.2.3.md"),
+      "# Agentic Workflows v1.2.3\n",
+    );
     git(repository, "init", "--initial-branch=main");
     git(repository, "config", "user.email", "release-test@example.invalid");
     git(repository, "config", "user.name", "Release Test");
@@ -83,6 +95,17 @@ describe("release artifact contracts", () => {
       sourceCommit: git(repository, "rev-parse", "HEAD"),
     });
 
+    await writeFile(
+      path.join(repository, "release-notes/v1.2.3.md"),
+      "# Agentic Workflows v1.2.4\n",
+    );
+    await expect(verifyReleaseIdentity(repository, "v1.2.3")).rejects.toThrow(
+      /do not declare the exact tag/,
+    );
+    await writeFile(
+      path.join(repository, "release-notes/v1.2.3.md"),
+      "# Agentic Workflows v1.2.3\n",
+    );
     await writeFile(
       path.join(repository, "packages/cli/package.json"),
       JSON.stringify({ name: "@kauanpolydoro/agentic-workflows", version: "1.2.4" }),
