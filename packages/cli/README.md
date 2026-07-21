@@ -1,6 +1,6 @@
 # Agentic Workflows
 
-Install inspectable engineering workflows into Codex, Claude Code, Cursor, Gemini CLI, OpenCode, or any tool that can follow Markdown.
+Install inspectable engineering workflows into Codex, Claude Code, Cursor, Gemini CLI, or OpenCode, with a plain Markdown export for manual use elsewhere.
 
 Agentic Workflows is a catalog of 20 evidence-oriented workflow bundles plus an offline CLI that installs them safely inside a project.
 It gives coding agents explicit inputs, prerequisites, observable steps, decision points, approval gates, expected outputs, and completion criteria for work such as pull-request review, CI debugging, migrations, security review, testing, and documentation.
@@ -29,10 +29,13 @@ Install it globally once to make `awf` available from any project:
 npm install --global @kauanpolydoro/agentic-workflows
 ```
 
-The following Codex example goes from an empty project configuration to an installed and inspectable workflow:
+For a repository or CI job that must pin the CLI, use the [exact-version setup](#try-without-a-global-installation) instead.
+
+Run the following Codex example from the root of an existing project:
 
 ```bash
-cd your-project
+cd path/to/your-project
+awf --version
 awf context
 awf init --agent codex
 awf list
@@ -43,7 +46,8 @@ awf status
 ```
 
 `awf context` reports the selected project root without changing files.
-`awf init --agent codex` writes the project defaults to `.agentic-workflows/config.yml`.
+Stop if that path is not the project you intended to modify, or select it explicitly with `awf --project-root <directory> context`.
+`awf init --agent codex` writes persistent project defaults to `.agentic-workflows/config.yml`, and the later commands reuse them.
 The dry run then shows every planned file and its complete generated content without changing the installation target.
 The second install command writes the reviewed bundle and its hash-bearing manifest.
 
@@ -105,8 +109,8 @@ npx --yes @kauanpolydoro/agentic-workflows@latest list
 bunx @kauanpolydoro/agentic-workflows list
 ```
 
-The unscoped `agentic-workflows` name belongs to a different package on npm.
-Keep `@kauanpolydoro/agentic-workflows` in `npx` and `bunx` commands.
+Only the scoped package name identifies this CLI.
+Do not shorten package-runner commands to `agentic-workflows`; keep `@kauanpolydoro/agentic-workflows` even though the installed binary is named `awf`.
 These `@latest` examples are intentionally for one-off evaluation, not reproducible automation.
 
 Install the exact repository version and commit the resulting manifest plus lockfile for project or CI use:
@@ -236,8 +240,37 @@ pnpm new:recipe my-workflow
 ```
 
 Every complete recipe contains `recipe.yml`, `workflow.md`, `checklist.md`, `README.md`, `output.schema.json`, `examples/input.md`, and `examples/expected-output.md`.
+That seven-file set is the canonical source recipe.
+An adapter installs the agent-facing entry document, checklist, metadata, schema, examples, and any required policy or asset files, but not the recipe's source-side `README.md`.
 Replace every scaffold marker, use original examples, declare support honestly, and follow the [recipe quality standard](docs/quality/recipe-quality-standard.md).
 The [contribution guide](https://github.com/kauanpolydoro/agentic-workflows/blob/main/CONTRIBUTING.md) is the authoritative source for the complete validation suite required before handoff.
+
+<details>
+<summary>Complete contributor validation suite</summary>
+
+```bash
+pnpm generate:check
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm test:coverage
+pnpm build
+pnpm test:completion
+pnpm test:automation
+pnpm test:integration
+pnpm test:acceptance
+pnpm test:package
+pnpm validate:recipes
+pnpm validate:content
+pnpm audit:similarity
+pnpm test:fixtures
+pnpm docs:build
+pnpm check:links
+pnpm check:clean
+```
+
+</details>
 
 The root `README.md` is canonical for the CLI package.
 The build copies it into the npm archive, which keeps the GitHub and npm landing pages synchronized for each published version.
@@ -259,9 +292,10 @@ Delivery-contract tests compare the section map and first-use commands across bo
 
 ## Project status
 
-The CLI and shared core packages are public on npm.
+The [`@kauanpolydoro/agentic-workflows`](https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows) CLI and [`@kauanpolydoro/agentic-workflows-core`](https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows-core) library are public on npm.
 Releases are tag-driven and use npm trusted publishing, provenance, package smoke tests, and integrity verification before GitHub release synchronization.
-The package smoke test proves that the tarball contains this exact README, and registry `dist.integrity` verification covers the complete published tarball.
+The package smoke test proves that the tarball contains this exact README, and the publisher verifies both registry `dist.integrity` and the registry README bytes after publication.
+The release then audits every allowlisted public documentation link before creating or resuming the GitHub release.
 GitHub can show unreleased README changes first, because the npm landing page changes only when a new package version containing those bytes is published.
 See the [changelog](https://github.com/kauanpolydoro/agentic-workflows/blob/main/CHANGELOG.md) and [release process](https://github.com/kauanpolydoro/agentic-workflows/blob/main/RELEASING.md) for the current version and delivery contract.
 

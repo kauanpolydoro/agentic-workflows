@@ -8,10 +8,14 @@ const packageNamePattern = /^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/;
 const versionPattern =
   /^\d+\.\d+\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 const MAX_TARBALL_BYTES = 128 * 1024 * 1024;
+const MAX_README_BYTES = 1024 * 1024;
+const REGISTRY_ATTEMPTS = 6;
+const REGISTRY_RETRY_MS = 2_000;
 
 export interface PublishedVersion {
   version: string;
   integrity: string;
+  readme: string;
 }
 
 export function sha512Integrity(content: Uint8Array): string {
@@ -29,15 +33,24 @@ export function parsePublishedVersion(raw: string): PublishedVersion {
     throw new Error("npm view returned an invalid package record.");
   }
   const record = value as Record<string, unknown>;
-  if (typeof record.version !== "string" || typeof record["dist.integrity"] !== "string") {
-    throw new Error("npm view omitted the published version or tarball integrity.");
+  if (
+    typeof record.version !== "string" ||
+    typeof record["dist.integrity"] !== "string" ||
+    typeof record.readme !== "string"
+  ) {
+    throw new Error("npm view omitted the published version, tarball integrity, or README.");
   }
-  return { version: record.version, integrity: record["dist.integrity"] };
+  return {
+    version: record.version,
+    integrity: record["dist.integrity"],
+    readme: record.readme,
+  };
 }
 
 export function assertMatchingPublication(
   expectedVersion: string,
   localIntegrity: string,
+  expectedReadme: string,
   published: PublishedVersion,
 ): void {
   if (published.version !== expectedVersion) {
@@ -50,6 +63,42 @@ export function assertMatchingPublication(
       "The npm version already exists with different tarball content. Published versions are immutable.",
     );
   }
+  if (published.readme !== expectedReadme) {
+    throw new Error("The npm registry README differs from the README packed for this version.");
+  }
+}
+
+function inspectRegistry(spec: string): PublishedVersion | null {
+  const viewed = spawnSync("npm", ["view", spec, "version", "dist.integrity", "readme", "--json"], {
+    encoding: "utf8",
+    shell: false,
+    maxBuffer: 2 * 1024 * 1024,
+  });
+  if (viewed.error) throw viewed.error;
+  if (viewed.status === 0) return parsePublishedVersion(viewed.stdout);
+  if (/\bE404\b/.test(`${viewed.stdout}\n${viewed.stderr}`)) return null;
+  throw new Error(
+    `Could not determine whether ${spec} exists. npm view exited with ${viewed.status}.\n${viewed.stderr}`,
+  );
+}
+
+async function verifyRegistryPublication(
+  spec: string,
+  version: string,
+  integrity: string,
+  readme: string,
+): Promise<boolean> {
+  for (let attempt = 1; attempt <= REGISTRY_ATTEMPTS; attempt += 1) {
+    const published = inspectRegistry(spec);
+    if (published) {
+      assertMatchingPublication(version, integrity, readme, published);
+      return true;
+    }
+    if (attempt < REGISTRY_ATTEMPTS) {
+      await new Promise((resolve) => setTimeout(resolve, REGISTRY_RETRY_MS));
+    }
+  }
+  return false;
 }
 
 function requiredArgument(name: string): string {
@@ -63,6 +112,7 @@ async function publish(): Promise<void> {
   const packageName = requiredArgument("--package");
   const version = requiredArgument("--version");
   const tarball = path.resolve(requiredArgument("--tarball"));
+  const readme = path.resolve(requiredArgument("--readme"));
   if (!packageNamePattern.test(packageName)) throw new Error("Invalid scoped npm package name.");
   if (!versionPattern.test(version)) throw new Error("Invalid npm package version.");
   const information = await lstat(tarball);
@@ -72,23 +122,24 @@ async function publish(): Promise<void> {
   if (information.size > MAX_TARBALL_BYTES) {
     throw new Error(`The npm tarball exceeds ${MAX_TARBALL_BYTES} bytes.`);
   }
-  const integrity = sha512Integrity(await readFile(tarball));
-  const spec = `${packageName}@${version}`;
-  const viewed = spawnSync("npm", ["view", spec, "version", "dist.integrity", "--json"], {
-    encoding: "utf8",
-    shell: false,
-    maxBuffer: 1024 * 1024,
-  });
-  if (viewed.error) throw viewed.error;
-  if (viewed.status === 0) {
-    assertMatchingPublication(version, integrity, parsePublishedVersion(viewed.stdout));
-    process.stdout.write(`${spec} is already published with the exact expected tarball.\n`);
-    return;
+  const readmeInformation = await lstat(readme);
+  if (
+    readmeInformation.isSymbolicLink() ||
+    !readmeInformation.isFile() ||
+    readmeInformation.size > MAX_README_BYTES
+  ) {
+    throw new Error("The package README must be a regular file no larger than 1 MiB.");
   }
-  if (!/\bE404\b/.test(`${viewed.stdout}\n${viewed.stderr}`)) {
-    throw new Error(
-      `Could not determine whether ${spec} exists. npm view exited with ${viewed.status}.\n${viewed.stderr}`,
+  const integrity = sha512Integrity(await readFile(tarball));
+  const expectedReadme = await readFile(readme, "utf8");
+  const spec = `${packageName}@${version}`;
+  const existing = inspectRegistry(spec);
+  if (existing) {
+    assertMatchingPublication(version, integrity, expectedReadme, existing);
+    process.stdout.write(
+      `${spec} is already published with the exact expected tarball and README.\n`,
     );
+    return;
   }
 
   const published = spawnSync("npm", ["publish", tarball, "--access", "public", "--provenance"], {
@@ -100,6 +151,10 @@ async function publish(): Promise<void> {
   if (published.status !== 0) {
     throw new Error(`npm publish failed for ${spec} with exit code ${published.status}.`);
   }
+  if (!(await verifyRegistryPublication(spec, version, integrity, expectedReadme))) {
+    throw new Error(`npm did not expose ${spec} for post-publication verification.`);
+  }
+  process.stdout.write(`Verified ${spec} tarball integrity and README in the npm registry.\n`);
 }
 
 const mainModule =

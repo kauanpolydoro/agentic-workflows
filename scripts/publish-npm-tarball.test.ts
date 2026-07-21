@@ -15,19 +15,31 @@ describe("resumable npm publication", () => {
 
   it("accepts only the exact immutable package already in the registry", () => {
     const published = parsePublishedVersion(
-      JSON.stringify({ version: "1.2.3", "dist.integrity": "sha512-exact" }),
+      JSON.stringify({
+        version: "1.2.3",
+        "dist.integrity": "sha512-exact",
+        readme: "# Exact\n",
+      }),
     );
-    expect(() => assertMatchingPublication("1.2.3", "sha512-exact", published)).not.toThrow();
-    expect(() => assertMatchingPublication("1.2.3", "sha512-other", published)).toThrow(
-      /different tarball content/,
-    );
-    expect(() => assertMatchingPublication("1.2.4", "sha512-exact", published)).toThrow(
-      /expected 1\.2\.4/,
-    );
+    expect(() =>
+      assertMatchingPublication("1.2.3", "sha512-exact", "# Exact\n", published),
+    ).not.toThrow();
+    expect(() =>
+      assertMatchingPublication("1.2.3", "sha512-other", "# Exact\n", published),
+    ).toThrow(/different tarball content/);
+    expect(() =>
+      assertMatchingPublication("1.2.4", "sha512-exact", "# Exact\n", published),
+    ).toThrow(/expected 1\.2\.4/);
+    expect(() =>
+      assertMatchingPublication("1.2.3", "sha512-exact", "# Different\n", published),
+    ).toThrow(/README differs/);
   });
 
   it("rejects incomplete or malformed registry responses", () => {
     expect(() => parsePublishedVersion("not json")).toThrow(/invalid JSON/);
     expect(() => parsePublishedVersion(JSON.stringify({ version: "1.2.3" }))).toThrow(/omitted/);
+    expect(() =>
+      parsePublishedVersion(JSON.stringify({ version: "1.2.3", "dist.integrity": "sha512-exact" })),
+    ).toThrow(/README/);
   });
 });

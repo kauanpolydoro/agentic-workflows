@@ -1,6 +1,6 @@
 # Agentic Workflows
 
-Instale fluxos de engenharia inspecionáveis no Codex, Claude Code, Cursor, Gemini CLI, OpenCode ou em qualquer ferramenta capaz de seguir Markdown.
+Instale fluxos de engenharia inspecionáveis no Codex, Claude Code, Cursor, Gemini CLI ou OpenCode, com uma exportação em Markdown simples para uso manual em outros ambientes.
 
 Agentic Workflows é um catálogo com 20 pacotes de fluxos orientados a evidências e uma CLI offline que os instala com segurança dentro de um projeto.
 Ele oferece aos agentes de programação entradas, pré-requisitos, passos observáveis, decisões, aprovações, saídas esperadas e critérios de conclusão explícitos para tarefas como revisão de pull request, diagnóstico de CI, migrações, segurança, testes e documentação.
@@ -29,10 +29,13 @@ Instale-o globalmente uma vez para disponibilizar `awf` em qualquer projeto:
 npm install --global @kauanpolydoro/agentic-workflows
 ```
 
-O exemplo a seguir para Codex começa sem configuração do projeto e termina com um fluxo instalado e inspecionável:
+Para um repositório ou job de CI que precise fixar a CLI, use a [configuração com versão exata](#experimente-sem-instalação-global).
+
+Execute o exemplo a seguir para Codex a partir da raiz de um projeto existente:
 
 ```bash
-cd seu-projeto
+cd caminho/para/seu-projeto
+awf --version
 awf context
 awf init --agent codex
 awf list
@@ -43,7 +46,8 @@ awf status
 ```
 
 `awf context` informa a raiz selecionada sem alterar arquivos.
-`awf init --agent codex` grava as configurações do projeto em `.agentic-workflows/config.yml`.
+Pare se esse caminho não for o projeto que você pretende modificar ou selecione-o explicitamente com `awf --project-root <diretório> context`.
+`awf init --agent codex` grava configurações persistentes em `.agentic-workflows/config.yml`, e os comandos seguintes as reutilizam.
 A simulação mostra cada arquivo planejado e seu conteúdo gerado completo sem alterar o destino da instalação.
 O segundo comando de instalação grava o pacote revisado e seu manifesto com hashes.
 
@@ -105,8 +109,8 @@ npx --yes @kauanpolydoro/agentic-workflows@latest list
 bunx @kauanpolydoro/agentic-workflows list
 ```
 
-O nome sem escopo `agentic-workflows` pertence a outro pacote no npm.
-Mantenha `@kauanpolydoro/agentic-workflows` nos comandos com `npx` e `bunx`.
+Apenas o nome de pacote com escopo identifica esta CLI.
+Não encurte comandos dos executores para `agentic-workflows`; mantenha `@kauanpolydoro/agentic-workflows`, embora o binário instalado se chame `awf`.
 Esses exemplos com `@latest` destinam-se intencionalmente a avaliações pontuais, não a automações reproduzíveis.
 
 Instale a versão exata do repositório e versione o manifesto e o lockfile resultantes para uso no projeto ou CI:
@@ -236,8 +240,37 @@ pnpm new:recipe meu-fluxo
 ```
 
 Cada receita completa contém `recipe.yml`, `workflow.md`, `checklist.md`, `README.md`, `output.schema.json`, `examples/input.md` e `examples/expected-output.md`.
+Esse conjunto de sete arquivos é a receita-fonte canônica.
+Um adaptador instala o documento de entrada voltado ao agente, checklist, metadados, schema, exemplos e os arquivos de política ou assets necessários, mas não o `README.md` da receita-fonte.
 Substitua todos os marcadores, use exemplos originais, declare suporte honestamente e siga o [padrão de qualidade das receitas](docs/quality/recipe-quality-standard.md).
 O [guia de contribuição](CONTRIBUTING.md) é a fonte oficial para a suíte completa de validação exigida antes da entrega.
+
+<details>
+<summary>Suíte completa de validação para contribuições</summary>
+
+```bash
+pnpm generate:check
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm test:coverage
+pnpm build
+pnpm test:completion
+pnpm test:automation
+pnpm test:integration
+pnpm test:acceptance
+pnpm test:package
+pnpm validate:recipes
+pnpm validate:content
+pnpm audit:similarity
+pnpm test:fixtures
+pnpm docs:build
+pnpm check:links
+pnpm check:clean
+```
+
+</details>
 
 O `README.md` da raiz é a fonte canônica do pacote da CLI.
 O build o copia para o arquivo publicado no npm, mantendo as páginas iniciais do GitHub e do npm sincronizadas em cada versão publicada.
@@ -259,9 +292,10 @@ Os testes de contrato comparam o mapa de seções e os comandos de primeiro uso 
 
 ## Status do projeto
 
-A CLI e o núcleo compartilhado estão públicos no npm.
+A CLI [`@kauanpolydoro/agentic-workflows`](https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows) e a biblioteca [`@kauanpolydoro/agentic-workflows-core`](https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows-core) estão públicas no npm.
 As releases são acionadas por tags e usam publicação confiável do npm, proveniência, testes do pacote e verificação de integridade antes da sincronização da release no GitHub.
-O teste do pacote comprova que o tarball contém este README exato, e a verificação de `dist.integrity` do registro cobre o tarball publicado completo.
+O teste do pacote comprova que o tarball contém este README exato, e o publicador verifica o `dist.integrity` e os bytes do README no registro depois da publicação.
+A release então audita todos os links públicos permitidos da documentação antes de criar ou retomar a release no GitHub.
 O GitHub pode exibir primeiro alterações ainda não publicadas, pois a página inicial do npm só muda quando uma nova versão contendo esses bytes é publicada.
 Consulte o [changelog](CHANGELOG.md) e o [processo de release](RELEASING.md) para conhecer a versão atual e o contrato de entrega.
 

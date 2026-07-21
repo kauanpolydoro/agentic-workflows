@@ -20,6 +20,28 @@ interface PackageMetadata {
   version?: unknown;
 }
 
+const completeValidationCommands = [
+  "pnpm generate:check",
+  "pnpm format:check",
+  "pnpm lint",
+  "pnpm typecheck",
+  "pnpm test",
+  "pnpm test:coverage",
+  "pnpm build",
+  "pnpm test:completion",
+  "pnpm test:automation",
+  "pnpm test:integration",
+  "pnpm test:acceptance",
+  "pnpm test:package",
+  "pnpm validate:recipes",
+  "pnpm validate:content",
+  "pnpm audit:similarity",
+  "pnpm test:fixtures",
+  "pnpm docs:build",
+  "pnpm check:links",
+  "pnpm check:clean",
+] as const;
+
 function markdownHeadings(content: string): string[] {
   return content
     .split("\n")
@@ -66,26 +88,7 @@ describe("delivery contracts", () => {
 
   it("documents the complete contributor validation suite", async () => {
     const contributing = await text("CONTRIBUTING.md");
-    for (const command of [
-      "pnpm generate:check",
-      "pnpm format:check",
-      "pnpm lint",
-      "pnpm typecheck",
-      "pnpm test",
-      "pnpm test:coverage",
-      "pnpm build",
-      "pnpm test:completion",
-      "pnpm test:integration",
-      "pnpm test:acceptance",
-      "pnpm test:package",
-      "pnpm validate:recipes",
-      "pnpm validate:content",
-      "pnpm audit:similarity",
-      "pnpm test:fixtures",
-      "pnpm docs:build",
-      "pnpm check:links",
-      "pnpm check:clean",
-    ]) {
+    for (const command of completeValidationCommands) {
       expect(contributing, `CONTRIBUTING.md omits ${command}`).toContain(command);
     }
   });
@@ -139,6 +142,7 @@ describe("delivery contracts", () => {
       "registry-url: https://registry.npmjs.org",
       "package-manager-cache: false",
       "publish-npm-tarball.ts",
+      "pnpm check:links:external",
       "sync-github-release.ts",
       "--notes-file",
     ]) {
@@ -147,6 +151,7 @@ describe("delivery contracts", () => {
     for (const requirement of [
       '"view"',
       '"dist.integrity"',
+      '"readme"',
       '"publish"',
       '"--access"',
       '"public"',
@@ -170,8 +175,12 @@ describe("delivery contracts", () => {
     );
     expect(workflow).toContain("id-token: write");
     expect(workflow.indexOf("publish-npm-tarball.ts")).toBeLessThan(
+      workflow.indexOf("pnpm check:links:external"),
+    );
+    expect(workflow.indexOf("pnpm check:links:external")).toBeLessThan(
       workflow.indexOf("sync-github-release.ts"),
     );
+    expect(workflow.match(/--readme/g)).toHaveLength(2);
   });
 
   it("keeps package versions, runtime floors, and project metadata consistent", async () => {
@@ -239,6 +248,7 @@ describe("delivery contracts", () => {
       for (const requirement of [
         "npm install --global @kauanpolydoro/agentic-workflows",
         "awf context",
+        "awf --version",
         "awf init --agent codex",
         "awf show review-pull-request",
         "awf install review-pull-request --dry-run --show-content",
@@ -247,6 +257,7 @@ describe("delivery contracts", () => {
         "$review-pull-request",
         "/review-pull-request",
         ".agentic-workflows/config.yml",
+        "awf --project-root <",
         "No files were changed.",
         "Installed review-pull-request for codex:",
         "Invoke explicitly with: $review-pull-request",
@@ -276,6 +287,8 @@ describe("delivery contracts", () => {
     expect(english).not.toContain("tested browser opening");
     expect(english).not.toContain("produced with `pnpm pack`");
     expect(portuguese).not.toContain("produzido com `pnpm pack`");
+    expect(english).not.toContain("belongs to a different package");
+    expect(portuguese).not.toContain("pertence a outro pacote");
     expect(await text("packages/cli/README.md")).toBe(english);
 
     const metadata = await packageMetadata("packages/cli/package.json");
@@ -323,6 +336,21 @@ describe("delivery contracts", () => {
     ]) {
       expect(english).toContain(`awf ${command}`);
       expect(portuguese).toContain(`awf ${command}`);
+    }
+    for (const command of completeValidationCommands) {
+      expect(english).toContain(command);
+      expect(portuguese).toContain(command);
+    }
+    for (const [englishClaim, portugueseClaim] of [
+      ["not an executable plugin", "não um plugin executável"],
+      ["never executes recipe instructions", "nunca executa as instruções das receitas"],
+      ["Generic Markdown has no agent command", "Markdown genérico não possui comando de agente"],
+      ["not active evidence", "não são evidências ativas"],
+      ["registry README bytes", "bytes do README no registro"],
+      ["only when a new package version", "só muda quando uma nova versão"],
+    ] as const) {
+      expect(english).toContain(englishClaim);
+      expect(portuguese).toContain(portugueseClaim);
     }
   });
 

@@ -21,5 +21,6 @@ The core package is published before the CLI because the CLI depends on it.
 The workflow packs both packages with pnpm before publishing them with npm so the released CLI tarball contains a resolved core version instead of the workspace protocol.
 The npm package access is explicitly public in each package's `publishConfig`.
 The package smoke test compares the CLI tarball's README byte for byte with the root `README.md` before publication.
-The publisher then compares the registry `dist.integrity` value with that complete local tarball, so a resumed release cannot accept different README or runtime bytes under the same version.
+The publisher then compares the registry `dist.integrity` value and registry README with the complete local package, so a resumed release cannot accept different README or runtime bytes under the same version.
+After both npm packages pass those checks, the workflow audits every allowlisted public documentation link before synchronizing the GitHub release.
 The npm landing page receives README changes only when a new package version is published.

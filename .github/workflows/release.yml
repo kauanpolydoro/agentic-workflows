@@ -84,12 +84,18 @@ jobs:
           --package @kauanpolydoro/agentic-workflows-core
           --version "${GITHUB_REF_NAME#v}"
           --tarball "$RUNNER_TEMP/npm-packages/kauanpolydoro-agentic-workflows-core-${GITHUB_REF_NAME#v}.tgz"
+          --readme "packages/core/README.md"
       - name: Publish or verify CLI package on npm
         run: >-
           pnpm exec tsx scripts/publish-npm-tarball.ts
           --package @kauanpolydoro/agentic-workflows
           --version "${GITHUB_REF_NAME#v}"
           --tarball "$RUNNER_TEMP/npm-packages/kauanpolydoro-agentic-workflows-${GITHUB_REF_NAME#v}.tgz"
+          --readme "packages/cli/README.md"
+      - name: Verify public documentation links after npm publication
+        env:
+          AWF_EXTERNAL_LINK_CACHE: ${{ runner.temp }}/external-links.json
+        run: pnpm check:links:external
       - name: Create or resume draft GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
