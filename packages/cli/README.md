@@ -31,7 +31,7 @@ npm install --global @kauanpolydoro/agentic-workflows
 
 For a repository or CI job that must pin the CLI, use the [exact-version setup](#try-without-a-global-installation) instead.
 
-Run the following Codex example from the root of an existing project:
+Run the following Codex example from the root of an existing project that has no AWF configuration and no installed `review-pull-request` bundle:
 
 ```bash
 cd path/to/your-project
@@ -50,6 +50,10 @@ Stop if that path is not the project you intended to modify, or select it explic
 `awf init --agent codex` writes persistent project defaults to `.agentic-workflows/config.yml`, and the later commands reuse them.
 The dry run then shows every planned file and its complete generated content without changing the installation target.
 The second install command writes the reviewed bundle and its hash-bearing manifest.
+
+If `.agentic-workflows/config.yml` already exists, do not rerun `awf init`; inspect the retained defaults with `awf doctor` and continue with them.
+If `review-pull-request` is already installed, use `awf update review-pull-request --dry-run --show-content` instead of installing it again.
+Use `awf init --force` only after backing up and reviewing an existing configuration that you intentionally want to replace.
 
 Confirm these checkpoints before continuing:
 
@@ -295,7 +299,7 @@ Delivery-contract tests compare the section map and first-use commands across bo
 The [`@kauanpolydoro/agentic-workflows`](https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows) CLI and [`@kauanpolydoro/agentic-workflows-core`](https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows-core) library are public on npm.
 Releases are tag-driven and use npm trusted publishing, provenance, package smoke tests, and integrity verification before GitHub release synchronization.
 The package smoke test proves that the tarball contains this exact README, and the publisher verifies both registry `dist.integrity` and the registry README bytes after publication.
-The release then audits every allowlisted public documentation link before creating or resuming the GitHub release.
+Before npm publication, the release audits every allowlisted public documentation link so a broken destination blocks the release before an irreversible registry write.
 GitHub can show unreleased README changes first, because the npm landing page changes only when a new package version containing those bytes is published.
 See the [changelog](https://github.com/kauanpolydoro/agentic-workflows/blob/main/CHANGELOG.md) and [release process](https://github.com/kauanpolydoro/agentic-workflows/blob/main/RELEASING.md) for the current version and delivery contract.
 

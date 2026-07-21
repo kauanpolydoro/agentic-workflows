@@ -19,7 +19,8 @@ From there, work through these steps:
 6. Add evidence only after the corresponding activity has actually happened.
 7. Run `pnpm validate:recipes`, `pnpm validate:content`, the tests, and the docs build.
 
-Follow the [recipe quality standard](../quality/recipe-quality-standard.md) and use schema version 2 for agent compatibility declarations.
+Follow the [recipe quality standard](../quality/recipe-quality-standard.md) and use schema version 3 for recipe metadata.
+Agent compatibility declarations belong to each recipe, while global adapter support and format facts remain in the central registry.
 
 A few boundaries to respect:
 

@@ -36,6 +36,10 @@ jobs:
       - run: pnpm audit:similarity
       - name: Ensure tracked and untracked generated artifacts are current
         run: pnpm check:clean
+      - name: Verify public documentation links before npm publication
+        env:
+          AWF_EXTERNAL_LINK_CACHE: ${{ runner.temp }}/external-links.json
+        run: pnpm check:links:external
       - name: Prepare source archives
         run: |
           pnpm exec tsx scripts/release-artifacts.ts prepare \
@@ -92,10 +96,6 @@ jobs:
           --version "${GITHUB_REF_NAME#v}"
           --tarball "$RUNNER_TEMP/npm-packages/kauanpolydoro-agentic-workflows-${GITHUB_REF_NAME#v}.tgz"
           --readme "packages/cli/README.md"
-      - name: Verify public documentation links after npm publication
-        env:
-          AWF_EXTERNAL_LINK_CACHE: ${{ runner.temp }}/external-links.json
-        run: pnpm check:links:external
       - name: Create or resume draft GitHub release
         env:
           GH_TOKEN: ${{ github.token }}

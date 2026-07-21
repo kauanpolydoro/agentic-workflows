@@ -46,6 +46,7 @@
     "catalog.json",
     "docs",
     "README.md",
+    "README.pt-BR.md",
     "LICENSE"
   ],
   "scripts": {

@@ -420,7 +420,7 @@ describe.sequential("CLI command contracts", () => {
     expect(stdout).toContain(
       "https://kauanpolydoro.github.io/agentic-workflows/catalog/write-release-notes",
     );
-    expect(stdout).toContain("Could not launch a browser");
+    expect(stdout).toContain("Could not open the documentation with the native handler");
   });
 
   it("waits for the documentation opener to report its real exit status", async () => {
@@ -430,7 +430,7 @@ describe.sequential("CLI command contracts", () => {
       { from: "user" },
     );
     expect(documentationOpener).toHaveBeenCalledOnce();
-    expect(stdout).toContain("Could not launch a browser");
+    expect(stdout).toContain("Could not open the documentation with the native handler");
     expect(stdout).not.toContain("Opened ");
   });
 

@@ -10,6 +10,7 @@ All notable project changes will be documented here.
 - Updated public status documents to reflect npm trusted publishing and the current pre-1.0 security support policy.
 - Aligned adapter research with the active evidence registry and added observable checkpoints plus exact CI version pinning to both landing pages.
 - Added post-publication npm README verification, release-time public-link auditing, semantic translation contracts, and a complete contributor gate reference.
+- Aligned authoring and installation guides, clarified existing-project onboarding, and replaced browser-specific CLI wording with the native-handler contract.
 
 ## 0.2.0 - 2026-07-21
 

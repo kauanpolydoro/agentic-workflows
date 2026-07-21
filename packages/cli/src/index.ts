@@ -1807,7 +1807,7 @@ export function createProgram(options: ProgramOptions = {}): Command {
     )
     .option("--json", "Print complete structured recipe metadata")
     .option("--raw", "Print the canonical workflow Markdown")
-    .option("--open", "Open the local page or public catalog page in a browser")
+    .option("--open", "Open the local page or public catalog URL with the native document handler")
     .option("--location", "Print the local documentation path or public catalog URL")
     .action(async (id, options) => {
       if (
@@ -1827,7 +1827,7 @@ export function createProgram(options: ProgramOptions = {}): Command {
             ? { schema_version: 1, ...documentation }
             : documentation.opened
               ? `Opened ${documentation.target}.`
-              : `Could not launch a browser. Open ${documentation.target}.`,
+              : `Could not open the documentation with the native handler. Open ${documentation.target} manually.`,
           Boolean(options.json),
         );
       }

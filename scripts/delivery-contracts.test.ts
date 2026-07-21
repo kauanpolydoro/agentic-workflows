@@ -174,10 +174,10 @@ describe("delivery contracts", () => {
       workflow.indexOf("release-artifacts.ts prepare"),
     );
     expect(workflow).toContain("id-token: write");
-    expect(workflow.indexOf("publish-npm-tarball.ts")).toBeLessThan(
-      workflow.indexOf("pnpm check:links:external"),
-    );
     expect(workflow.indexOf("pnpm check:links:external")).toBeLessThan(
+      workflow.indexOf("publish-npm-tarball.ts"),
+    );
+    expect(workflow.indexOf("publish-npm-tarball.ts")).toBeLessThan(
       workflow.indexOf("sync-github-release.ts"),
     );
     expect(workflow.match(/--readme/g)).toHaveLength(2);
@@ -258,6 +258,8 @@ describe("delivery contracts", () => {
         "/review-pull-request",
         ".agentic-workflows/config.yml",
         "awf --project-root <",
+        "awf init --force",
+        "awf update review-pull-request --dry-run --show-content",
         "No files were changed.",
         "Installed review-pull-request for codex:",
         "Invoke explicitly with: $review-pull-request",
@@ -290,12 +292,19 @@ describe("delivery contracts", () => {
     expect(english).not.toContain("belongs to a different package");
     expect(portuguese).not.toContain("pertence a outro pacote");
     expect(await text("packages/cli/README.md")).toBe(english);
+    expect(await text("packages/cli/README.pt-BR.md")).toBe(portuguese);
 
     const metadata = await packageMetadata("packages/cli/package.json");
     expect(typeof metadata.version).toBe("string");
     const exactPackage = `@kauanpolydoro/agentic-workflows@${String(metadata.version)}`;
     expect(english).toContain(exactPackage);
     expect(portuguese).toContain(exactPackage);
+
+    const recipeCount = (
+      await readdir(path.join(repository, "recipes"), { withFileTypes: true })
+    ).filter((entry) => entry.isDirectory()).length;
+    expect(english).toContain(`catalog of ${recipeCount} evidence-oriented workflow bundles`);
+    expect(portuguese).toContain(`catálogo com ${recipeCount} pacotes de fluxos`);
   });
 
   it("keeps the English and Portuguese landing pages equivalent in scope", async () => {
@@ -352,11 +361,45 @@ describe("delivery contracts", () => {
       expect(english).toContain(englishClaim);
       expect(portuguese).toContain(portugueseClaim);
     }
+    for (const sharedDestination of [
+      "https://kauanpolydoro.github.io/agentic-workflows/catalog/write-release-notes#complete-example-input",
+      "https://kauanpolydoro.github.io/agentic-workflows/catalog/write-release-notes#complete-expected-output",
+      "https://kauanpolydoro.github.io/agentic-workflows/launch/reference-evaluations",
+    ]) {
+      expect(english).toContain(sharedDestination);
+      expect(portuguese).toContain(sharedDestination);
+    }
+  });
+
+  it("keeps linked onboarding guides on current recipe and pinning contracts", async () => {
+    const authoring = await text("docs/guide/authoring.md");
+    const installation = await text("docs/guide/installation.md");
+    const cliMetadata = await packageMetadata("packages/cli/package.json");
+    const exactPackage = `@kauanpolydoro/agentic-workflows@${String(cliMetadata.version)}`;
+    expect(authoring).toContain("schema version 3");
+    expect(authoring).not.toContain("schema version 2");
+    expect(installation).toContain(`npm install --save-dev --save-exact ${exactPackage}`);
+    expect(installation).toContain(`pnpm add --save-dev --save-exact ${exactPackage}`);
+    expect(installation).toContain("Commit the resulting package manifest and lockfile.");
+  });
+
+  it("uses the native document-handler contract consistently", async () => {
+    const cli = await text("packages/cli/src/index.ts");
+    const english = await text("README.md");
+    const reference = await text("docs/guide/cli-reference.md");
+    for (const document of [cli, english, reference]) {
+      expect(document).toMatch(/native (?:document )?handler/);
+    }
+    expect(cli).not.toContain("launch a browser");
+    expect(cli).not.toContain("page in a browser");
   });
 
   it("keeps historical adapter records separate from active compatibility claims", async () => {
     const research = await text("docs/research/adapter-sources.md");
     const compatibility = await text("docs/compatibility.md");
+    const recipeCount = (
+      await readdir(path.join(repository, "recipes"), { withFileTypes: true })
+    ).filter((entry) => entry.isDirectory()).length;
     expect(research).toContain("They are not active evidence");
     expect(research).toContain("review-pull-request-pre-history-reset.md");
     expect(research).not.toContain("Separate retained records now establish");
@@ -372,7 +415,9 @@ describe("delivery contracts", () => {
         .split("\n")
         .find((line) => line.startsWith(`| ${adapter} |`));
       expect(researchRow).toContain("| untested | untested | untested | untested |");
-      expect(compatibilityRow).toContain("| untested | 0/20 | 0/20 | 0/20 | untested |");
+      expect(compatibilityRow).toContain(
+        `| untested | 0/${recipeCount} | 0/${recipeCount} | 0/${recipeCount} | untested |`,
+      );
     }
   });
 
