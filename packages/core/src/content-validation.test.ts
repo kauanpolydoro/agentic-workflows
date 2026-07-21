@@ -273,6 +273,28 @@ describe("content validation fixtures", () => {
     );
   });
 
+  it("attributes loader failures through a canonical parent alias", async () => {
+    const directory = await fixture("valid");
+    const repositoryRoot = path.dirname(path.dirname(directory));
+    const aliasContainer = await mkdtemp(path.join(os.tmpdir(), "awf-content-alias-"));
+    const alias = path.join(aliasContainer, "catalog");
+    await symlink(repositoryRoot, alias, process.platform === "win32" ? "junction" : "dir");
+    await writeFile(
+      path.join(directory, "README.md"),
+      Buffer.alloc(MAX_RECIPE_FILE_BYTES + 1, "a"),
+    );
+
+    const aliasedDirectory = path.join(alias, "recipes", path.basename(directory));
+    await expect(validateRecipeContent(aliasedDirectory)).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          file: "README.md",
+          code: "FILE_TOO_LARGE",
+        }),
+      ]),
+    );
+  });
+
   it("rejects a required recipe file that is a symbolic link", async () => {
     const directory = await fixture("valid");
     const external = path.join(path.dirname(path.dirname(directory)), "external-readme.md");

@@ -1,12 +1,12 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
-  chmod,
   cp,
   mkdir,
   mkdtemp,
   readdir,
   readFile,
+  realpath,
   rm,
   stat,
   symlink,
@@ -77,8 +77,12 @@ function syntheticUntestedEvidence(options: {
   };
 }
 
+function testProgram(options: Parameters<typeof createProgram>[0] = {}) {
+  return createProgram({ ...options, discoveryBoundary: project });
+}
+
 async function run(...args: string[]): Promise<void> {
-  await createProgram().parseAsync(args, { from: "user" });
+  await testProgram().parseAsync(args, { from: "user" });
 }
 
 async function createVerificationRepository(): Promise<{
@@ -161,7 +165,7 @@ async function replaceEvidenceRecords(
 }
 
 beforeEach(async () => {
-  project = await mkdtemp(path.join(os.tmpdir(), "awf-cli-unit-"));
+  project = await realpath(await mkdtemp(path.join(os.tmpdir(), "awf-cli-unit-")));
   await writeFile(path.join(project, "package.json"), "{}\n");
   process.chdir(project);
   process.env.AWF_CATALOG_ROOT = path.join(repositoryRoot, "recipes");
@@ -188,6 +192,60 @@ afterEach(async () => {
 });
 
 describe.sequential("CLI command contracts", () => {
+  it("turns an empty invocation into actionable help with a successful parse", async () => {
+    await run();
+
+    expect(stdout).toContain("Usage: awf [options] [command]");
+    expect(stdout).toContain("awf init --agent codex");
+    expect(stdout).toContain("awf install review-pull-request --agent codex --dry-run");
+    expect(stdout).toContain("awf status");
+    expect(stdout).toContain("awf doctor");
+    expect(stdout).toContain("awf completion zsh");
+    expect(process.exitCode).toBeUndefined();
+  });
+
+  it("explains project-root selection for humans and automation", async () => {
+    await run("--project-root", project, "context", "--json");
+    expect(JSON.parse(stdout)).toEqual({
+      schema_version: 1,
+      project_root: project,
+      selection_source: "explicit",
+      project_root_fallback: false,
+      reason: "Selected by the explicit --project-root option.",
+    });
+
+    stdout = "";
+    await run("context");
+    expect(stdout).toContain(`Project root: ${project}`);
+    expect(stdout).toContain("Selection source: package");
+    expect(stdout).toContain("Current-directory fallback: no");
+  });
+
+  it("generates completion for every supported shell", async () => {
+    for (const shell of ["bash", "zsh", "fish", "pwsh"]) {
+      stdout = "";
+      await run("completion", shell);
+      expect(stdout).toContain("review-pull-request");
+      expect(stdout).toContain("agentic-workflows");
+
+      stdout = "";
+      await run("completion", shell, "--install-instructions");
+      expect(stdout).toContain("will not edit");
+      expect(stdout).toContain(`awf completion ${shell}`);
+      expect(stdout).not.toContain("review-pull-request");
+    }
+
+    await expect(run("completion", "unsupported")).rejects.toMatchObject({ exitCode: 1 });
+  });
+
+  it("documents safety-relevant options in command help", async () => {
+    await expect(run("install", "--help")).rejects.toMatchObject({ exitCode: 0 });
+
+    expect(stdout).toContain("Preview the complete installation plan without changing");
+    expect(stdout).toContain("Include proposed generated content in a dry run");
+    expect(stdout).toContain("never overwrite unmanaged files");
+  });
+
   it("separates adapter support and recipe compatibility filters", async () => {
     await run(
       "list",
@@ -216,7 +274,8 @@ describe.sequential("CLI command contracts", () => {
     });
     stdout = "";
     await run("list", "--category", "does-not-exist");
-    expect(stdout).toBe("\n");
+    expect(stdout).toContain("No workflows match the selected filters");
+    expect(stdout).toContain("awf list --help");
     stdout = "";
     await run("list", "--category", "release");
     expect(stdout).toContain("write-release-notes");
@@ -247,8 +306,101 @@ describe.sequential("CLI command contracts", () => {
     stdout = "";
     await run("show", "write-release-notes");
     expect(stdout).toContain("Risk:");
+    expect(stdout).toContain("Difficulty:");
+    expect(stdout).toContain("Required inputs:");
+    expect(stdout).toContain("Agent compatibility:");
+    expect(stdout).toContain("- codex: compatible; capability unknown");
+    stdout = "";
+    await run("show", "write-release-notes", "--agent", "codex");
+    expect(stdout).toContain("- codex: compatible; capability unknown");
+    expect(stdout).not.toContain("- cursor:");
     await expect(run("show", "write-release-notes", "--raw", "--json")).rejects.toMatchObject({
       exitCode: 2,
+    });
+    stdout = "";
+    await run("show", "write-release-notes", "--location");
+    expect(stdout).toContain(path.join("docs", "catalog", "write-release-notes.md"));
+    await expect(run("show", "write-release-notes", "--location", "--open")).rejects.toMatchObject({
+      exitCode: 2,
+    });
+    await expect(run("show", "write-release-notes", "--location", "--json")).rejects.toMatchObject({
+      exitCode: 2,
+    });
+  });
+
+  it("reports an actionable empty installation status", async () => {
+    await run("status");
+    expect(stdout).toContain("No workflows are installed");
+    expect(stdout).toContain("awf install <workflow-id> --agent <agent> --dry-run");
+    stdout = "";
+    await run("status", "--json");
+    expect(JSON.parse(stdout)).toMatchObject({
+      schema_version: 1,
+      project_context: {
+        project_root: project,
+        selection_source: "package",
+        project_root_fallback: false,
+      },
+      installations: [],
+    });
+    await expect(run("status", "write-release-notes")).rejects.toMatchObject({
+      code: "NOT_FOUND",
+      details: {
+        workflow: "write-release-notes",
+        remediation: expect.stringContaining("awf install write-release-notes --dry-run"),
+      },
+    });
+  });
+
+  it("filters healthy status records while retaining complete summary counts", async () => {
+    await run("init", "--agent", "codex", "--target", "status target");
+    stdout = "";
+    await run("install", "write-release-notes", "--json");
+    const manifest = JSON.parse(stdout) as { files: Array<{ path: string }> };
+
+    stdout = "";
+    await run("status", "--failures-only", "--json");
+    expect(JSON.parse(stdout)).toMatchObject({
+      schema_version: 1,
+      project_context: {
+        project_root: project,
+        selection_source: "config",
+        project_root_fallback: false,
+      },
+      filter: "failures-only",
+      summary: { total: 1, healthy: 1, drifted: 0, invalid: 0 },
+      installations: [],
+    });
+    stdout = "";
+    await run("status", "--failures-only");
+    expect(stdout).toContain("No drifted or invalid workflows were found");
+    expect(stdout).toContain("1 healthy, 0 drifted, 0 invalid");
+
+    const managedFile = manifest.files[0]?.path;
+    if (!managedFile) throw new Error("The installed fixture did not contain a managed file.");
+    const installedPath = path.join(project, "status target", managedFile);
+    await writeFile(installedPath, `${await readFile(installedPath, "utf8")}local edit\n`);
+
+    stdout = "";
+    await run("status", "--failures-only", "--json");
+    expect(JSON.parse(stdout)).toMatchObject({
+      filter: "failures-only",
+      summary: { total: 1, healthy: 0, drifted: 1, invalid: 0 },
+      installations: [{ id: "write-release-notes", status: "drifted" }],
+    });
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("suggests nearby workflow IDs without weakening ID validation", async () => {
+    await expect(run("show", "review-pull-reques")).rejects.toMatchObject({
+      code: "MISSING_FILE",
+      details: {
+        suggestions: ["review-pull-request"],
+        remediation: expect.stringContaining("awf list"),
+      },
+    });
+    await expect(run("show", "Review-Pull-Request")).rejects.toMatchObject({
+      code: "INVALID_RECIPE",
     });
   });
 
@@ -261,14 +413,10 @@ describe.sequential("CLI command contracts", () => {
       { recursive: true },
     );
     process.env.AWF_CATALOG_ROOT = packagedCatalog;
-    const previousPath = process.env.PATH;
-    process.env.PATH = "";
-    try {
-      await run("show", "write-release-notes", "--open");
-    } finally {
-      if (previousPath === undefined) delete process.env.PATH;
-      else process.env.PATH = previousPath;
-    }
+    await testProgram({ documentationOpener: async () => false }).parseAsync(
+      ["show", "write-release-notes", "--open"],
+      { from: "user" },
+    );
     expect(stdout).toContain(
       "https://kauanpolydoro.github.io/agentic-workflows/catalog/write-release-notes",
     );
@@ -276,67 +424,66 @@ describe.sequential("CLI command contracts", () => {
   });
 
   it("waits for the documentation opener to report its real exit status", async () => {
-    if (process.platform === "win32") return;
-    const bin = path.join(project, "bin");
-    await mkdir(bin);
-    const opener = path.join(bin, process.platform === "darwin" ? "open" : "xdg-open");
-    await writeFile(opener, "#!/bin/sh\nexit 7\n");
-    await chmod(opener, 0o755);
-    const previousPath = process.env.PATH;
-    process.env.PATH = bin;
-    try {
-      await run("show", "write-release-notes", "--open");
-    } finally {
-      if (previousPath === undefined) delete process.env.PATH;
-      else process.env.PATH = previousPath;
-    }
+    const documentationOpener = vi.fn().mockResolvedValue(false);
+    await testProgram({ documentationOpener }).parseAsync(
+      ["show", "write-release-notes", "--open"],
+      { from: "user" },
+    );
+    expect(documentationOpener).toHaveBeenCalledOnce();
     expect(stdout).toContain("Could not launch a browser");
     expect(stdout).not.toContain("Opened ");
   });
 
   it("reports a successful documentation opener only after exit zero", async () => {
-    if (process.platform === "win32") return;
-    const bin = path.join(project, "bin");
-    await mkdir(bin);
-    const opener = path.join(bin, process.platform === "darwin" ? "open" : "xdg-open");
-    await writeFile(opener, "#!/bin/sh\nexit 0\n");
-    await chmod(opener, 0o755);
-    const previousPath = process.env.PATH;
-    process.env.PATH = bin;
-    try {
-      await run("show", "write-release-notes", "--open");
-    } finally {
-      if (previousPath === undefined) delete process.env.PATH;
-      else process.env.PATH = previousPath;
-    }
+    const documentationOpener = vi.fn().mockResolvedValue(true);
+    await testProgram({ documentationOpener }).parseAsync(
+      ["show", "write-release-notes", "--open"],
+      { from: "user" },
+    );
+    expect(documentationOpener).toHaveBeenCalledOnce();
     expect(stdout).toContain("Opened ");
-    expect(stdout).toContain("docs/catalog/write-release-notes.md");
+    expect(stdout).toContain(path.join("docs", "catalog", "write-release-notes.md"));
+
+    stdout = "";
+    await testProgram({ documentationOpener }).parseAsync(
+      ["show", "write-release-notes", "--open", "--json"],
+      { from: "user" },
+    );
+    expect(JSON.parse(stdout)).toEqual({
+      schema_version: 1,
+      target: path.join(repositoryRoot, "docs/catalog/write-release-notes.md"),
+      opened: true,
+    });
   });
 
   it("propagates cancellation while a documentation opener is active", async () => {
-    if (process.platform === "win32") return;
-    const bin = path.join(project, "bin");
-    await mkdir(bin);
-    const opener = path.join(bin, process.platform === "darwin" ? "open" : "xdg-open");
-    await writeFile(opener, "#!/bin/sh\nexec /bin/sleep 30\n");
-    await chmod(opener, 0o755);
-    const previousPath = process.env.PATH;
-    process.env.PATH = bin;
     const controller = new AbortController();
     const interruption = new Error("synthetic opener cancellation");
     interruption.name = "AbortError";
-    try {
-      const pending = createProgram({ signal: controller.signal }).parseAsync(
-        ["show", "write-release-notes", "--open"],
-        { from: "user" },
-      );
-      await new Promise<void>((resolve) => setTimeout(resolve, 20));
-      controller.abort(interruption);
-      await expect(pending).rejects.toBe(interruption);
-    } finally {
-      if (previousPath === undefined) delete process.env.PATH;
-      else process.env.PATH = previousPath;
-    }
+    let reportStarted!: () => void;
+    const started = new Promise<void>((resolve) => {
+      reportStarted = resolve;
+    });
+    const documentationOpener = (_documentation: string, signal?: AbortSignal) =>
+      new Promise<boolean>((_resolve, reject) => {
+        reportStarted();
+        if (signal?.aborted) {
+          reject(signal.reason ?? new Error("Documentation opening was aborted."));
+          return;
+        }
+        signal?.addEventListener(
+          "abort",
+          () => reject(signal.reason ?? new Error("Documentation opening was aborted.")),
+          { once: true },
+        );
+      });
+    const pending = testProgram({
+      signal: controller.signal,
+      documentationOpener,
+    }).parseAsync(["show", "write-release-notes", "--open"], { from: "user" });
+    await started;
+    controller.abort(interruption);
+    await expect(pending).rejects.toBe(interruption);
   });
 
   it("uses initialized defaults and completes the managed lifecycle", async () => {
@@ -359,6 +506,19 @@ describe.sequential("CLI command contracts", () => {
     expect(manifest.adapter.id).toBe("codex");
     expect(manifest.files.some((file) => file.role === "policy")).toBe(true);
     stdout = "";
+    await run("status", "--json");
+    expect(JSON.parse(stdout)).toMatchObject({
+      schema_version: 1,
+      installations: [
+        {
+          id: "write-release-notes",
+          status: "healthy",
+          agent: "codex",
+          issue: null,
+        },
+      ],
+    });
+    stdout = "";
     await run("manifest", "write-release-notes", "--json");
     expect(JSON.parse(stdout)).toMatchObject({ adapter: { id: "codex" } });
     stdout = "";
@@ -370,21 +530,174 @@ describe.sequential("CLI command contracts", () => {
     stdout = "";
     await run("update", "write-release-notes", "--dry-run", "--json");
     const plan = JSON.parse(stdout) as {
-      changes: { create: string[]; replace: string[]; retire: string[] };
+      changes: { create: string[]; replace: string[]; unchanged: string[]; retire: string[] };
+      plan: { schema_version: number; operation: string };
     };
+    expect(plan.plan).toEqual(expect.objectContaining({ schema_version: 1, operation: "update" }));
     expect(plan.changes.create).toEqual([]);
     expect(plan.changes.retire).toEqual([]);
-    expect(plan.changes.replace.length).toBeGreaterThan(0);
+    expect(plan.changes.replace).toEqual([]);
+    expect(plan.changes.unchanged.length).toBeGreaterThan(0);
     stdout = "";
     await run("update", "write-release-notes", "--dry-run");
     expect(stdout).toContain("Would update write-release-notes:");
     expect(stdout).toContain("Create:\n- none");
+    expect(stdout).toContain("Unchanged:\n-");
     expect(stdout).toContain("No files were changed.");
     await run("update", "write-release-notes");
+    stdout = "";
+    await run("remove", "write-release-notes", "--dry-run");
+    expect(stdout).toContain("Would remove write-release-notes:");
+    expect(stdout).toContain("Remove:\n-");
+    expect(stdout).toContain("No files were changed.");
+    await expect(
+      stat(path.join(project, "managed path/.agents/skills/write-release-notes/SKILL.md")),
+    ).resolves.toBeDefined();
+    stdout = "";
+    await run("remove", "write-release-notes", "--dry-run", "--json");
+    expect(JSON.parse(stdout)).toMatchObject({
+      requiresForce: false,
+      changes: { modifiedManagedFiles: [], missingManagedFiles: [] },
+      plan: { schema_version: 1, operation: "remove", dry_run: true },
+    });
+    stdout = "";
     await run("remove", "write-release-notes");
     await expect(
       stat(path.join(project, "managed path/.agents/skills/write-release-notes/SKILL.md")),
     ).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  it("guides interactive init while flags and non-interactive use remain deterministic", async () => {
+    const wizard = vi.fn().mockResolvedValue({ agent: "codex", target: "guided target" });
+    await testProgram({ interactive: true, initWizard: wizard }).parseAsync(["init"], {
+      from: "user",
+    });
+    expect(wizard).toHaveBeenCalledOnce();
+    expect(
+      parse(await readFile(path.join(project, ".agentic-workflows/config.yml"), "utf8")),
+    ).toEqual({
+      schema_version: 1,
+      default_agent: "codex",
+      default_target: "guided target",
+    });
+    expect(stdout).toContain("Default agent: codex");
+    expect(stdout).toContain("Next: awf install <workflow-id> --dry-run");
+
+    wizard.mockClear();
+    await expect(
+      testProgram({ interactive: true, initWizard: wizard }).parseAsync(["init"], {
+        from: "user",
+      }),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(wizard).not.toHaveBeenCalled();
+
+    stdout = "";
+    await testProgram({ interactive: true, initWizard: wizard }).parseAsync(
+      ["init", "--force", "--agent", "generic", "--target", "."],
+      { from: "user" },
+    );
+    expect(wizard).not.toHaveBeenCalled();
+    expect(
+      parse(await readFile(path.join(project, ".agentic-workflows/config.yml"), "utf8")),
+    ).toMatchObject({ default_agent: "generic", default_target: "." });
+
+    await testProgram({ interactive: true, initWizard: wizard }).parseAsync(
+      ["init", "--force", "--no-interactive"],
+      { from: "user" },
+    );
+    expect(wizard).not.toHaveBeenCalled();
+
+    wizard.mockClear();
+    stdout = "";
+    await testProgram({ interactive: false, initWizard: wizard }).parseAsync(
+      ["init", "--force", "--wizard"],
+      { from: "user" },
+    );
+    expect(wizard).toHaveBeenCalledOnce();
+    expect(
+      parse(await readFile(path.join(project, ".agentic-workflows/config.yml"), "utf8")),
+    ).toMatchObject({ default_agent: "codex", default_target: "guided target" });
+
+    for (const conflicting of [
+      ["--json"],
+      ["--no-interactive"],
+      ["--agent", "codex"],
+      ["--target", "managed"],
+    ]) {
+      await expect(
+        testProgram({ interactive: false, initWizard: wizard }).parseAsync(
+          ["init", "--force", "--wizard", ...conflicting],
+          { from: "user" },
+        ),
+      ).rejects.toMatchObject({
+        code: "awf.conflictingInitialization",
+        exitCode: 2,
+      });
+    }
+    expect(wizard).toHaveBeenCalledOnce();
+
+    wizard.mockClear();
+    stdout = "";
+    await testProgram({ interactive: true, initWizard: wizard }).parseAsync(
+      ["init", "--force", "--json", "--agent", "codex", "--target", "machine target"],
+      { from: "user" },
+    );
+    expect(wizard).not.toHaveBeenCalled();
+    expect(JSON.parse(stdout)).toMatchObject({
+      schema_version: 1,
+      created: false,
+      replaced: true,
+      config_path: ".agentic-workflows/config.yml",
+      project_context: { source: "config" },
+      configuration: {
+        schema_version: 1,
+        default_agent: "codex",
+        default_target: "machine target",
+      },
+    });
+  });
+
+  it("warns only human commands when project-root discovery falls back to the current directory", async () => {
+    await rm(path.join(project, "package.json"));
+    await run("init", "--agent", "generic");
+    expect(process.stderr.write).toHaveBeenCalledWith(
+      expect.stringContaining("no Git, AWF configuration, or package marker was found"),
+    );
+
+    vi.mocked(process.stderr.write).mockClear();
+    await rm(path.join(project, ".agentic-workflows"), { recursive: true });
+    stdout = "";
+    await run("status", "--json");
+    expect(process.stderr.write).not.toHaveBeenCalled();
+    expect(JSON.parse(stdout)).toMatchObject({
+      schema_version: 1,
+      project_context: {
+        project_root: project,
+        selection_source: "cwd",
+        project_root_fallback: true,
+        reason: expect.stringContaining("invocation directory"),
+      },
+    });
+
+    stdout = "";
+    await run("context", "--json");
+    expect(process.stderr.write).not.toHaveBeenCalled();
+    expect(JSON.parse(stdout)).toMatchObject({
+      project_root: project,
+      selection_source: "cwd",
+      project_root_fallback: true,
+    });
+
+    stdout = "";
+    await run("doctor", "--json");
+    expect(process.stderr.write).not.toHaveBeenCalled();
+    expect(JSON.parse(stdout)).toMatchObject({
+      projectContext: {
+        root: project,
+        source: "cwd",
+        reason: expect.stringContaining("invocation directory"),
+      },
+    });
   });
 
   it("keeps dry-run colorless, non-mutating, and explicit about post-install use", async () => {
@@ -404,6 +717,8 @@ describe.sequential("CLI command contracts", () => {
     expect(stdout).toContain("Invoke explicitly with: $write-release-notes");
     expect(stdout).toContain("Warning:");
     expect(stdout).toContain("does not prove agent execution or workflow outcome quality");
+    expect(stdout).toContain("Create:\n-");
+    expect(stdout).not.toContain("Proposed generated content:");
     expect(stdout).not.toContain("\u001b");
     await expect(stat(path.join(project, target))).rejects.toMatchObject({ code: "ENOENT" });
 
@@ -422,6 +737,32 @@ describe.sequential("CLI command contracts", () => {
     expect(manifest.files.map((file) => file.role)).toContain("output-schema");
     expect(stdout).not.toContain("Would install");
     await expect(stat(path.join(project, target))).rejects.toMatchObject({ code: "ENOENT" });
+
+    stdout = "";
+    await run(
+      "install",
+      "write-release-notes",
+      "--agent",
+      "codex",
+      "--target",
+      target,
+      "--dry-run",
+      "--show-content",
+    );
+    expect(stdout).toContain("Proposed generated content:");
+    expect(stdout).toContain("=== .agents/skills/write-release-notes/SKILL.md (entrypoint) ===");
+    await expect(stat(path.join(project, target))).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  it("rejects content previews outside dry-run mode", async () => {
+    await expect(run("install", "write-release-notes", "--show-content")).rejects.toMatchObject({
+      exitCode: 2,
+      code: "awf.contentPreviewRequiresDryRun",
+    });
+    await expect(run("update", "write-release-notes", "--show-content")).rejects.toMatchObject({
+      exitCode: 2,
+      code: "awf.contentPreviewRequiresDryRun",
+    });
   });
 
   it("renders declared effects and approval gates for a write-capable recipe", async () => {
@@ -540,6 +881,7 @@ describe.sequential("CLI command contracts", () => {
     stdout = "";
     await run("validate", project, "--strict", "--json");
     expect(JSON.parse(stdout)).toEqual({
+      schema_version: 1,
       valid: true,
       recipes: 0,
       installations: 0,
@@ -550,8 +892,19 @@ describe.sequential("CLI command contracts", () => {
   it("reports doctor checks as structured records", async () => {
     await run("--project-root", project, "doctor", "--json");
     const result = JSON.parse(stdout) as {
+      schema_version: number;
+      status: string;
       healthy: boolean;
-      checks: Array<{ check: string; status: string }>;
+      exit_code: number;
+      projectContext: { root: string; source: string; reason: string };
+      summary: { total: number; pass: number; warn: number; fail: number };
+      checks: Array<{
+        schema_version: number;
+        check: string;
+        status: string;
+        remediation: string | null;
+        data: Record<string, unknown> | null;
+      }>;
     };
     expect(result.checks).toEqual(
       expect.arrayContaining([
@@ -567,7 +920,36 @@ describe.sequential("CLI command contracts", () => {
       ]),
     );
     expect(typeof result.healthy).toBe("boolean");
+    expect(result.schema_version).toBe(1);
+    expect(result.status).toBe(result.healthy ? "pass" : "fail");
+    expect(result.exit_code).toBe(result.healthy ? 0 : 1);
+    expect(result.summary.total).toBe(result.checks.length);
+    expect(
+      result.checks.every(
+        (check) =>
+          check.schema_version === 1 &&
+          "remediation" in check &&
+          "data" in check &&
+          ["pass", "warn", "fail"].includes(check.status),
+      ),
+    ).toBe(true);
+    expect(result.projectContext).toEqual({
+      root: project,
+      source: "explicit",
+      reason: expect.stringContaining("--project-root"),
+    });
     expect((await readdir(project)).some((entry) => entry.startsWith(".awf-doctor-"))).toBe(false);
+
+    stdout = "";
+    await run("--project-root", project, "doctor", "--failures-only", "--json");
+    const filtered = JSON.parse(stdout) as {
+      filter: string;
+      summary: { pass: number; warn: number; fail: number };
+      checks: Array<{ status: string }>;
+    };
+    expect(filtered.filter).toBe("failures-only");
+    expect(filtered.summary.pass).toBeGreaterThan(0);
+    expect(filtered.checks.every((check) => check.status !== "pass")).toBe(true);
   });
 
   it("reports an invalid configured target when it is a regular file", async () => {
@@ -603,14 +985,31 @@ describe.sequential("CLI command contracts", () => {
     try {
       await run("--project-root", project, "doctor", "--json");
       const result = JSON.parse(stdout) as {
+        healthy: boolean;
         checks: Array<{ check: string; status: string }>;
       };
       expect(result.checks).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ check: "corepack", status: "warn" }),
+          expect.objectContaining({ check: "pnpm", status: "warn" }),
+        ]),
+      );
+      expect(result.healthy).toBe(true);
+
+      stdout = "";
+      process.exitCode = undefined;
+      await run("--project-root", project, "doctor", "--maintainer", "--json");
+      const maintainerResult = JSON.parse(stdout) as {
+        healthy: boolean;
+        checks: Array<{ check: string; status: string }>;
+      };
+      expect(maintainerResult.checks).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ check: "corepack", status: "fail" }),
           expect.objectContaining({ check: "pnpm", status: "fail" }),
         ]),
       );
+      expect(maintainerResult.healthy).toBe(false);
     } finally {
       if (previousPath === undefined) delete process.env.PATH;
       else process.env.PATH = previousPath;
@@ -684,23 +1083,80 @@ describe.sequential("CLI command contracts", () => {
   it("reports a lifecycle lock without deleting it", async () => {
     await run("init");
     const lifecycleLock = path.join(project, ".agentic-workflows", "lifecycle.lock");
-    await writeFile(lifecycleLock, '{"pid":123,"created_at":"synthetic"}\n');
+    await writeFile(
+      lifecycleLock,
+      '{"schema_version":1,"pid":123,"acquired_at":"2026-07-20T12:00:00.000Z","token":"must-not-leak"}\n',
+    );
     stdout = "";
     process.exitCode = undefined;
 
     await run("--project-root", project, "doctor", "--json");
 
     const result = JSON.parse(stdout) as {
-      checks: Array<{ check: string; status: string; detail: string }>;
+      checks: Array<{
+        check: string;
+        status: string;
+        detail: string;
+        remediation?: string;
+        data?: Record<string, unknown>;
+      }>;
     };
     expect(result.checks).toContainEqual(
       expect.objectContaining({
         check: "lifecycle-lock",
         status: "fail",
         detail: expect.stringContaining(lifecycleLock),
+        remediation: expect.stringContaining("PID 123"),
+        data: {
+          path: lifecycleLock,
+          recordValid: true,
+          owner: { pid: 123, acquiredAt: "2026-07-20T12:00:00.000Z" },
+        },
       }),
     );
     expect(await readFile(lifecycleLock, "utf8")).toContain('"pid":123');
+    expect(stdout).not.toContain("must-not-leak");
+  });
+
+  it("reports abandoned lifecycle transactions without deleting recovery state", async () => {
+    await run("init");
+    const transaction = path.join(
+      project,
+      ".agentic-workflows",
+      "transactions",
+      "abandoned-transaction",
+    );
+    await mkdir(transaction, { recursive: true });
+    await writeFile(path.join(transaction, "0.staged"), "retained recovery state\n");
+    stdout = "";
+    process.exitCode = undefined;
+
+    await run("--project-root", project, "doctor", "--json");
+
+    const result = JSON.parse(stdout) as {
+      checks: Array<{
+        check: string;
+        status: string;
+        remediation?: string;
+        data?: Record<string, unknown>;
+      }>;
+    };
+    expect(result.checks).toContainEqual(
+      expect.objectContaining({
+        check: "lifecycle-transactions",
+        status: "fail",
+        remediation: expect.stringContaining("remove only verified abandoned transaction"),
+        data: {
+          path: path.dirname(transaction),
+          count: 1,
+          entries: ["abandoned-transaction"],
+        },
+      }),
+    );
+    await expect(readFile(path.join(transaction, "0.staged"), "utf8")).resolves.toBe(
+      "retained recovery state\n",
+    );
+    expect(process.exitCode).toBe(1);
   });
 
   it("keeps doctor structured when configuration prevents safe target resolution", async () => {
@@ -726,6 +1182,7 @@ describe.sequential("CLI command contracts", () => {
         expect.objectContaining({ check: "default-target", status: "fail" }),
         expect.objectContaining({ check: "target-writable", status: "fail" }),
         expect.objectContaining({ check: "lifecycle-lock", status: "fail" }),
+        expect.objectContaining({ check: "lifecycle-transactions", status: "fail" }),
         expect.objectContaining({ check: "installations", status: "fail" }),
       ]),
     );
@@ -750,6 +1207,7 @@ describe.sequential("CLI command contracts", () => {
         expect.objectContaining({ check: "default-target", status: "warn" }),
         expect.objectContaining({ check: "target-writable", status: "warn" }),
         expect.objectContaining({ check: "lifecycle-lock", status: "pass" }),
+        expect.objectContaining({ check: "lifecycle-transactions", status: "pass" }),
         expect.objectContaining({ check: "installations", status: "pass" }),
       ]),
     );
@@ -783,7 +1241,7 @@ describe.sequential("CLI command contracts", () => {
     controller.abort(interruption);
 
     await expect(
-      createProgram({ signal: controller.signal }).parseAsync(
+      testProgram({ signal: controller.signal }).parseAsync(
         ["install", "write-release-notes", "--agent", "generic"],
         { from: "user" },
       ),
@@ -797,7 +1255,7 @@ describe.sequential("CLI command contracts", () => {
     const signal = { aborted: true, reason: undefined } as AbortSignal;
 
     await expect(
-      createProgram({ signal }).parseAsync(["list"], { from: "user" }),
+      testProgram({ signal }).parseAsync(["list"], { from: "user" }),
     ).rejects.toMatchObject({ name: "AbortError" });
   });
 
@@ -847,8 +1305,40 @@ describe.sequential("CLI command contracts", () => {
     });
   });
 
+  it("explains unsupported configuration schemas and supports explicit recreation", async () => {
+    const directory = path.join(project, ".agentic-workflows");
+    await mkdir(directory, { recursive: true });
+    await writeFile(
+      path.join(directory, "config.yml"),
+      "schema_version: 2\ndefault_agent: generic\ndefault_target: .\n",
+    );
+
+    await expect(run("install", "write-release-notes", "--dry-run")).rejects.toMatchObject({
+      code: "INVALID_RECIPE",
+      details: {
+        schemaVersion: 2,
+        supportedSchemaVersions: [1],
+        remediation: expect.stringContaining("awf init --force --no-interactive"),
+      },
+    });
+
+    stdout = "";
+    await run("init", "--force", "--no-interactive", "--agent", "codex", "--target", "managed");
+    expect(parse(await readFile(path.join(directory, "config.yml"), "utf8"))).toEqual({
+      schema_version: 1,
+      default_agent: "codex",
+      default_target: "managed",
+    });
+
+    stdout = "";
+    await run("install", "write-release-notes", "--dry-run", "--json");
+    expect(JSON.parse(stdout)).toMatchObject({
+      recipe: "write-release-notes",
+      adapter: { id: "codex" },
+    });
+  });
+
   it.each([
-    "schema_version: 2\ndefault_agent: generic\ndefault_target: .\n",
     "schema_version: 1\ndefault_agent: unknown\ndefault_target: .\n",
     "schema_version: 1\ndefault_agent: generic\ndefault_target: ../outside\n",
     "schema_version: 1\ndefault_agent: generic\ndefault_target: .\nextra: true\n",

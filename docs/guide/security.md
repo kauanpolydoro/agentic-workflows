@@ -8,6 +8,8 @@ They are documentation and metadata, and the CLI never gives them a way to execu
 The installer rejects absolute paths and path traversal, keeps every write inside the project root, checks parent directories for symlinks, and stages complete bundles before moving them into place.
 Lifecycle operations are serialized with one lock per target, every installed file gets a SHA-256 hash, and failed mutations are rolled back when the filesystem reports an error.
 It refuses to overwrite silently, and files you have modified are protected during update and removal.
+Lifecycle conflicts expose only the recorded PID and acquisition time, never the ownership token.
+The CLI requires the user to verify that the process is inactive and the timestamp is stale before any manual lock removal.
 
 ## How the catalog loader protects itself
 

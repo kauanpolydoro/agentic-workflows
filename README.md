@@ -4,12 +4,12 @@ Evidence-oriented workflow bundles and locally verified exporters for AI coding 
 
 Use structured workflows for code review, CI debugging, migrations, security review, testing, documentation, and maintenance across multiple coding agents.
 
-![Agentic Workflows terminal demonstration](docs/public/terminal-demo.svg)
+![Agentic Workflows terminal demonstration](https://raw.githubusercontent.com/kauanpolydoro/agentic-workflows/main/docs/public/terminal-demo.svg)
 
 Agentic Workflows is a structured catalog with an offline installer, not a loose prompt list.
 Every recipe declares inputs, preconditions, observable steps, decision points, safety guardrails, human approvals, expected outputs, completion criteria, examples, adapter status, and independent verification stages.
 
-[Read in Brazilian Portuguese](README.pt-BR.md)
+[Read in Brazilian Portuguese](https://github.com/kauanpolydoro/agentic-workflows/blob/main/README.pt-BR.md)
 
 ## Quick start
 
@@ -24,6 +24,7 @@ You can then use the short `awf` command from any project:
 
 ```bash
 awf --version
+awf
 awf list
 awf show review-pull-request
 ```
@@ -31,11 +32,37 @@ awf show review-pull-request
 From the root of a project, preview a workflow installation before writing any files:
 
 ```bash
-awf install review-pull-request --agent codex --dry-run
+awf context
+awf init --agent codex
+awf install review-pull-request --dry-run
+awf install review-pull-request --dry-run --show-content
+awf status --json
 ```
 
-Remove `--dry-run` after reviewing the planned files to install the workflow.
+Run bare `awf init` in an interactive terminal when you prefer to choose the default agent and target through a short wizard.
+
+Run `awf init --wizard` to request the prompts explicitly when input is redirected or the host cannot report an interactive terminal.
+
+Providing `--agent`, `--target`, or `--no-interactive` skips the wizard for deterministic scripts and CI, and those options cannot be combined with `--wizard`.
+
+| What you need | Start with |
+| --- | --- |
+| Understand the CLI | `awf` |
+| Confirm the selected project | `awf context` |
+| Save agent and target defaults | `awf init` |
+| Discover a workflow | `awf list` and `awf show <workflow-id>` |
+| Review without changing files | `awf install <workflow-id> --dry-run --show-content` |
+| Apply the reviewed plan | `awf install <workflow-id>` |
+| Inspect drift or recovery state | `awf status` and `awf doctor` |
+| Automate safely | Add `--json` and validate the public output contract |
+
+The first preview lists every create, replace, unchanged, and retire action.
+Add `--show-content` when you also want to inspect the complete generated files.
+Remove `--dry-run` after reviewing the plan to install the workflow.
 The package exposes both `awf` and `agentic-workflows` as command names, but this documentation uses the shorter `awf` form.
+Run `awf completion bash`, `awf completion zsh`, `awf completion fish`, or `awf completion pwsh` to generate tab completion for your shell.
+Add `--install-instructions` to print persistent setup without modifying your shell profile.
+Completion is command-specific and includes the agents, categories, tags, evidence states, and workflow IDs bundled with that CLI version.
 
 To try the latest release without installing it globally, use either package runner:
 
@@ -46,6 +73,7 @@ bunx @kauanpolydoro/agentic-workflows list
 
 Keep the full `@kauanpolydoro/agentic-workflows` scope when using `npx` or `bunx` without a local installation.
 The unscoped `agentic-workflows` name resolves to a different package on npm.
+If `awf` is unavailable after a global installation, follow the [installation troubleshooting guide](https://github.com/kauanpolydoro/agentic-workflows/blob/main/docs/guide/installation.md#troubleshoot-installation) to verify Node.js, npm's prefix, `PATH`, and permissions.
 
 To pin the CLI version for a project or CI environment instead:
 
@@ -71,6 +99,10 @@ pnpm awf show review-pull-request
 
 Use `git@github.com:kauanpolydoro/agentic-workflows.git` instead only when your SSH credentials are already configured.
 
+GitHub source archives are source snapshots and require the same dependency installation and build steps.
+
+The npm publication artifact is a different `.tgz` produced with `pnpm pack`; it contains the compiled CLI, catalog, and version-matched offline documentation.
+
 Preview a local installation without writing files:
 
 ```bash
@@ -84,16 +116,16 @@ pnpm awf install review-pull-request --agent generic --dry-run
 - `database-migration-review` evaluates locks, data loss, mixed-version compatibility, and rollout recovery.
 - `security-review` stays strictly defensive and requires explicit authorized scope.
 
-[Browse all 20 workflows on the documentation site](https://kauanpolydoro.github.io/agentic-workflows/catalog/), or inspect the [generated catalog source](docs/catalog/index.md).
+[Browse all 20 workflows on the documentation site](https://kauanpolydoro.github.io/agentic-workflows/catalog/), or inspect the [generated catalog source](https://github.com/kauanpolydoro/agentic-workflows/blob/main/docs/catalog/index.md).
 
 ## See a complete result
 
-The `write-release-notes` golden recipe includes a [self-contained synthetic input](recipes/write-release-notes/examples/input.md) and its [complete expected release-note artifact](recipes/write-release-notes/examples/expected-output.md).
+The `write-release-notes` golden recipe includes a [self-contained synthetic input](https://github.com/kauanpolydoro/agentic-workflows/blob/main/recipes/write-release-notes/examples/input.md) and its [complete expected release-note artifact](https://github.com/kauanpolydoro/agentic-workflows/blob/main/recipes/write-release-notes/examples/expected-output.md).
 Every material statement in that expected output maps to an evidence ID from the input.
 The pair is an editorial reference maintained in the repository, not evidence that an external agent executed the recipe or that a real release outcome was approved.
 
 The reproducible demonstration also evaluates the maintained reference outputs for `debug-failing-ci`, `review-pull-request`, and `synchronize-documentation` against their output contracts.
-See the [reference-evaluation record](docs/launch/reference-evaluations.md) for claim traces and the explicit verification boundary.
+See the [reference-evaluation record](https://github.com/kauanpolydoro/agentic-workflows/blob/main/docs/launch/reference-evaluations.md) for claim traces and the explicit verification boundary.
 
 ## Agent exports
 
@@ -108,7 +140,7 @@ See the [reference-evaluation record](docs/launch/reference-evaluations.md) for 
 
 Supported means the format is confirmed, the exporter is implemented, and local generation plus installation contract tests pass.
 It does not mean that an external agent executed the workflow or that its outcome was reviewed.
-See the [source research](docs/research/adapter-sources.md) and [generated compatibility matrix](docs/compatibility.md).
+See the [source research](https://github.com/kauanpolydoro/agentic-workflows/blob/main/docs/research/adapter-sources.md) and [generated compatibility matrix](https://github.com/kauanpolydoro/agentic-workflows/blob/main/docs/compatibility.md).
 
 ## How it works
 
@@ -119,6 +151,8 @@ See the [source research](docs/research/adapter-sources.md) and [generated compa
 The CLI operates offline during normal use, has no telemetry, and does not execute recipe instructions.
 It validates containment, symlink parents, overwrite intent, and managed-file hashes in tested local filesystem conditions.
 These controls are not a security boundary against a privileged process racing filesystem changes.
+
+Project-root detection prefers an explicit override, then the nearest initialized AWF project or Git boundary, so a configured nested project remains independent inside a monorepo.
 
 ## Verification without inflated claims
 
@@ -137,13 +171,21 @@ Every human outcome-review stage remains `untested`.
 
 The `awf` binary supports:
 
-- `list` with category, agent, tag, global support, recipe compatibility, and JSON filters;
-- `show` with raw Markdown and JSON output;
-- `install` with dry-run, target, adapter, overwrite, and JSON controls;
-- `update` and `remove` with modified-file protection;
-- `validate`, `doctor`, and `init` for catalog and project maintenance.
+- `awf list` with category, agent, tag, global support, recipe compatibility, and JSON filters;
+- `awf context` for explicit project-root discovery and audit output;
+- `awf show` with raw Markdown, JSON, documentation location, tested browser opening, and a structured opener result for automation;
+- `awf install` with complete dry-run plans, optional generated content, target, adapter, overwrite, and JSON controls;
+- `awf status` for local installation health, managed-file drift, and project-root provenance in JSON;
+- `awf update` and `awf remove` with non-mutating plans and modified-file protection;
+- `awf validate`, `awf doctor`, and `awf init` for catalog and project maintenance;
+- `awf manifest` for inspecting the exact installed manifest;
+- `awf completion` for generated Bash, Zsh, Fish, and PowerShell completion.
 
-Read the [CLI reference](docs/guide/cli-reference.md) for flags and exit codes.
+Automation can validate every machine-readable result, including catalog recipes and manifests, through the public `@kauanpolydoro/agentic-workflows/output-contract` export.
+
+The same export provides `normalizeProjectContext` so `context`, `status`, `doctor`, and `init` share one canonical project-root shape in multi-command automation.
+
+Read the [CLI reference](https://github.com/kauanpolydoro/agentic-workflows/blob/main/docs/guide/cli-reference.md) for flags and exit codes.
 
 ## Author a workflow
 
@@ -160,19 +202,19 @@ pnpm test
 pnpm docs:build
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and the [authoring guide](docs/guide/authoring.md).
+See [CONTRIBUTING.md](https://github.com/kauanpolydoro/agentic-workflows/blob/main/CONTRIBUTING.md) and the [authoring guide](https://github.com/kauanpolydoro/agentic-workflows/blob/main/docs/guide/authoring.md).
 
 ## Security and trust
 
 Recipes are untrusted data and documentation, never executable plugins.
 Review their content before asking any agent to follow it.
-Use the private reporting process in [SECURITY.md](SECURITY.md) for vulnerabilities and never post secrets in public issues.
+Use the private reporting process in [SECURITY.md](https://github.com/kauanpolydoro/agentic-workflows/blob/main/SECURITY.md) for vulnerabilities and never post secrets in public issues.
 
 ## Project status
 
 The initial npm packages are public, and the project continues to expand workflow evidence, adapters, and release automation.
-See [ROADMAP.md](ROADMAP.md), [CHANGELOG.md](CHANGELOG.md), and [LAUNCH_PLAN.md](LAUNCH_PLAN.md).
+See [ROADMAP.md](https://github.com/kauanpolydoro/agentic-workflows/blob/main/ROADMAP.md), [CHANGELOG.md](https://github.com/kauanpolydoro/agentic-workflows/blob/main/CHANGELOG.md), and [LAUNCH_PLAN.md](https://github.com/kauanpolydoro/agentic-workflows/blob/main/LAUNCH_PLAN.md).
 
-Released under the [MIT License](LICENSE).
+Released under the [MIT License](https://github.com/kauanpolydoro/agentic-workflows/blob/main/LICENSE).
 
 Star the repository to bookmark new workflows.

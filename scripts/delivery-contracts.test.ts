@@ -67,6 +67,7 @@ describe("delivery contracts", () => {
       "pnpm test",
       "pnpm test:coverage",
       "pnpm build",
+      "pnpm test:completion",
       "pnpm test:integration",
       "pnpm test:acceptance",
       "pnpm test:package",
@@ -119,6 +120,8 @@ describe("delivery contracts", () => {
 
   it("keeps npm publication and release creation behind identity and supply-chain checks", async () => {
     const workflow = await text(".github/workflows/release.yml");
+    const npmPublisher = await text("scripts/publish-npm-tarball.ts");
+    const releaseSynchronizer = await text("scripts/sync-github-release.ts");
     for (const requirement of [
       "release-artifacts.ts prepare",
       "format: spdx-json",
@@ -128,19 +131,36 @@ describe("delivery contracts", () => {
       "pnpm check:clean",
       "registry-url: https://registry.npmjs.org",
       "package-manager-cache: false",
-      "npm publish",
-      "--access public",
-      "--draft",
-      "--verify-tag",
+      "publish-npm-tarball.ts",
+      "sync-github-release.ts",
     ]) {
       expect(workflow, `release workflow is missing ${requirement}`).toContain(requirement);
     }
+    for (const requirement of [
+      '"view"',
+      '"dist.integrity"',
+      '"publish"',
+      '"--access"',
+      '"public"',
+      '"--provenance"',
+    ]) {
+      expect(npmPublisher, `npm publisher is missing ${requirement}`).toContain(requirement);
+    }
+    for (const action of ["view", "create", "download", "upload"]) {
+      expect(releaseSynchronizer, `release synchronizer is missing ${action}`).toMatch(
+        new RegExp(`"release",\\s*"${action}"`),
+      );
+    }
+    expect(releaseSynchronizer).toContain('"--draft"');
+    expect(releaseSynchronizer).toContain('"--verify-tag"');
+    expect(npmPublisher).not.toContain("NODE_AUTH_TOKEN");
+    expect(releaseSynchronizer).not.toContain("--clobber");
     expect(workflow.indexOf("pnpm check:clean")).toBeLessThan(
       workflow.indexOf("release-artifacts.ts prepare"),
     );
     expect(workflow).toContain("id-token: write");
-    expect(workflow.indexOf("npm publish")).toBeLessThan(
-      workflow.indexOf("Create draft GitHub release"),
+    expect(workflow.indexOf("publish-npm-tarball.ts")).toBeLessThan(
+      workflow.indexOf("sync-github-release.ts"),
     );
   });
 

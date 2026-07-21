@@ -1,10 +1,24 @@
-import { mkdir, mkdtemp, symlink, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, realpath, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { catalogRoot, findProjectRoot, generatedCatalogPath } from "./context.js";
+import {
+  catalogRoot,
+  explainProjectRootSource,
+  findProjectContext,
+  findProjectRoot,
+  generatedCatalogPath,
+} from "./context.js";
 
 describe("project-root discovery", () => {
+  it("explains every stable discovery source for machine diagnostics", () => {
+    expect(explainProjectRootSource("explicit")).toContain("--project-root");
+    expect(explainProjectRootSource("git")).toContain(".git");
+    expect(explainProjectRootSource("config")).toContain("config.yml");
+    expect(explainProjectRootSource("package")).toContain("package.json");
+    expect(explainProjectRootSource("cwd")).toContain("invocation directory");
+  });
+
   it("prefers the enclosing repository over a nested package manifest", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "awf-root-"));
     await mkdir(path.join(root, ".git"));
@@ -25,7 +39,7 @@ describe("project-root discovery", () => {
     await expect(findProjectRoot(nested)).resolves.toBe(root);
   });
 
-  it("prefers the enclosing repository over a nested initialized project", async () => {
+  it("prefers a nested initialized project over an enclosing repository", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "awf-root-"));
     await mkdir(path.join(root, ".git"));
     const project = path.join(root, "nested");
@@ -33,7 +47,16 @@ describe("project-root discovery", () => {
     await mkdir(path.join(project, ".agentic-workflows"), { recursive: true });
     await mkdir(start);
     await writeFile(path.join(project, ".agentic-workflows", "config.yml"), "schema_version: 1\n");
-    await expect(findProjectRoot(start)).resolves.toBe(root);
+    await expect(findProjectContext(start)).resolves.toEqual({ root: project, source: "config" });
+  });
+
+  it("prefers an AWF configuration when it shares a root with Git", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "awf-root-"));
+    await mkdir(path.join(root, ".git"));
+    await mkdir(path.join(root, ".agentic-workflows"));
+    await writeFile(path.join(root, ".agentic-workflows", "config.yml"), "schema_version: 1\n");
+
+    await expect(findProjectContext(root)).resolves.toEqual({ root, source: "config" });
   });
 
   it("uses an initialized project when no repository marker exists", async () => {
@@ -53,17 +76,55 @@ describe("project-root discovery", () => {
     const start = path.join(root, "package", "src");
     await mkdir(start, { recursive: true });
     await writeFile(path.join(root, "package", "package.json"), "{}\n");
-    await expect(findProjectRoot(start)).resolves.toBe(start);
-    await expect(findProjectRoot(start, { allowPackageRoot: true })).resolves.toBe(
-      path.join(root, "package"),
-    );
+    await expect(findProjectRoot(start, { discoveryBoundary: root })).resolves.toBe(start);
+    await expect(
+      findProjectRoot(start, { allowPackageRoot: true, discoveryBoundary: root }),
+    ).resolves.toBe(path.join(root, "package"));
   });
 
   it("honors an explicit project root", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "awf-root-"));
     const start = path.join(root, "nested");
     await mkdir(start);
-    await expect(findProjectRoot(start, { explicitRoot: root })).resolves.toBe(root);
+    const canonicalRoot = await realpath(root);
+    await expect(findProjectRoot(start, { explicitRoot: root })).resolves.toBe(canonicalRoot);
+    await expect(findProjectContext(start, { explicitRoot: root })).resolves.toEqual({
+      root: canonicalRoot,
+      source: "explicit",
+    });
+  });
+
+  it("reports whether discovery used a package marker or the current-directory fallback", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "awf-root-source-"));
+    const packageRoot = path.join(root, "package");
+    const nested = path.join(packageRoot, "src");
+    await mkdir(nested, { recursive: true });
+    await writeFile(path.join(packageRoot, "package.json"), "{}\n");
+
+    await expect(
+      findProjectContext(nested, { allowPackageRoot: true, discoveryBoundary: root }),
+    ).resolves.toEqual({ root: packageRoot, source: "package" });
+    await expect(findProjectContext(nested, { discoveryBoundary: root })).resolves.toEqual({
+      root: nested,
+      source: "cwd",
+    });
+  });
+
+  it("keeps bounded discovery hermetic when an ancestor contains repository markers", async () => {
+    const ancestor = await mkdtemp(path.join(os.tmpdir(), "awf-bounded-root-"));
+    await mkdir(path.join(ancestor, ".git"));
+    const boundary = path.join(ancestor, "isolated test boundary");
+    const packageRoot = path.join(boundary, "package");
+    const start = path.join(packageRoot, "src");
+    await mkdir(start, { recursive: true });
+    await writeFile(path.join(packageRoot, "package.json"), "{}\n");
+
+    await expect(
+      findProjectContext(start, { allowPackageRoot: true, discoveryBoundary: boundary }),
+    ).resolves.toEqual({ root: packageRoot, source: "package" });
+    await expect(
+      findProjectContext(start, { discoveryBoundary: path.join(ancestor, "outside") }),
+    ).rejects.toThrow("must contain the invocation directory");
   });
 
   it("rejects explicit roots that are files or symbolic links", async () => {

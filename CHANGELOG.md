@@ -6,6 +6,45 @@ All notable project changes will be documented here.
 
 No changes have been assigned to a later version.
 
+## 0.2.0 - 2026-07-21
+
+### Added
+
+- First-run help, package-root detection, actionable empty states, and workflow ID suggestions.
+- Complete lifecycle dry runs with optional generated-content previews.
+- Installation health reporting through `awf status` and consumer diagnostics through `awf doctor`.
+- Bash, Zsh, Fish, and PowerShell completion through `awf completion <shell>`.
+- Interactive `awf init` setup for agent and target selection while retaining deterministic flags.
+- Versioned lifecycle plan, validation, diagnostic, and JSON error contracts.
+- Stable machine-error metadata with command context, conservative retryability, reference links, and remediation.
+- Filtered installation status with complete healthy, drifted, and invalid summary counts.
+- Cross-command automation contract coverage on the Linux, Windows, and macOS CI matrix.
+- Versioned `awf init --json` output with project-root discovery evidence.
+- Non-mutating shell-profile setup guidance through `awf completion <shell> --install-instructions`.
+- Explicit project-root preflight for humans and automation through `awf context`.
+- Resumable npm and GitHub release synchronization with exact tarball integrity checks.
+- Project-root provenance in every versioned installation status report.
+- Cross-platform documentation-opener contracts without skipped Windows unit coverage.
+- Strict executable schemas for CLI-owned JSON results through the public `output-contract` package export.
+- Native command-specific completion smoke tests for Bash, Zsh, Fish, and PowerShell.
+- Real PTY acceptance coverage for the interactive initialization wizard.
+
+### Changed
+
+- No-op updates identify and preserve unchanged managed files instead of rewriting them.
+- Root fallback notices, documentation location output, and filtered doctor diagnostics make ambiguous environments easier to inspect.
+- Unsupported configuration schemas now report a safe, explicit recreation path instead of a generic validation failure.
+- Doctor reports now retain project-root provenance and structured lifecycle-lock recovery metadata without exposing ownership tokens.
+- Doctor checks now expose a normalized per-check schema and equivalent top-level status, health, and exit-code verdicts.
+- Package smoke tests now exercise local, package-runner, global-install, completion, status, and lifecycle paths while rejecting test artifacts.
+- Acceptance coverage now verifies safe `SIGINT` and `SIGTERM` handling on supported POSIX runners.
+- Lifecycle conflicts now provide sanitized PID and acquisition-time guidance in human output while preserving tokens and requiring manual verification.
+- Windows CI now exercises compiled CLI automation from both the default shell and Git Bash.
+- Completion now scopes every option and enum to its owning command and guards against drift from the Commander surface.
+- SIGINT and SIGTERM now preserve JSON stream isolation through a versioned `INTERRUPTED` error.
+- Branch coverage was restored above the enforced 85 percent release threshold without lowering the gate.
+- The npm package README now uses the repository README as its canonical source so the npm and GitHub landing pages remain synchronized.
+
 ## 0.1.0
 
 This section records the repository contents published to npm as version `0.1.0`.

@@ -1,6 +1,6 @@
 {
   "name": "@kauanpolydoro/agentic-workflows",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Offline CLI for inspecting and safely installing Agentic Workflows bundles.",
   "license": "MIT",
   "keywords": [
@@ -26,6 +26,16 @@
     "node": ">=22"
   },
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./output-contract": {
+      "types": "./dist/output-contract.d.ts",
+      "import": "./dist/output-contract.js"
+    }
+  },
   "bin": {
     "awf": "dist/index.js",
     "agentic-workflows": "dist/index.js"
@@ -39,12 +49,13 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json && tsx ../../scripts/prepare-cli-package.ts",
-    "typecheck": "pnpm --filter @kauanpolydoro/agentic-workflows-core build && tsc -p tsconfig.json --noEmit"
+    "build": "tsx ../../scripts/clean-package-dist.ts dist && tsc -p tsconfig.json && tsx ../../scripts/prepare-cli-package.ts",
+    "typecheck": "pnpm --filter @kauanpolydoro/agentic-workflows-core build && tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json"
   },
   "dependencies": {
     "@kauanpolydoro/agentic-workflows-core": "workspace:*",
     "commander": "15.0.0",
-    "yaml": "2.9.0"
+    "yaml": "2.9.0",
+    "zod": "4.4.3"
   }
 }

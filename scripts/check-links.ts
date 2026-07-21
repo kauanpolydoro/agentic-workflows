@@ -18,7 +18,7 @@ function inside(root: string, candidate: string): boolean {
   return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
 }
 
-function headingAnchors(content: string): Set<string> {
+export function headingAnchors(content: string): Set<string> {
   const anchors = new Set<string>();
   const counts = new Map<string, number>();
   for (const match of content.matchAll(/^#{1,6}\s+(.+?)\s*$/gm)) {

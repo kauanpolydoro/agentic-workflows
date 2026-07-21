@@ -42,6 +42,7 @@ interface FileMutation {
   relative: string;
   content: string | null;
   expected: FilePrecondition;
+  verifyOnly?: boolean;
 }
 
 interface BundleFingerprint {
@@ -76,6 +77,12 @@ interface LifecycleOptions {
   onLockAcquired?: () => void | Promise<void>;
   /** Test-only hook used to reproduce a change between planning and commit. */
   beforeMutation?: (relative: string, index: number) => void | Promise<void>;
+  /** Test-only hook used to observe actual writes without counting verify-only preconditions. */
+  beforeWrite?: (relative: string, index: number) => void | Promise<void>;
+}
+
+interface PlanOptions extends LifecycleOptions {
+  includeContent?: boolean;
 }
 
 export interface InstallOptions extends LifecycleOptions {
@@ -99,10 +106,46 @@ export interface UpdatePlan {
   changes: {
     create: string[];
     replace: string[];
+    unchanged: string[];
     retire: string[];
     modifiedManagedFiles: string[];
     missingManagedFiles: string[];
   };
+  proposedFiles?: ProposedFile[];
+}
+
+export interface ProposedFile {
+  path: string;
+  role: GeneratedAdapterBundle["files"][number]["role"];
+  content: string;
+}
+
+export interface InstallPlan {
+  manifest: Manifest;
+  requiresForce: boolean;
+  changes: {
+    create: string[];
+    replace: string[];
+    unchanged: string[];
+    retire: string[];
+    modifiedManagedFiles: string[];
+    missingManagedFiles: string[];
+  };
+  proposedFiles?: ProposedFile[];
+}
+
+export interface RemovePlan {
+  manifest: Manifest | LegacyManifest;
+  requiresForce: boolean;
+  changes: {
+    remove: string[];
+    modifiedManagedFiles: string[];
+    missingManagedFiles: string[];
+  };
+}
+
+interface InternalInstallPlan extends InstallPlan {
+  mutations: FileMutation[];
 }
 
 interface InternalUpdatePlan extends UpdatePlan {
@@ -817,7 +860,8 @@ async function applyTransaction(
 ): Promise<void> {
   const transactionId = randomUUID();
   const stagingRoot = resolveInside(root, transactionRelative(transactionId));
-  const snapshots: FileSnapshot[] = [];
+  const snapshots = new Map<string, FileSnapshot>();
+  const appliedSnapshots: FileSnapshot[] = [];
   const stagedFiles = new Map<string, string>();
   const replacementBackups = new Set<string>();
   let applied = 0;
@@ -828,7 +872,7 @@ async function applyTransaction(
     await mkdir(stagingRoot, { recursive: false });
     for (const [index, mutation] of mutations.entries()) {
       throwIfAborted(options.signal);
-      if (mutation.content !== null) {
+      if (!mutation.verifyOnly && mutation.content !== null) {
         const staged = path.join(stagingRoot, `${index}.staged`);
         await syncFile(staged, mutation.content);
         stagedFiles.set(mutation.relative, staged);
@@ -840,7 +884,9 @@ async function applyTransaction(
     }
     for (const mutation of mutations) {
       throwIfAborted(options.signal);
-      snapshots.push(await snapshotForMutation(root, mutation));
+      if (!mutation.verifyOnly) {
+        snapshots.set(mutation.relative, await snapshotForMutation(root, mutation));
+      }
     }
     throwIfAborted(options.signal);
     await revalidateTargetRoot(root);
@@ -850,6 +896,11 @@ async function applyTransaction(
       await options.beforeMutation?.(mutation.relative, index);
       throwIfAborted(options.signal);
       await assertPrecondition(root, mutation);
+      if (mutation.verifyOnly) continue;
+      await options.beforeWrite?.(mutation.relative, index);
+      throwIfAborted(options.signal);
+      const snapshot = snapshots.get(mutation.relative);
+      if (!snapshot) throw new Error(`Missing transaction snapshot for ${mutation.relative}.`);
       const destination = await assertSafeDestination(root, mutation.relative);
       if (
         options.faultAtStage === "before-manifest" &&
@@ -860,6 +911,7 @@ async function applyTransaction(
       if (mutation.content === null) {
         await rm(destination, { force: true });
         applied += 1;
+        appliedSnapshots.push(snapshot);
       } else {
         const staged = stagedFiles.get(mutation.relative);
         if (!staged) throw new Error(`Missing staged content for ${mutation.relative}.`);
@@ -868,6 +920,7 @@ async function applyTransaction(
         }
         const replacementBackup = await replaceFile(root, destination, staged);
         applied += 1;
+        appliedSnapshots.push(snapshot);
         if (replacementBackup) replacementBackups.add(replacementBackup);
         if (options.faultAtStage === "after-replacement") {
           throw new Error("Injected transaction failure after replacement.");
@@ -884,7 +937,7 @@ async function applyTransaction(
     }
   } catch (error) {
     const rollbackErrors: string[] = [];
-    for (const snapshot of snapshots.slice(0, applied).reverse()) {
+    for (const snapshot of appliedSnapshots.reverse()) {
       try {
         await restoreSnapshot(root, snapshot);
       } catch (rollbackError) {
@@ -899,7 +952,7 @@ async function applyTransaction(
     }
     await cleanEmptyParents(
       root,
-      mutations.slice(0, applied).map((mutation) => mutation.relative),
+      appliedSnapshots.map((snapshot) => snapshot.path),
     );
     throw error;
   } finally {
@@ -929,16 +982,22 @@ async function plannedInstall(
   recipeDirectory: string,
   root: string,
   options: InstallOptions,
-): Promise<{ manifest: Manifest; mutations: FileMutation[] }> {
+  enforceExistingInstallationPolicy = true,
+  includeContent = false,
+): Promise<InternalInstallPlan> {
   throwIfAborted(options.signal);
   const { recipe, bundle } = await recipeBundle(recipeDirectory, options.agent);
   const manifestPath = manifestRelative(recipe.id);
   const manifestDestination = await assertSafeDestination(root, manifestPath);
   const oldPaths = new Set<string>();
+  const oldHashes = new Map<string, string>();
   const oldPreconditions = new Map<string, FilePrecondition>();
+  let previousStates = new Map<string, "unmodified" | "modified" | "missing">();
   let manifestPrecondition: FilePrecondition = { state: "absent" };
   if (await exists(manifestDestination)) {
-    if (!options.force) throw new AwfError("CONFLICT", "An installation manifest already exists.");
+    if (!options.force && enforceExistingInstallationPolicy) {
+      throw new AwfError("CONFLICT", "An installation manifest already exists.");
+    }
     const previousRead = await readLifecycleManifestFile(root, recipe.id);
     const previous = previousRead.manifest;
     manifestPrecondition = previousRead.precondition;
@@ -946,9 +1005,12 @@ async function plannedInstall(
     else {
       await migratableBundleForManifest(recipeDirectory, previous, registryFrom(options));
     }
+    const observations = await observeManifestFiles(root, previous);
+    previousStates = new Map(statesFromObservations(previous, observations));
     for (const file of previous.files) {
       oldPaths.add(file.path);
-      oldPreconditions.set(file.path, await observePrecondition(root, file.path));
+      oldHashes.set(file.path, file.hash);
+      oldPreconditions.set(file.path, observations.get(file.path) ?? { state: "absent" });
     }
   }
   for (const file of bundle.files) {
@@ -961,11 +1023,31 @@ async function plannedInstall(
   }
   const manifest = createManifest(recipe, adapters[options.agent], bundle, CLI_VERSION);
   const desired = new Set(bundle.files.map((file) => file.path));
+  const unchangedFiles = bundle.files
+    .filter(
+      (file) =>
+        oldPaths.has(file.path) &&
+        previousStates.get(file.path) === "unmodified" &&
+        oldHashes.get(file.path) === hashContent(file.content),
+    )
+    .map((file) => file.path)
+    .sort();
+  const unchanged = new Set(unchangedFiles);
+  const createdFiles = [...desired].filter((file) => !oldPaths.has(file)).sort();
+  const replacedFiles = [...desired]
+    .filter((file) => oldPaths.has(file) && !unchanged.has(file))
+    .sort();
+  const retiredFiles = [...oldPaths].filter((file) => !desired.has(file)).sort();
+  const modifiedManagedFiles = [...previousStates]
+    .filter(([, state]) => state === "modified")
+    .map(([file]) => file)
+    .sort();
   const mutations: FileMutation[] = [
     ...bundle.files.map((file) => ({
       relative: file.path,
       content: file.content,
       expected: oldPreconditions.get(file.path) ?? { state: "absent" as const },
+      ...(unchanged.has(file.path) ? { verifyOnly: true } : {}),
     })),
     ...[...oldPaths]
       .filter((file) => !desired.has(file))
@@ -977,7 +1059,55 @@ async function plannedInstall(
     manifestMutation(manifest, manifestPrecondition),
   ];
   throwIfAborted(options.signal);
-  return { manifest, mutations };
+  return {
+    manifest,
+    requiresForce: manifestPrecondition.state === "present" && !options.force,
+    changes: {
+      create: createdFiles,
+      replace: replacedFiles,
+      unchanged: unchangedFiles,
+      retire: retiredFiles,
+      modifiedManagedFiles,
+      missingManagedFiles: [...previousStates]
+        .filter(([, state]) => state === "missing")
+        .map(([file]) => file)
+        .sort(),
+    },
+    ...(includeContent
+      ? {
+          proposedFiles: bundle.files.map((file) => ({
+            path: file.path,
+            role: file.role,
+            content: file.content,
+          })),
+        }
+      : {}),
+    mutations,
+  };
+}
+
+export async function planInstallRecipe(
+  recipeDirectory: string,
+  target: string,
+  options: InstallOptions,
+  planOptions: PlanOptions = {},
+): Promise<InstallPlan> {
+  throwIfAborted(options.signal ?? planOptions.signal);
+  const root = await safeTargetRoot(target, false);
+  const plan = await plannedInstall(
+    recipeDirectory,
+    root,
+    { ...options, ...(planOptions.signal ? { signal: planOptions.signal } : {}) },
+    false,
+    Boolean(planOptions.includeContent),
+  );
+  const { manifest, requiresForce, changes, proposedFiles } = plan;
+  return {
+    manifest,
+    requiresForce,
+    changes,
+    ...(proposedFiles ? { proposedFiles } : {}),
+  };
 }
 
 export async function installRecipe(
@@ -988,7 +1118,7 @@ export async function installRecipe(
   throwIfAborted(options.signal);
   const root = await safeTargetRoot(target, !options.dryRun);
   if (options.dryRun) {
-    const plan = await plannedInstall(recipeDirectory, root, options);
+    const plan = await plannedInstall(recipeDirectory, root, options, false);
     throwIfAborted(options.signal);
     return plan.manifest;
   }
@@ -1034,7 +1164,7 @@ async function plannedUpdate(
   root: string,
   force: boolean,
   enforceModifiedFilePolicy = true,
-  options: LifecycleOptions = {},
+  options: PlanOptions = {},
 ): Promise<InternalUpdatePlan> {
   throwIfAborted(options.signal);
   const recipe = await loadRecipe(recipeDirectory);
@@ -1059,6 +1189,7 @@ async function plannedUpdate(
   const { bundle } = await recipeBundle(recipeDirectory, agent);
   const desired = new Set(bundle.files.map((file) => file.path));
   const currentPaths = new Set(current.files.map((file) => file.path));
+  const currentHashes = new Map(current.files.map((file) => [file.path, file.hash]));
   for (const file of bundle.files) {
     const observed = observations.get(file.path) ?? (await observePrecondition(root, file.path));
     if (!currentPaths.has(file.path) && observed.state === "present") {
@@ -1066,8 +1197,20 @@ async function plannedUpdate(
     }
     observations.set(file.path, observed);
   }
+  const unchangedFiles = bundle.files
+    .filter(
+      (file) =>
+        currentPaths.has(file.path) &&
+        states.get(file.path) === "unmodified" &&
+        currentHashes.get(file.path) === hashContent(file.content),
+    )
+    .map((file) => file.path)
+    .sort();
+  const unchanged = new Set(unchangedFiles);
   const createdFiles = [...desired].filter((file) => !currentPaths.has(file)).sort();
-  const replacedFiles = [...desired].filter((file) => currentPaths.has(file)).sort();
+  const replacedFiles = [...desired]
+    .filter((file) => currentPaths.has(file) && !unchanged.has(file))
+    .sort();
   const retiredFiles = [...currentPaths].filter((file) => !desired.has(file)).sort();
   const previousAgent = current.schema_version === 1 ? current.agent : current.adapter.id;
   const previousAdapterVersion = current.schema_version === 1 ? null : current.adapter.version;
@@ -1103,6 +1246,7 @@ async function plannedUpdate(
     changes: {
       create: createdFiles,
       replace: replacedFiles,
+      unchanged: unchangedFiles,
       retire: retiredFiles,
       modifiedManagedFiles,
       missingManagedFiles: [...states]
@@ -1110,11 +1254,21 @@ async function plannedUpdate(
         .map(([file]) => file)
         .sort(),
     },
+    ...(options.includeContent
+      ? {
+          proposedFiles: bundle.files.map((file) => ({
+            path: file.path,
+            role: file.role,
+            content: file.content,
+          })),
+        }
+      : {}),
     mutations: [
       ...bundle.files.map((file) => ({
         relative: file.path,
         content: file.content,
         expected: observations.get(file.path) ?? { state: "absent" as const },
+        ...(unchanged.has(file.path) ? { verifyOnly: true } : {}),
       })),
       ...current.files
         .filter((file) => !desired.has(file.path))
@@ -1132,11 +1286,90 @@ export async function planUpdateRecipe(
   recipeDirectory: string,
   target: string,
   force: boolean,
-  options: LifecycleOptions = {},
+  options: PlanOptions = {},
 ): Promise<UpdatePlan> {
   throwIfAborted(options.signal);
   const root = await safeTargetRoot(target, false);
-  const { manifest, requiresForce, changes } = await plannedUpdate(
+  const { manifest, requiresForce, changes, proposedFiles } = await plannedUpdate(
+    recipeDirectory,
+    root,
+    force,
+    false,
+    options,
+  );
+  throwIfAborted(options.signal);
+  return {
+    manifest,
+    requiresForce,
+    changes,
+    ...(proposedFiles ? { proposedFiles } : {}),
+  };
+}
+
+interface InternalRemovePlan extends RemovePlan {
+  mutations: FileMutation[];
+}
+
+async function plannedRemove(
+  recipeDirectory: string,
+  root: string,
+  force: boolean,
+  enforceModifiedFilePolicy = true,
+  options: LifecycleOptions = {},
+): Promise<InternalRemovePlan> {
+  throwIfAborted(options.signal);
+  const recipe = await loadRecipe(recipeDirectory);
+  const currentRead = await readLifecycleManifestFile(root, recipe.id);
+  const manifest = currentRead.manifest;
+  if (manifest.schema_version === 1) validateLegacyManifest(manifest);
+  else await migratableBundleForManifest(recipeDirectory, manifest, registryFrom(options));
+  const observations = await observeManifestFiles(root, manifest);
+  const states = statesFromObservations(manifest, observations);
+  const modifiedManagedFiles = [...states]
+    .filter(([, state]) => state === "modified")
+    .map(([file]) => file)
+    .sort();
+  if (enforceModifiedFilePolicy && !force && modifiedManagedFiles.length > 0) {
+    throw new AwfError(
+      "MODIFIED_FILE",
+      `Refusing to change modified file ${modifiedManagedFiles[0]}. Use --force to override.`,
+    );
+  }
+  return {
+    manifest,
+    requiresForce: modifiedManagedFiles.length > 0 && !force,
+    changes: {
+      remove: manifest.files.map((file) => file.path).sort(),
+      modifiedManagedFiles,
+      missingManagedFiles: [...states]
+        .filter(([, state]) => state === "missing")
+        .map(([file]) => file)
+        .sort(),
+    },
+    mutations: [
+      ...manifest.files.map((file) => ({
+        relative: file.path,
+        content: null,
+        expected: observations.get(file.path) ?? { state: "absent" as const },
+      })),
+      {
+        relative: manifestRelative(recipe.id),
+        content: null,
+        expected: currentRead.precondition,
+      },
+    ],
+  };
+}
+
+export async function planRemoveRecipe(
+  recipeDirectory: string,
+  target: string,
+  force: boolean,
+  options: LifecycleOptions = {},
+): Promise<RemovePlan> {
+  throwIfAborted(options.signal);
+  const root = await safeTargetRoot(target, false);
+  const { manifest, requiresForce, changes } = await plannedRemove(
     recipeDirectory,
     root,
     force,
@@ -1159,47 +1392,18 @@ export async function removeRecipe(
   return withTargetLock(
     root,
     async () => {
-      const recipe = await loadRecipe(recipeDirectory);
-      const currentRead = await readLifecycleManifestFile(root, recipe.id);
-      const manifest = currentRead.manifest;
-      if (manifest.schema_version === 1) validateLegacyManifest(manifest);
-      else {
-        await migratableBundleForManifest(recipeDirectory, manifest, registryFrom(options));
-      }
-      const observations = await observeManifestFiles(root, manifest);
-      const states = statesFromObservations(manifest, observations);
-      if (!force) {
-        const modified = [...states].find(([, state]) => state === "modified");
-        if (modified) {
-          throw new AwfError(
-            "MODIFIED_FILE",
-            `Refusing to change modified file ${modified[0]}. Use --force to override.`,
-          );
-        }
-      }
-      const mutations: FileMutation[] = [
-        ...manifest.files.map((file) => ({
-          relative: file.path,
-          content: null,
-          expected: observations.get(file.path) ?? { state: "absent" as const },
-        })),
-        {
-          relative: manifestRelative(recipe.id),
-          content: null,
-          expected: currentRead.precondition,
-        },
-      ];
+      const plan = await plannedRemove(recipeDirectory, root, force, true, options);
       throwIfAborted(options.signal);
       await applyTransaction(
         root,
-        mutations,
+        plan.mutations,
         faultAfterMutation === undefined ? options : { ...options, faultAfterMutation },
       );
       await cleanEmptyParents(
         root,
-        mutations.map((mutation) => mutation.relative),
+        plan.mutations.map((mutation) => mutation.relative),
       );
-      return manifest;
+      return plan.manifest;
     },
     options,
   );

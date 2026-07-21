@@ -9,6 +9,9 @@ const packagedDocumentation = [
   "quality/recipe-quality-standard.md",
   "research/adapter-sources.md",
   "guide/contributing.md",
+  "guide/installation.md",
+  "guide/cli-reference.md",
+  "guide/output-contracts.md",
   "guide/verification.md",
   "guide/security.md",
   "decisions/0001-portable-core-and-data-only-recipes.md",
@@ -22,6 +25,9 @@ for (const entry of await readdir(path.join(repository, "recipes"), { withFileTy
   await cp(path.join(repository, "recipes", entry.name), path.join(target, entry.name), {
     recursive: true,
   });
+  const catalogPageTarget = path.join(documentationTarget, "catalog", `${entry.name}.md`);
+  await mkdir(path.dirname(catalogPageTarget), { recursive: true });
+  await cp(path.join(repository, "docs", "catalog", `${entry.name}.md`), catalogPageTarget);
 }
 
 for (const relative of packagedDocumentation) {
@@ -35,7 +41,11 @@ await writeFile(
   await readFile(path.join(repository, "LICENSE"), "utf8"),
 );
 await writeFile(
+  path.join(repository, "packages/cli/README.md"),
+  await readFile(path.join(repository, "README.md"), "utf8"),
+);
+await writeFile(
   path.join(repository, "packages/cli/catalog.json"),
   await readFile(path.join(repository, "generated/catalog.json"), "utf8"),
 );
-process.stdout.write("Prepared the packaged CLI catalog.\n");
+process.stdout.write("Prepared the packaged CLI catalog, README, and documentation.\n");

@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           fetch-depth: 0
-      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
         with:
           run_install: false
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
@@ -78,17 +78,22 @@ jobs:
             --pack-destination "$RUNNER_TEMP/npm-packages"
           pnpm --filter @kauanpolydoro/agentic-workflows pack \
             --pack-destination "$RUNNER_TEMP/npm-packages"
-      - name: Publish core package to npm
+      - name: Publish or verify core package on npm
         run: >-
-          npm publish
-          "$RUNNER_TEMP/npm-packages/kauanpolydoro-agentic-workflows-core-${GITHUB_REF_NAME#v}.tgz"
-          --access public
-      - name: Publish CLI package to npm
+          pnpm exec tsx scripts/publish-npm-tarball.ts
+          --package @kauanpolydoro/agentic-workflows-core
+          --version "${GITHUB_REF_NAME#v}"
+          --tarball "$RUNNER_TEMP/npm-packages/kauanpolydoro-agentic-workflows-core-${GITHUB_REF_NAME#v}.tgz"
+      - name: Publish or verify CLI package on npm
         run: >-
-          npm publish
-          "$RUNNER_TEMP/npm-packages/kauanpolydoro-agentic-workflows-${GITHUB_REF_NAME#v}.tgz"
-          --access public
-      - name: Create draft GitHub release
+          pnpm exec tsx scripts/publish-npm-tarball.ts
+          --package @kauanpolydoro/agentic-workflows
+          --version "${GITHUB_REF_NAME#v}"
+          --tarball "$RUNNER_TEMP/npm-packages/kauanpolydoro-agentic-workflows-${GITHUB_REF_NAME#v}.tgz"
+      - name: Create or resume draft GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" "$RUNNER_TEMP/release/"* --draft --generate-notes --verify-tag
+        run: >-
+          pnpm exec tsx scripts/sync-github-release.ts
+          --tag "$GITHUB_REF_NAME"
+          --directory "$RUNNER_TEMP/release"

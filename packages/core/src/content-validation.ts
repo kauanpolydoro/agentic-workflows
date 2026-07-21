@@ -375,12 +375,27 @@ interface RecipeContentValidation {
   totalBytes: number;
 }
 
-function recipeLoadIssue(recipeDirectory: string, error: unknown): Omit<ContentIssue, "recipe"> {
+async function recipeLoadIssue(
+  recipeDirectory: string,
+  error: unknown,
+): Promise<Omit<ContentIssue, "recipe">> {
   let file = "recipe.yml";
   if (error instanceof AwfError && typeof error.details.path === "string") {
-    const relative = path.relative(path.resolve(recipeDirectory), path.resolve(error.details.path));
-    if (isContained(path.resolve(recipeDirectory), path.resolve(error.details.path)) && relative) {
-      file = relative.split(path.sep).join("/");
+    const requestedRoot = path.resolve(recipeDirectory);
+    const roots = [requestedRoot];
+    try {
+      const canonicalRoot = await realpath(requestedRoot);
+      if (canonicalRoot !== requestedRoot) roots.unshift(canonicalRoot);
+    } catch {
+      // The requested path still identifies missing-file errors when canonicalization is impossible.
+    }
+    const candidate = path.resolve(error.details.path);
+    for (const root of roots) {
+      const relative = path.relative(root, candidate);
+      if (isContained(root, candidate) && relative) {
+        file = relative.split(path.sep).join("/");
+        break;
+      }
     }
   }
   const incompleteMarker =
@@ -415,7 +430,7 @@ async function validateRecipeContentResult(
   try {
     loaded = await loadRecipeSource(recipeDirectory, options);
   } catch (error) {
-    const issue = recipeLoadIssue(recipeDirectory, error);
+    const issue = await recipeLoadIssue(recipeDirectory, error);
     push(issues, recipeName, issue.file, issue.code, issue.message);
     const inspectedBytes =
       error instanceof AwfError &&

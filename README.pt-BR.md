@@ -14,18 +14,73 @@ Cada receita declara entradas, pré-condições, passos observáveis, decisões,
 
 ## Início rápido
 
-Execute a CLI publicada sem instalação global:
+O pacote público da CLI exige Node.js 22 ou superior.
+Para uso frequente, instale-o globalmente uma vez:
+
+```bash
+npm install --global @kauanpolydoro/agentic-workflows
+```
+
+O comando curto `awf` passa a funcionar em qualquer projeto:
+
+```bash
+awf
+awf list
+awf show review-pull-request
+```
+
+Na raiz do projeto que receberá o fluxo, salve o agente padrão e simule a instalação antes de escrever arquivos:
+
+```bash
+awf init --agent codex
+awf install review-pull-request --dry-run
+awf install review-pull-request --dry-run --show-content
+```
+
+Em um terminal interativo, execute apenas `awf init` para escolher o agente padrão e o destino em um wizard curto.
+
+Execute `awf init --wizard` para solicitar as perguntas explicitamente quando a entrada estiver redirecionada ou o ambiente não conseguir identificar um terminal interativo.
+
+Informar `--agent`, `--target` ou `--no-interactive` ignora o wizard e mantém scripts e CI determinísticos, e essas opções não podem ser combinadas com `--wizard`.
+
+| O que você precisa | Comece com |
+| --- | --- |
+| Entender a CLI | `awf` |
+| Confirmar o projeto selecionado | `awf context` |
+| Salvar agente e destino padrão | `awf init` |
+| Descobrir um fluxo | `awf list` e `awf show <workflow-id>` |
+| Revisar sem alterar arquivos | `awf install <workflow-id> --dry-run --show-content` |
+| Aplicar o plano revisado | `awf install <workflow-id>` |
+| Inspecionar divergências ou recuperação | `awf status` e `awf doctor` |
+| Automatizar com segurança | Adicione `--json` e valide o contrato público de saída |
+
+A primeira simulação lista cada criação, substituição, arquivo inalterado e retirada prevista.
+Adicione `--show-content` quando também quiser inspecionar o conteúdo completo dos arquivos gerados.
+Remova `--dry-run` depois de revisar o plano.
+
+Use `awf completion bash`, `awf completion zsh`, `awf completion fish` ou `awf completion pwsh` para gerar o autocomplete do seu shell.
+
+Depois da instalação, verifique a saúde dos arquivos gerenciados com:
+
+```bash
+awf status
+```
+
+Para experimentar a versão mais recente sem instalação global, mantenha o escopo completo do pacote:
 
 ```bash
 npx --yes @kauanpolydoro/agentic-workflows@latest list
-npx --yes @kauanpolydoro/agentic-workflows@latest show review-pull-request
+bunx @kauanpolydoro/agentic-workflows list
 ```
 
-Para fixar a CLI nas dependências de um projeto:
+O nome sem escopo `agentic-workflows` pertence a outro pacote no npm.
+Se `awf` não estiver disponível depois da instalação global, siga o [guia de diagnóstico da instalação](docs/guide/installation.md#troubleshoot-installation) para verificar Node.js, prefixo do npm, `PATH` e permissões.
+
+Para fixar a versão da CLI em um projeto ou ambiente de CI:
 
 ```bash
 npm install --save-dev @kauanpolydoro/agentic-workflows
-npx agentic-workflows list
+npx awf list
 ```
 
 O [pacote da CLI](https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows) e o [núcleo compartilhado](https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows-core) estão públicos no npm.
@@ -44,6 +99,10 @@ pnpm awf show review-pull-request
 ```
 
 Use `git@github.com:kauanpolydoro/agentic-workflows.git` apenas quando suas credenciais SSH já estiverem configuradas.
+
+Os arquivos-fonte gerados pelo GitHub são snapshots do código e exigem as mesmas etapas de instalação das dependências e build.
+
+O artefato publicado no npm é outro arquivo `.tgz`, produzido com `pnpm pack`, que contém a CLI compilada, o catálogo e a documentação offline correspondente à versão.
 
 Simule uma instalação sem escrever arquivos:
 
@@ -79,6 +138,8 @@ Todos os agentes permanecem sem execução externa verificável no histórico at
 Não significa que um agente externo executou o fluxo de trabalho nem que o resultado foi revisado.
 
 Consulte o [site com o catálogo completo](https://kauanpolydoro.github.io/agentic-workflows/catalog/), a [matriz de compatibilidade](docs/compatibility.md) e as [fontes dos adaptadores](docs/research/adapter-sources.md).
+
+Para automação, o export público `@kauanpolydoro/agentic-workflows/output-contract` valida as saídas e oferece `normalizeProjectContext` para unificar o contexto de projeto de `context`, `status`, `doctor` e `init`.
 
 ## Segurança
 

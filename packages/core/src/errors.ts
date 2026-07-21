@@ -4,6 +4,7 @@ export type AwfErrorCode =
   | "FILE_TOO_LARGE"
   | "MISSING_FILE"
   | "CONFLICT"
+  | "INTERRUPTED"
   | "MODIFIED_FILE"
   | "NOT_FOUND"
   | "INVALID_MANIFEST";

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { spawn, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { constants, realpathSync, type Dirent, type Stats } from "node:fs";
 import { access, link, lstat, mkdir, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
@@ -33,11 +33,24 @@ import {
   verificationEvidenceSchema,
   verificationStatuses,
 } from "@kauanpolydoro/agentic-workflows-core";
-import { Command, CommanderError, Option } from "commander";
+import { Argument, Command, CommanderError, Option } from "commander";
 import { parse, stringify } from "yaml";
-import { catalogRoot, findProjectRoot, generatedCatalogPath } from "./context.js";
+import {
+  completionShells,
+  renderCompletion,
+  renderCompletionInstallInstructions,
+  type CompletionShell,
+} from "./completion.js";
+import {
+  catalogRoot,
+  explainProjectRootSource,
+  findProjectContext,
+  generatedCatalogPath,
+} from "./context.js";
 import {
   installRecipe,
+  planInstallRecipe,
+  planRemoveRecipe,
   planUpdateRecipe,
   readManifest,
   removeRecipe,
@@ -45,7 +58,15 @@ import {
   validateInstallation,
 } from "./install.js";
 import { fail, output } from "./io.js";
+import { type DocumentationOpener, openDocumentationTarget } from "./platform.js";
+import {
+  inspectInstallations,
+  type InstallationStatus,
+  type InstallationStatusSummary,
+  summarizeInstallations,
+} from "./status.js";
 import { CLI_VERSION } from "./version.js";
+import { type InitWizard, promptInitWizard } from "./wizard.js";
 
 interface ProjectConfig {
   schema_version: 1;
@@ -74,6 +95,7 @@ const defaultConfig: ProjectConfig = {
   default_target: ".",
 };
 const MAX_CONFIG_BYTES = 64 * 1024;
+const MAX_LIFECYCLE_LOCK_BYTES = 16 * 1024;
 const MAX_GENERATED_CATALOG_BYTES = 16 * 1024 * 1024;
 const MAX_SITE_CONFIG_BYTES = 1024 * 1024;
 const MAX_VERIFICATION_EVIDENCE_BYTES = 1024 * 1024;
@@ -92,6 +114,24 @@ const generatedStructuralChecks = [
 
 interface ProgramOptions {
   signal?: AbortSignal;
+  interactive?: boolean;
+  initWizard?: InitWizard;
+  documentationOpener?: DocumentationOpener;
+  /** Internal embedding and test boundary; the CLI normally searches to the filesystem root. */
+  discoveryBoundary?: string;
+}
+
+interface DoctorCheck {
+  check: string;
+  status: "pass" | "warn" | "fail";
+  detail: string;
+  remediation?: string;
+  data?: Readonly<Record<string, unknown>>;
+}
+
+interface LifecycleLockOwner {
+  pid: number;
+  acquiredAt: string;
 }
 
 function errorCode(error: unknown): string | undefined {
@@ -102,6 +142,32 @@ function errorCode(error: unknown): string | undefined {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function errorRemediation(error: unknown): string | undefined {
+  if (!(error instanceof AwfError)) return undefined;
+  const remediation = error.details.remediation;
+  return typeof remediation === "string" ? remediation : undefined;
+}
+
+function parseLifecycleLockOwner(content: string): LifecycleLockOwner | null {
+  try {
+    const value = JSON.parse(content) as Record<string, unknown>;
+    if (
+      value.schema_version !== 1 ||
+      !Number.isSafeInteger(value.pid) ||
+      (value.pid as number) <= 0 ||
+      typeof value.acquired_at !== "string" ||
+      !Number.isFinite(Date.parse(value.acquired_at)) ||
+      typeof value.token !== "string" ||
+      value.token.length === 0
+    ) {
+      return null;
+    }
+    return { pid: value.pid as number, acquiredAt: value.acquired_at };
+  } catch {
+    return null;
+  }
 }
 
 async function inspectOptionalPath(candidate: string, scope: string): Promise<Stats | null> {
@@ -180,13 +246,29 @@ function safeRelativeTarget(value: unknown): value is string {
 async function loadConfig(root: string): Promise<ProjectConfig> {
   const file = path.join(root, ".agentic-workflows", "config.yml");
   try {
-    const raw = parse(
+    const parsed = parse(
       (await readBoundedRegularFile(file, MAX_CONFIG_BYTES, root)).toString("utf8"),
       {
         maxAliasCount: 0,
         uniqueKeys: true,
       },
-    ) as Record<string, unknown>;
+    ) as unknown;
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      throw new AwfError("INVALID_RECIPE", "The local AWF configuration is invalid.");
+    }
+    const raw = parsed as Record<string, unknown>;
+    if ("schema_version" in raw && raw.schema_version !== 1) {
+      throw new AwfError(
+        "INVALID_RECIPE",
+        `Unsupported local AWF configuration schema version ${JSON.stringify(raw.schema_version)}.`,
+        {
+          schemaVersion: raw.schema_version,
+          supportedSchemaVersions: [1],
+          remediation:
+            "Back up the configuration, then recreate it with `awf init --force --no-interactive --agent <agent> --target <directory>` using reviewed values.",
+        },
+      );
+    }
     const keys = Object.keys(raw).sort();
     if (
       raw.schema_version !== 1 ||
@@ -230,6 +312,60 @@ function recipePath(id: string): string {
   return path.join(catalogRoot(), id);
 }
 
+function editDistance(left: string, right: string): number {
+  const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
+  for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
+    const current = [leftIndex];
+    for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
+      const substitution =
+        (previous[rightIndex - 1] ?? 0) + (left[leftIndex - 1] === right[rightIndex - 1] ? 0 : 1);
+      current[rightIndex] = Math.min(
+        (current[rightIndex - 1] ?? 0) + 1,
+        (previous[rightIndex] ?? 0) + 1,
+        substitution,
+      );
+    }
+    previous.splice(0, previous.length, ...current);
+  }
+  return previous[right.length] ?? right.length;
+}
+
+async function resolveWorkflowPath(id: string): Promise<string> {
+  const candidate = recipePath(id);
+  const information = await inspectOptionalPath(candidate, "the workflow directory");
+  if (information) {
+    assertRealDirectory(information, candidate, "The workflow directory");
+    return candidate;
+  }
+
+  let suggestions: string[] = [];
+  try {
+    const maximumDistance = Math.max(2, Math.floor(id.length / 3));
+    suggestions = (await loadGeneratedCatalog())
+      .map((recipe) => ({ id: recipe.id, distance: editDistance(id, recipe.id) }))
+      .filter(({ distance }) => distance <= maximumDistance)
+      .sort((left, right) => left.distance - right.distance || left.id.localeCompare(right.id))
+      .slice(0, 3)
+      .map(({ id: suggestion }) => suggestion);
+  } catch {
+    // The source-catalog error remains primary when generated metadata is unavailable too.
+  }
+
+  throw new AwfError(
+    "MISSING_FILE",
+    suggestions.length > 0
+      ? `Workflow ${JSON.stringify(id)} was not found. Did you mean ${suggestions
+          .map((suggestion) => JSON.stringify(suggestion))
+          .join(", ")}?`
+      : `Workflow ${JSON.stringify(id)} was not found.`,
+    {
+      workflowId: id,
+      suggestions,
+      remediation: "Run `awf list` to browse available workflow IDs.",
+    },
+  );
+}
+
 async function commandExists(command: string): Promise<boolean> {
   const extensions = process.platform === "win32" ? [".exe", ".cmd", ".bat", ""] : [""];
   for (const directory of (process.env.PATH ?? "").split(path.delimiter).filter(Boolean)) {
@@ -252,31 +388,36 @@ async function commandExists(command: string): Promise<boolean> {
 
 async function openDocumentation(
   id: string,
+  opener: DocumentationOpener,
   signal?: AbortSignal,
 ): Promise<{ target: string; opened: boolean }> {
   throwIfAborted(signal);
-  const localDocumentation = path.resolve(catalogRoot(), "..", "docs", "catalog", `${id}.md`);
-  const documentation = (await hasRegularFile(localDocumentation, "the local documentation page"))
-    ? localDocumentation
-    : `https://kauanpolydoro.github.io/agentic-workflows/catalog/${id}`;
-  const [command, args] =
-    process.platform === "darwin"
-      ? ["open", [documentation]]
-      : process.platform === "win32"
-        ? ["rundll32.exe", ["url.dll,FileProtocolHandler", documentation]]
-        : ["xdg-open", [documentation]];
-  const opened = await new Promise<boolean>((resolve, reject) => {
-    const child = spawn(command, args, { signal, stdio: "ignore" });
-    child.once("error", (error) => {
-      if (signal?.aborted) reject(signal.reason ?? error);
-      else resolve(false);
-    });
-    child.once("close", (code, closeSignal) => {
-      resolve(code === 0 && closeSignal === null);
-    });
-  });
+  const documentation = await documentationLocation(id);
+  const opened = await opener(documentation, signal);
   throwIfAborted(signal);
   return { target: documentation, opened };
+}
+
+async function documentationLocation(id: string): Promise<string> {
+  const localDocumentation = path.resolve(catalogRoot(), "..", "docs", "catalog", `${id}.md`);
+  if (await hasRegularFile(localDocumentation, "the packaged documentation page")) {
+    return localDocumentation;
+  }
+  const repositoryRoot = path.resolve(import.meta.dirname, "../../..");
+  const sourcePackageRoot = path.join(repositoryRoot, "packages", "cli");
+  const relativeCatalog = path.relative(sourcePackageRoot, catalogRoot());
+  const usesSourceCatalog =
+    relativeCatalog !== ".." &&
+    !relativeCatalog.startsWith(`..${path.sep}`) &&
+    !path.isAbsolute(relativeCatalog);
+  const sourceDocumentation = path.join(repositoryRoot, "docs", "catalog", `${id}.md`);
+  if (
+    usesSourceCatalog &&
+    (await hasRegularFile(sourceDocumentation, "the source documentation page"))
+  ) {
+    return sourceDocumentation;
+  }
+  return `https://kauanpolydoro.github.io/agentic-workflows/catalog/${id}`;
 }
 
 async function replaceConfiguration(destination: string, temporary: string): Promise<void> {
@@ -1297,25 +1438,183 @@ function invocationGuidance(
   return lines.join("\n");
 }
 
+function renderChangeSections(sections: Array<[string, readonly string[]]>): string[] {
+  return sections.flatMap(([label, files]) => [
+    `${label}:`,
+    ...(files.length > 0 ? files.map((file) => `- ${file}`) : ["- none"]),
+  ]);
+}
+
+function renderProposedFiles(
+  files:
+    | Awaited<ReturnType<typeof planInstallRecipe>>["proposedFiles"]
+    | Awaited<ReturnType<typeof planUpdateRecipe>>["proposedFiles"],
+): string[] {
+  if (!files) return [];
+  return [
+    "",
+    "Proposed generated content:",
+    ...files.flatMap((file) => [`=== ${file.path} (${file.role}) ===`, file.content.trimEnd()]),
+  ];
+}
+
+function versionedLifecyclePlan(
+  operation: "install" | "update" | "remove",
+  plan: {
+    requiresForce: boolean;
+    changes: object;
+    proposedFiles?: readonly { path: string; role: string; content: string }[];
+  },
+) {
+  return {
+    schema_version: 1,
+    operation,
+    dry_run: true,
+    requires_force: plan.requiresForce,
+    changes: plan.changes,
+    ...(plan.proposedFiles ? { proposed_files: plan.proposedFiles } : {}),
+  };
+}
+
+function renderInstallPlan(
+  id: string,
+  agent: AgentId,
+  plan: Awaited<ReturnType<typeof planInstallRecipe>>,
+  recipe: Awaited<ReturnType<typeof loadRecipe>>,
+  target: string,
+): string {
+  return [
+    `Would install ${id} for ${agent}:`,
+    ...renderChangeSections([
+      ["Create", plan.changes.create],
+      ["Replace", plan.changes.replace],
+      ["Unchanged", plan.changes.unchanged],
+      ["Retire", plan.changes.retire],
+      ["Modified managed files", plan.changes.modifiedManagedFiles],
+      ["Missing managed files", plan.changes.missingManagedFiles],
+    ]),
+    ...(plan.requiresForce
+      ? ["An installation already exists. Review this plan and add --force to replace it."]
+      : []),
+    "No files were changed.",
+    "",
+    invocationGuidance(plan.manifest, recipe, target),
+    ...renderProposedFiles(plan.proposedFiles),
+  ].join("\n");
+}
+
 function renderUpdatePlan(id: string, plan: Awaited<ReturnType<typeof planUpdateRecipe>>): string {
   const sections: Array<[string, readonly string[]]> = [
     ["Create", plan.changes.create],
     ["Replace", plan.changes.replace],
+    ["Unchanged", plan.changes.unchanged],
     ["Retire", plan.changes.retire],
     ["Modified managed files", plan.changes.modifiedManagedFiles],
     ["Missing managed files", plan.changes.missingManagedFiles],
   ];
   return [
     `Would update ${id}:`,
-    ...sections.flatMap(([label, files]) => [
-      `${label}:`,
-      ...(files.length > 0 ? files.map((file) => `- ${file}`) : ["- none"]),
+    ...renderChangeSections(sections),
+    ...(plan.requiresForce
+      ? ["This plan contains locally modified managed files and requires an explicit --force."]
+      : []),
+    "No files were changed.",
+    ...renderProposedFiles(plan.proposedFiles),
+  ].join("\n");
+}
+
+function renderRemovePlan(id: string, plan: Awaited<ReturnType<typeof planRemoveRecipe>>): string {
+  return [
+    `Would remove ${id}:`,
+    ...renderChangeSections([
+      ["Remove", plan.changes.remove],
+      ["Modified managed files", plan.changes.modifiedManagedFiles],
+      ["Missing managed files", plan.changes.missingManagedFiles],
     ]),
     ...(plan.requiresForce
       ? ["This plan contains locally modified managed files and requires an explicit --force."]
       : []),
     "No files were changed.",
   ].join("\n");
+}
+
+function renderWorkflowDetails(
+  recipe: Awaited<ReturnType<typeof loadRecipe>>,
+  selectedAgent?: AgentId,
+): string {
+  const effects = Object.entries(recipe.effects)
+    .filter(([, enabled]) => enabled)
+    .map(([effect]) => effect);
+  const agents = selectedAgent ? [selectedAgent] : agentIds;
+  return [
+    recipe.title,
+    recipe.summary,
+    "",
+    `ID: ${recipe.id}`,
+    `Version: ${recipe.version}`,
+    `Category: ${recipe.category}`,
+    `Difficulty: ${recipe.difficulty}`,
+    `Risk: ${recipe.risk_level}`,
+    `Estimated duration: ${recipe.estimated_duration}`,
+    `Tags: ${recipe.tags.join(", ")}`,
+    "",
+    "Required inputs:",
+    ...recipe.inputs.required.map((input) => `- ${input}`),
+    "Optional inputs:",
+    ...(recipe.inputs.optional.length > 0
+      ? recipe.inputs.optional.map((input) => `- ${input}`)
+      : ["- none"]),
+    "Outputs:",
+    ...recipe.outputs.map((workflowOutput) => `- ${workflowOutput}`),
+    "Human approval gates:",
+    ...(recipe.safety.requires_human_approval.length > 0
+      ? recipe.safety.requires_human_approval.map((approval) => `- ${approval}`)
+      : ["- none"]),
+    `Declared effects: ${effects.length > 0 ? effects.join(", ") : "none"}`,
+    "",
+    "Agent compatibility:",
+    ...agents.flatMap((agent) => {
+      const support = recipe.agents[agent];
+      return [
+        `- ${agent}: ${support.bundle_compatibility}; capability ${support.capability_status}`,
+        ...support.limitations.map((limitation) => `  Limitation: ${limitation}`),
+      ];
+    }),
+    "",
+    `Preview: awf install ${recipe.id} --agent ${selectedAgent ?? "<agent>"} --dry-run`,
+  ].join("\n");
+}
+
+function renderInstallationStatus(
+  target: string,
+  statuses: readonly InstallationStatus[],
+  summary: InstallationStatusSummary,
+  failuresOnly: boolean,
+): string {
+  if (summary.total === 0) {
+    return `No workflows are installed in ${target}. Preview one with \`awf install <workflow-id> --agent <agent> --dry-run\`.`;
+  }
+  if (failuresOnly && statuses.length === 0) {
+    return `No drifted or invalid workflows were found in ${target}. Summary: ${summary.healthy} healthy, 0 drifted, 0 invalid.`;
+  }
+  return [
+    `${failuresOnly ? "Drifted or invalid" : "Installed"} workflows in ${target}:`,
+    `Summary: ${summary.healthy} healthy, ${summary.drifted} drifted, ${summary.invalid} invalid.`,
+    ...statuses.flatMap((status) => [
+      `${status.id.padEnd(28)} ${status.status.padEnd(8)} ${status.agent ?? "unknown"} ${status.recipeVersion ?? "unknown"} ${status.files} file(s)`,
+      ...(status.issue ? [`  [${status.issue.code}] ${status.issue.message}`] : []),
+      ...(status.issue?.files ?? []).map((file) => `  - ${file.file}: ${file.state}`),
+    ]),
+  ].join("\n");
+}
+
+function requireDryRunForContentPreview(dryRun: boolean, showContent: boolean): void {
+  if (!showContent || dryRun) return;
+  throw new CommanderError(
+    2,
+    "awf.contentPreviewRequiresDryRun",
+    "--show-content requires --dry-run because generated content is a preview.",
+  );
 }
 
 function describeInstallationConflict(id: string, error: unknown): string {
@@ -1336,13 +1635,32 @@ function describeInstallationConflict(id: string, error: unknown): string {
   return `${id}: [${code}] ${errorMessage(error)}${evidence.length > 0 ? ` (${evidence.join(", ")})` : ""}`;
 }
 
+const firstRunHelp = `
+Examples:
+  $ awf context
+  $ awf list
+  $ awf show review-pull-request
+  $ awf init --agent codex
+  $ awf install review-pull-request --agent codex --dry-run
+
+Next steps:
+  $ awf status       Inspect installed workflow health
+  $ awf doctor       Diagnose configuration and environment problems
+  $ awf completion zsh --install-instructions  Configure completion without profile writes
+
+Start with a dry run before installing a workflow. Run awf <command> --help for command details.`;
+
 export function createProgram(options: ProgramOptions = {}): Command {
   const { signal } = options;
+  const interactive = options.interactive ?? Boolean(process.stdin.isTTY && process.stdout.isTTY);
+  const initWizard = options.initWizard ?? promptInitWizard;
+  const documentationOpener = options.documentationOpener ?? openDocumentationTarget;
   const program = new Command()
     .name("awf")
     .description("Browse, inspect, and install step-by-step workflows for coding agents.")
     .version(CLI_VERSION)
-    .option("--project-root <directory>", "Use an explicit project root")
+    .option("--project-root <directory>", "Use an explicit project root instead of auto-detection")
+    .addHelpText("after", firstRunHelp)
     .exitOverride();
   program.configureOutput({
     writeOut: (value) => process.stdout.write(sanitizeTerminal(value)),
@@ -1354,23 +1672,94 @@ export function createProgram(options: ProgramOptions = {}): Command {
   });
   program.hook("preAction", () => throwIfAborted(signal));
   program.hook("postAction", () => throwIfAborted(signal));
-  const projectRoot = () => {
+  program.action(() => output(`${program.helpInformation().trimEnd()}\n${firstRunHelp.trim()}`));
+  let fallbackNoticeShown = false;
+  const resolveProjectContext = async (machineOutput = false) => {
     const explicitRoot = program.opts<{ projectRoot?: string }>().projectRoot;
-    return findProjectRoot(process.cwd(), explicitRoot ? { explicitRoot } : {});
+    const context = await findProjectContext(
+      process.cwd(),
+      explicitRoot
+        ? { explicitRoot }
+        : {
+            allowPackageRoot: true,
+            ...(options.discoveryBoundary ? { discoveryBoundary: options.discoveryBoundary } : {}),
+          },
+    );
+    if (context.source === "cwd" && !machineOutput && !fallbackNoticeShown) {
+      fallbackNoticeShown = true;
+      process.stderr.write(
+        `${sanitizeTerminal(
+          `Notice: no Git, AWF configuration, or package marker was found. Using ${context.root} as the project root. Pass --project-root <directory> to choose explicitly.`,
+        )}\n`,
+      );
+    }
+    return context;
   };
+  const projectRoot = async (machineOutput = false) =>
+    (await resolveProjectContext(machineOutput)).root;
+
+  program
+    .command("context")
+    .description("Explain which project root this invocation selected and why.")
+    .option("--json", "Print a versioned project-context report as JSON")
+    .action(async (options) => {
+      const context = await resolveProjectContext(true);
+      const result = {
+        schema_version: 1 as const,
+        project_root: context.root,
+        selection_source: context.source,
+        project_root_fallback: context.source === "cwd",
+        reason: explainProjectRootSource(context.source),
+      };
+      output(
+        options.json
+          ? result
+          : [
+              `Project root: ${result.project_root}`,
+              `Selection source: ${result.selection_source}`,
+              `Current-directory fallback: ${result.project_root_fallback ? "yes" : "no"}`,
+              `Reason: ${result.reason}`,
+            ].join("\n"),
+        Boolean(options.json),
+      );
+    });
 
   program
     .command("list")
     .description("List workflows in the catalog.")
-    .option("--category <category>")
-    .addOption(new Option("--agent <agent>").choices(agentIds))
-    .option("--tag <tag>")
-    .addOption(new Option("--adapter-status <status>").choices(supportStatuses))
-    .addOption(new Option("--compatibility <compatibility>").choices(recipeCompatibilityStatuses))
-    .addOption(new Option("--installation <status>").choices(verificationStatuses))
-    .addOption(new Option("--execution <status>").choices(verificationStatuses))
-    .addOption(new Option("--outcome <status>").choices(verificationStatuses))
-    .option("--json")
+    .option("--category <category>", "Match an exact workflow category")
+    .addOption(
+      new Option("--agent <agent>", "Match workflows compatible with an agent").choices(agentIds),
+    )
+    .option("--tag <tag>", "Match an exact workflow tag")
+    .addOption(
+      new Option(
+        "--adapter-status <status>",
+        "Match the selected agent exporter's support status",
+      ).choices(supportStatuses),
+    )
+    .addOption(
+      new Option(
+        "--compatibility <compatibility>",
+        "Match recipe compatibility for --agent",
+      ).choices(recipeCompatibilityStatuses),
+    )
+    .addOption(
+      new Option("--installation <status>", "Match installation evidence for --agent").choices(
+        verificationStatuses,
+      ),
+    )
+    .addOption(
+      new Option("--execution <status>", "Match execution evidence for --agent").choices(
+        verificationStatuses,
+      ),
+    )
+    .addOption(
+      new Option("--outcome <status>", "Match outcome-review evidence for --agent").choices(
+        verificationStatuses,
+      ),
+    )
+    .option("--json", "Print the matching catalog records as JSON")
     .action(async (options) => {
       if (
         (options.adapterStatus ||
@@ -1401,61 +1790,109 @@ export function createProgram(options: ProgramOptions = {}): Command {
       if (options.outcome) filters.outcome = options.outcome as VerificationStatus;
       const recipes = filterGeneratedCatalog(await loadGeneratedCatalog(), filters);
       if (options.json) output(recipes, true);
-      else output(recipes.map((recipe) => `${recipe.id.padEnd(28)} ${recipe.summary}`).join("\n"));
+      else if (recipes.length === 0) {
+        output(
+          "No workflows match the selected filters. Try `awf list` without filters or run `awf list --help`.",
+        );
+      } else {
+        output(recipes.map((recipe) => `${recipe.id.padEnd(28)} ${recipe.summary}`).join("\n"));
+      }
     });
 
   program
     .command("show <workflow-id>")
     .description("Show workflow details.")
-    .option("--json")
-    .option("--raw")
-    .option("--open")
+    .addOption(
+      new Option("--agent <agent>", "Focus compatibility details on one agent").choices(agentIds),
+    )
+    .option("--json", "Print complete structured recipe metadata")
+    .option("--raw", "Print the canonical workflow Markdown")
+    .option("--open", "Open the local page or public catalog page in a browser")
+    .option("--location", "Print the local documentation path or public catalog URL")
     .action(async (id, options) => {
-      if ([options.json, options.raw, options.open].filter(Boolean).length > 1) {
+      if (
+        [options.raw, options.open, options.location].filter(Boolean).length > 1 ||
+        (options.json && (options.raw || options.location))
+      ) {
         throw new CommanderError(2, "awf.conflictingOutput", "Choose one output mode.");
       }
-      const source = await loadRecipeSource(recipePath(id));
+      const source = await loadRecipeSource(await resolveWorkflowPath(id));
       const recipe = source.recipe;
       if (options.raw) return output(source.files["workflow.md"]);
+      if (options.location) return output(await documentationLocation(id));
       if (options.open) {
-        const documentation = await openDocumentation(id, signal);
+        const documentation = await openDocumentation(id, documentationOpener, signal);
         return output(
-          documentation.opened
-            ? `Opened ${documentation.target}.`
-            : `Could not launch a browser. Open ${documentation.target}.`,
+          options.json
+            ? { schema_version: 1, ...documentation }
+            : documentation.opened
+              ? `Opened ${documentation.target}.`
+              : `Could not launch a browser. Open ${documentation.target}.`,
+          Boolean(options.json),
         );
       }
       if (options.json) return output(recipe, true);
-      output(
-        `${recipe.title}\n${recipe.summary}\n\nCategory: ${recipe.category}\nRisk: ${recipe.risk_level}\nVersion: ${recipe.version}`,
-      );
+      output(renderWorkflowDetails(recipe, options.agent as AgentId | undefined));
     });
 
   program
     .command("install <workflow-id>")
     .description("Install a complete workflow bundle in the current project.")
-    .addOption(new Option("--agent <agent>").choices(agentIds))
+    .addOption(new Option("--agent <agent>", "Select the destination format").choices(agentIds))
     .option("--target <directory>", "Target inside the project")
-    .option("--dry-run")
-    .option("--force")
-    .option("--json")
+    .option("--dry-run", "Preview the complete installation plan without changing the target")
+    .option("--show-content", "Include proposed generated content in a dry run")
+    .option(
+      "--force",
+      "Replace this workflow's existing managed bundle, but never overwrite unmanaged files",
+    )
+    .option("--json", "Print the installation manifest as JSON")
     .action(async (id, options) => {
-      const root = await projectRoot();
+      requireDryRunForContentPreview(Boolean(options.dryRun), Boolean(options.showContent));
+      const root = await projectRoot(Boolean(options.json));
       const config = await loadConfig(root);
       const agent = (options.agent ?? config.default_agent) as AgentId;
       const target = await safeTarget(root, options.target ?? config.default_target);
-      const recipe = await loadRecipe(recipePath(id));
-      const manifest = await installRecipe(recipePath(id), target, {
+      const workflowPath = await resolveWorkflowPath(id);
+      const recipe = await loadRecipe(workflowPath);
+      if (options.dryRun) {
+        const plan = await planInstallRecipe(
+          workflowPath,
+          target,
+          {
+            agent,
+            force: Boolean(options.force),
+            dryRun: true,
+            ...(signal ? { signal } : {}),
+          },
+          {
+            includeContent: Boolean(options.showContent),
+            ...(signal ? { signal } : {}),
+          },
+        );
+        throwIfAborted(signal);
+        output(
+          options.json
+            ? {
+                ...plan.manifest,
+                plan: versionedLifecyclePlan("install", plan),
+              }
+            : renderInstallPlan(id, agent, plan, recipe, target),
+          Boolean(options.json),
+        );
+        return;
+      }
+      const manifest = await installRecipe(workflowPath, target, {
         agent,
         force: Boolean(options.force),
-        dryRun: Boolean(options.dryRun),
+        dryRun: false,
         ...(signal ? { signal } : {}),
       });
       throwIfAborted(signal);
       output(
         options.json
           ? manifest
-          : `${options.dryRun ? "Would install" : "Installed"} ${id} for ${agent}:\n${invocationGuidance(manifest, recipe, target)}`,
+          : `Installed ${id} for ${agent}:\n${invocationGuidance(manifest, recipe, target)}`,
         Boolean(options.json),
       );
     });
@@ -1465,32 +1902,38 @@ export function createProgram(options: ProgramOptions = {}): Command {
     .description("Update an installed bundle after checking every managed file.")
     .option("--target <directory>", "Target inside the project")
     .option("--dry-run", "Show the complete migration plan without changing files")
-    .option("--force")
-    .option("--json")
+    .option("--show-content", "Include proposed generated content in a dry run")
+    .option("--force", "Replace locally modified managed files after explicit review")
+    .option("--json", "Print the update result or dry-run plan as JSON")
     .action(async (id, options) => {
-      const root = await projectRoot();
+      requireDryRunForContentPreview(Boolean(options.dryRun), Boolean(options.showContent));
+      const root = await projectRoot(Boolean(options.json));
       const config = await loadConfig(root);
       const target = await safeTarget(root, options.target ?? config.default_target);
+      const workflowPath = await resolveWorkflowPath(id);
       if (options.dryRun) {
         throwIfAborted(signal);
-        const plan = await planUpdateRecipe(
-          recipePath(id),
-          target,
-          Boolean(options.force),
-          signal ? { signal } : {},
-        );
+        const plan = await planUpdateRecipe(workflowPath, target, Boolean(options.force), {
+          includeContent: Boolean(options.showContent),
+          ...(signal ? { signal } : {}),
+        });
         throwIfAborted(signal);
-        output(options.json ? plan : renderUpdatePlan(id, plan), Boolean(options.json));
+        output(
+          options.json
+            ? { ...plan, plan: versionedLifecyclePlan("update", plan) }
+            : renderUpdatePlan(id, plan),
+          Boolean(options.json),
+        );
         return;
       }
       const result = await updateRecipe(
-        recipePath(id),
+        workflowPath,
         target,
         Boolean(options.force),
         undefined,
         signal ? { signal } : {},
       );
-      const recipe = await loadRecipe(recipePath(id));
+      const recipe = await loadRecipe(workflowPath);
       throwIfAborted(signal);
       output(
         options.json ? result : `Updated ${id}.\n${invocationGuidance(result, recipe, target)}`,
@@ -1502,14 +1945,33 @@ export function createProgram(options: ProgramOptions = {}): Command {
     .command("remove <workflow-id>")
     .description("Remove only the exact managed bundle after integrity checks.")
     .option("--target <directory>", "Target inside the project")
-    .option("--force")
-    .option("--json")
+    .option("--dry-run", "Show every managed file that would be removed without changing files")
+    .option("--force", "Remove locally modified managed files after explicit review")
+    .option("--json", "Print the removed installation manifest as JSON")
     .action(async (id, options) => {
-      const root = await projectRoot();
+      const root = await projectRoot(Boolean(options.json));
       const config = await loadConfig(root);
+      const workflowPath = await resolveWorkflowPath(id);
+      const target = await safeTarget(root, options.target ?? config.default_target);
+      if (options.dryRun) {
+        const plan = await planRemoveRecipe(
+          workflowPath,
+          target,
+          Boolean(options.force),
+          signal ? { signal } : {},
+        );
+        throwIfAborted(signal);
+        output(
+          options.json
+            ? { ...plan, plan: versionedLifecyclePlan("remove", plan) }
+            : renderRemovePlan(id, plan),
+          Boolean(options.json),
+        );
+        return;
+      }
       const result = await removeRecipe(
-        recipePath(id),
-        await safeTarget(root, options.target ?? config.default_target),
+        workflowPath,
+        target,
         Boolean(options.force),
         undefined,
         signal ? { signal } : {},
@@ -1519,9 +1981,60 @@ export function createProgram(options: ProgramOptions = {}): Command {
     });
 
   program
+    .command("status [workflow-id]")
+    .description("Inspect locally installed workflows and report managed-file drift.")
+    .option("--target <directory>", "Target inside the project")
+    .option("--failures-only", "Show only drifted and invalid installations with a full summary")
+    .option("--json", "Print a versioned installation status report as JSON")
+    .action(async (id, options) => {
+      if (id !== undefined) recipePath(id);
+      const context = await resolveProjectContext(Boolean(options.json));
+      const root = context.root;
+      const config = await loadConfig(root);
+      const target = await safeTarget(root, options.target ?? config.default_target);
+      const statuses = await inspectInstallations(catalogRoot(), target, id);
+      throwIfAborted(signal);
+      if (id !== undefined && statuses.length === 0) {
+        throw new AwfError("NOT_FOUND", `Workflow ${JSON.stringify(id)} is not installed.`, {
+          workflow: id,
+          target,
+          remediation: `Preview it with \`awf install ${id} --dry-run\` or run \`awf status\` to inspect every installation.`,
+        });
+      }
+      const summary = summarizeInstallations(statuses);
+      const reportedStatuses = options.failuresOnly
+        ? statuses.filter((status) => status.status !== "healthy")
+        : statuses;
+      output(
+        options.json
+          ? {
+              schema_version: 1,
+              target,
+              project_context: {
+                project_root: root,
+                selection_source: context.source,
+                project_root_fallback: context.source === "cwd",
+                reason: explainProjectRootSource(context.source),
+              },
+              filter: options.failuresOnly ? "failures-only" : "all",
+              summary,
+              installations: reportedStatuses,
+            }
+          : renderInstallationStatus(
+              target,
+              reportedStatuses,
+              summary,
+              Boolean(options.failuresOnly),
+            ),
+        Boolean(options.json),
+      );
+      if (statuses.some((status) => status.status !== "healthy")) process.exitCode = 1;
+    });
+
+  program
     .command("validate [path]")
     .description("Validate a catalog, recipe, or installation.")
-    .option("--json")
+    .option("--json", "Print a structured validation result or error")
     .option("--strict", "Include content contracts or installed-file integrity checks")
     .action(async (candidate = catalogRoot(), options) => {
       let result: Awaited<ReturnType<typeof validateCandidate>>;
@@ -1532,7 +2045,7 @@ export function createProgram(options: ProgramOptions = {}): Command {
       }
       output(
         options.json
-          ? result
+          ? { schema_version: 1, ...result }
           : `Valid: ${result.recipes} recipe(s), ${result.installations} installation(s); strict=${result.strict}.`,
         Boolean(options.json),
       );
@@ -1541,11 +2054,20 @@ export function createProgram(options: ProgramOptions = {}): Command {
   program
     .command("doctor")
     .description("Diagnose catalog, configuration, project, installation, and agent availability.")
-    .option("--json")
+    .option("--json", "Print structured health checks as JSON")
+    .option("--maintainer", "Require source-development tools such as Corepack and pnpm")
+    .option("--failures-only", "Show only warnings and failures while retaining the full summary")
     .action(async (options) => {
-      const root = await projectRoot();
-      const checks: Array<{ check: string; status: "pass" | "warn" | "fail"; detail: string }> = [];
-      checks.push({ check: "project-root", status: "pass", detail: root });
+      const context = await resolveProjectContext(Boolean(options.json));
+      const root = context.root;
+      const contextReason = explainProjectRootSource(context.source);
+      const checks: DoctorCheck[] = [];
+      checks.push({
+        check: "project-root",
+        status: "pass",
+        detail: `${root} (${context.source}: ${contextReason})`,
+        data: { root, source: context.source, reason: contextReason },
+      });
       const major = Number(process.versions.node.split(".")[0]);
       checks.push({
         check: "node",
@@ -1558,10 +2080,12 @@ export function createProgram(options: ProgramOptions = {}): Command {
           const detected = await commandExists(command);
           checks.push({
             check: command,
-            status: detected ? "pass" : "fail",
+            status: detected ? "pass" : options.maintainer ? "fail" : "warn",
             detail: detected
               ? `${command} is executable from PATH`
-              : `${command} is not executable from PATH`,
+              : options.maintainer
+                ? `${command} is required for source development but is not executable from PATH`
+                : `${command} is not executable from PATH; it is optional for npm package consumers`,
           });
         } catch (error) {
           checks.push({ check: command, status: "fail", detail: errorMessage(error) });
@@ -1574,7 +2098,14 @@ export function createProgram(options: ProgramOptions = {}): Command {
         config = await loadConfig(root);
         checks.push({ check: "config", status: "pass", detail: JSON.stringify(config) });
       } catch (error) {
-        checks.push({ check: "config", status: "fail", detail: errorMessage(error) });
+        checks.push({
+          check: "config",
+          status: "fail",
+          detail: errorMessage(error),
+          remediation:
+            errorRemediation(error) ??
+            "Run `awf init --force --no-interactive` only after reviewing or backing up the invalid configuration.",
+        });
       }
       if (config) {
         try {
@@ -1588,6 +2119,8 @@ export function createProgram(options: ProgramOptions = {}): Command {
               check: "default-target",
               status: "warn",
               detail: `Configured default target does not exist yet: ${configuredTarget}`,
+              remediation:
+                "Create the configured directory or run `awf init --force` with a reviewed target.",
             });
           } else {
             assertRealDirectory(
@@ -1604,13 +2137,21 @@ export function createProgram(options: ProgramOptions = {}): Command {
         } catch (error) {
           configuredTarget = null;
           configuredTargetInformation = null;
-          checks.push({ check: "default-target", status: "fail", detail: errorMessage(error) });
+          checks.push({
+            check: "default-target",
+            status: "fail",
+            detail: errorMessage(error),
+            remediation:
+              errorRemediation(error) ??
+              "Run `awf init --force` with a safe project-relative target after reviewing the configuration.",
+          });
         }
       } else {
         checks.push({
           check: "default-target",
           status: "fail",
           detail: "Cannot resolve the default target until the project configuration is valid.",
+          remediation: "Resolve the config check first, then rerun `awf doctor`.",
         });
       }
       try {
@@ -1696,12 +2237,15 @@ export function createProgram(options: ProgramOptions = {}): Command {
           check: "target-writable",
           status: "fail",
           detail: "The configured default target could not be resolved safely.",
+          remediation: "Resolve the config and default-target checks before retrying.",
         });
       } else if (!configuredTargetInformation) {
         checks.push({
           check: "target-writable",
           status: "warn",
           detail: `Not probed because the configured default target does not exist: ${configuredTarget}`,
+          remediation:
+            "Create the configured target, then rerun `awf doctor` to test write access.",
         });
       } else {
         const probe = path.join(configuredTarget, `.awf-doctor-${process.pid}-${randomUUID()}`);
@@ -1713,7 +2257,12 @@ export function createProgram(options: ProgramOptions = {}): Command {
           probeCreated = false;
           checks.push({ check: "target-writable", status: "pass", detail: configuredTarget });
         } catch (error) {
-          checks.push({ check: "target-writable", status: "fail", detail: errorMessage(error) });
+          checks.push({
+            check: "target-writable",
+            status: "fail",
+            detail: errorMessage(error),
+            remediation: "Review directory ownership and permissions, then rerun `awf doctor`.",
+          });
         } finally {
           if (probeCreated) {
             try {
@@ -1747,27 +2296,131 @@ export function createProgram(options: ProgramOptions = {}): Command {
           const lockInformation = metadataInformation
             ? await inspectOptionalPath(lifecycleLock, "the lifecycle lock")
             : null;
-          checks.push(
-            lockInformation
-              ? {
-                  check: "lifecycle-lock",
-                  status: "fail",
-                  detail: `Lifecycle lock present at ${lifecycleLock}. Verify its recorded PID and timestamp before retrying; never remove it automatically.`,
-                }
-              : {
-                  check: "lifecycle-lock",
-                  status: "pass",
-                  detail: `No lifecycle lock is present at ${lifecycleLock}`,
-                },
-          );
+          if (lockInformation) {
+            assertRegularFile(lockInformation, lifecycleLock, "The lifecycle lock");
+            const owner = parseLifecycleLockOwner(
+              (
+                await readBoundedRegularFile(
+                  lifecycleLock,
+                  MAX_LIFECYCLE_LOCK_BYTES,
+                  configuredTarget,
+                )
+              ).toString("utf8"),
+            );
+            checks.push({
+              check: "lifecycle-lock",
+              status: "fail",
+              detail: owner
+                ? `Lifecycle lock present at ${lifecycleLock}; recorded PID ${owner.pid}, acquired at ${owner.acquiredAt}.`
+                : `Lifecycle lock present at ${lifecycleLock}, but its owner record is invalid or unsupported.`,
+              remediation: owner
+                ? `Confirm that PID ${owner.pid} is no longer active and that ${owner.acquiredAt} is stale before manually removing ${lifecycleLock}; then rerun \`awf doctor\`.`
+                : `Treat the lock as authoritative until you confirm that no lifecycle process owns ${configuredTarget}; only then remove ${lifecycleLock} manually and rerun \`awf doctor\`.`,
+              data: {
+                path: lifecycleLock,
+                recordValid: owner !== null,
+                owner,
+              },
+            });
+          } else {
+            checks.push({
+              check: "lifecycle-lock",
+              status: "pass",
+              detail: `No lifecycle lock is present at ${lifecycleLock}`,
+              data: { path: lifecycleLock, recordValid: null, owner: null },
+            });
+          }
         } catch (error) {
-          checks.push({ check: "lifecycle-lock", status: "fail", detail: errorMessage(error) });
+          checks.push({
+            check: "lifecycle-lock",
+            status: "fail",
+            detail: errorMessage(error),
+            remediation:
+              "Inspect the lifecycle lock as a regular project-local file and confirm ownership before any manual removal.",
+          });
         }
       } else {
         checks.push({
           check: "lifecycle-lock",
           status: "fail",
           detail: "Cannot inspect the lifecycle lock without a safely resolved default target.",
+          remediation: "Resolve the config and default-target checks before inspecting the lock.",
+        });
+      }
+
+      if (configuredTarget) {
+        const metadataDirectory = path.join(configuredTarget, ".agentic-workflows");
+        const transactionsDirectory = path.join(metadataDirectory, "transactions");
+        try {
+          const metadataInformation = await inspectOptionalPath(
+            metadataDirectory,
+            "the installation metadata directory",
+          );
+          if (metadataInformation) {
+            assertRealDirectory(
+              metadataInformation,
+              metadataDirectory,
+              "The installation metadata directory",
+            );
+          }
+          const transactionsInformation = metadataInformation
+            ? await inspectOptionalPath(
+                transactionsDirectory,
+                "the lifecycle transaction directory",
+              )
+            : null;
+          if (transactionsInformation) {
+            assertRealDirectory(
+              transactionsInformation,
+              transactionsDirectory,
+              "The lifecycle transaction directory",
+            );
+          }
+          const transactionEntries = transactionsInformation
+            ? (
+                await readDirectoryEntries(
+                  transactionsDirectory,
+                  "the lifecycle transaction directory",
+                )
+              )
+                .map((entry) => sanitizeTerminal(entry.name))
+                .sort()
+            : [];
+          checks.push({
+            check: "lifecycle-transactions",
+            status: transactionEntries.length === 0 ? "pass" : "fail",
+            detail:
+              transactionEntries.length === 0
+                ? `No staged lifecycle transactions are present at ${transactionsDirectory}`
+                : `${transactionEntries.length} staged lifecycle transaction(s) remain at ${transactionsDirectory}.`,
+            ...(transactionEntries.length > 0
+              ? {
+                  remediation:
+                    "Confirm that no lifecycle process owns the target, preserve any project state needed for recovery, run `awf status` and `awf validate <target> --strict`, reconcile managed files, then remove only verified abandoned transaction directories manually and rerun `awf doctor`.",
+                }
+              : {}),
+            data: {
+              path: transactionsDirectory,
+              count: transactionEntries.length,
+              entries: transactionEntries,
+            },
+          });
+        } catch (error) {
+          checks.push({
+            check: "lifecycle-transactions",
+            status: "fail",
+            detail: errorMessage(error),
+            remediation:
+              "Inspect the transaction path without following symbolic links, confirm lifecycle ownership, and preserve project state before any manual cleanup.",
+          });
+        }
+      } else {
+        checks.push({
+          check: "lifecycle-transactions",
+          status: "fail",
+          detail: "Cannot inspect lifecycle transactions without a safely resolved default target.",
+          remediation:
+            "Resolve the config and default-target checks before inspecting transaction state.",
         });
       }
 
@@ -1854,17 +2507,50 @@ export function createProgram(options: ProgramOptions = {}): Command {
           checks.push({ check: `agent-${agent}`, status: "fail", detail: errorMessage(error) });
         }
       }
-      const result = {
-        healthy: checks.every((check) => check.status !== "fail"),
-        projectRoot: root,
-        checks,
+      const normalizedChecks = checks.map((check) => ({
+        schema_version: 1 as const,
+        remediation: null as string | null,
+        data: null as Readonly<Record<string, unknown>> | null,
+        ...check,
+      }));
+      const summary = {
+        total: normalizedChecks.length,
+        pass: normalizedChecks.filter((check) => check.status === "pass").length,
+        warn: normalizedChecks.filter((check) => check.status === "warn").length,
+        fail: normalizedChecks.filter((check) => check.status === "fail").length,
       };
+      const reportedChecks = options.failuresOnly
+        ? normalizedChecks.filter((check) => check.status !== "pass")
+        : normalizedChecks;
+      const healthy = summary.fail === 0;
+      const result = {
+        schema_version: 1 as const,
+        status: healthy ? ("pass" as const) : ("fail" as const),
+        healthy,
+        exit_code: healthy ? (0 as const) : (1 as const),
+        projectRoot: root,
+        projectContext: {
+          root,
+          source: context.source,
+          reason: contextReason,
+        },
+        filter: options.failuresOnly ? ("failures-only" as const) : ("all" as const),
+        summary,
+        checks: reportedChecks,
+      };
+      const renderedChecks =
+        reportedChecks.length > 0
+          ? reportedChecks
+              .flatMap((check) => [
+                `[${check.status.toUpperCase()}] ${check.check}: ${check.detail}`,
+                ...(check.remediation ? [`  Next: ${check.remediation}`] : []),
+              ])
+              .join("\n")
+          : "[PASS] No warnings or failures.";
       output(
         options.json
           ? result
-          : `${result.healthy ? "Healthy" : "Unhealthy"} project at ${root}\n${checks
-              .map((check) => `[${check.status.toUpperCase()}] ${check.check}: ${check.detail}`)
-              .join("\n")}`,
+          : `${result.healthy ? "Healthy" : "Unhealthy"} project at ${root}\nSummary: ${summary.pass} pass, ${summary.warn} warn, ${summary.fail} fail.\n${renderedChecks}`,
         Boolean(options.json),
       );
       if (!result.healthy) process.exitCode = 1;
@@ -1872,33 +2558,79 @@ export function createProgram(options: ProgramOptions = {}): Command {
 
   program
     .command("init")
-    .description("Create local Agentic Workflows configuration.")
-    .addOption(new Option("--agent <agent>").choices(agentIds).default("generic"))
-    .option("--target <directory>", "Default target inside the project", ".")
-    .option("--force")
-    .action(async (options) => {
-      if (!safeRelativeTarget(options.target)) {
-        throw new AwfError("INVALID_PATH", "The configured target must be a safe relative path.");
+    .description("Create local configuration, with a guided wizard in interactive terminals.")
+    .addOption(
+      new Option("--agent <agent>", "Set the default destination format").choices(agentIds),
+    )
+    .option("--target <directory>", "Default target inside the project")
+    .option("--wizard", "Run the guided wizard even when no interactive terminal is detected")
+    .option("--no-interactive", "Skip the wizard and use flags or deterministic defaults")
+    .option("--force", "Replace an existing AWF configuration")
+    .option("--json", "Print a versioned configuration result and skip the wizard")
+    .action(async (commandOptions) => {
+      if (
+        commandOptions.wizard &&
+        (commandOptions.json ||
+          commandOptions.interactive === false ||
+          commandOptions.agent !== undefined ||
+          commandOptions.target !== undefined)
+      ) {
+        throw new CommanderError(
+          2,
+          "awf.conflictingInitialization",
+          "--wizard cannot be combined with --json, --no-interactive, --agent, or --target.",
+        );
       }
-      const root = await projectRoot();
+      const context = await resolveProjectContext(Boolean(commandOptions.json));
+      const root = context.root;
       const directory = path.join(root, ".agentic-workflows");
       await assertNoSymlink(root, directory);
-      await mkdir(directory, { recursive: true });
       const file = path.join(directory, "config.yml");
       await assertNoSymlink(root, file);
+      const existing = await inspectOptionalPath(file, "the existing project configuration");
+      if (existing) {
+        assertRegularFile(existing, file, "The existing project configuration");
+        if (!commandOptions.force) {
+          throw new AwfError(
+            "CONFLICT",
+            "Configuration already exists. Use --force to replace it.",
+          );
+        }
+      }
+      const guided =
+        (interactive || Boolean(commandOptions.wizard)) &&
+        !commandOptions.json &&
+        commandOptions.interactive !== false &&
+        commandOptions.agent === undefined &&
+        commandOptions.target === undefined;
+      const selection = guided
+        ? await initWizard({
+            defaultAgent: defaultConfig.default_agent,
+            defaultTarget: defaultConfig.default_target,
+            isValidTarget: safeRelativeTarget,
+            ...(signal ? { signal } : {}),
+          })
+        : {
+            agent: (commandOptions.agent ?? defaultConfig.default_agent) as AgentId,
+            target: commandOptions.target ?? defaultConfig.default_target,
+          };
+      if (!safeRelativeTarget(selection.target)) {
+        throw new AwfError("INVALID_PATH", "The configured target must be a safe relative path.");
+      }
+      await mkdir(directory, { recursive: true });
       const temporary = path.join(directory, `.config-${randomUUID()}.tmp`);
       try {
         await writeFile(
           temporary,
           stringify({
             schema_version: 1,
-            default_agent: options.agent,
-            default_target: options.target,
+            default_agent: selection.agent,
+            default_target: selection.target,
           }),
           { flag: "wx", mode: 0o600 },
         );
         throwIfAborted(signal);
-        if (options.force) {
+        if (commandOptions.force) {
           await replaceConfiguration(file, temporary);
         } else {
           await link(temporary, file);
@@ -1916,22 +2648,64 @@ export function createProgram(options: ProgramOptions = {}): Command {
         await rm(temporary, { force: true });
       }
       throwIfAborted(signal);
-      output("Created .agentic-workflows/config.yml.");
+      output(
+        commandOptions.json
+          ? {
+              schema_version: 1,
+              created: existing === null,
+              replaced: existing !== null,
+              config_path: ".agentic-workflows/config.yml",
+              project_context: {
+                root,
+                source: context.source,
+                reason: explainProjectRootSource(context.source),
+              },
+              configuration: {
+                schema_version: 1,
+                default_agent: selection.agent,
+                default_target: selection.target,
+              },
+              next: "awf install <workflow-id> --dry-run",
+            }
+          : `Created .agentic-workflows/config.yml.\nDefault agent: ${selection.agent}\nDefault target: ${selection.target}\nNext: awf install <workflow-id> --dry-run`,
+        Boolean(commandOptions.json),
+      );
     });
 
   program
     .command("manifest <workflow-id>")
     .description("Inspect a validated installation manifest.")
     .option("--target <directory>", "Target inside the project")
-    .option("--json")
+    .option("--json", "Print the manifest as JSON instead of YAML")
     .action(async (id, options) => {
-      const root = await projectRoot();
+      const root = await projectRoot(Boolean(options.json));
       const config = await loadConfig(root);
       const manifest = await validateInstallation(
-        recipePath(id),
+        await resolveWorkflowPath(id),
         await safeTarget(root, options.target ?? config.default_target),
       );
       output(options.json ? manifest : stringify(manifest), Boolean(options.json));
+    });
+
+  program
+    .command("completion")
+    .description("Generate tab completion for a supported shell.")
+    .addArgument(
+      new Argument("<shell>", "Shell whose completion script should be generated").choices([
+        ...completionShells,
+      ]),
+    )
+    .option(
+      "--install-instructions",
+      "Print persistent profile setup instructions without modifying the profile",
+    )
+    .action(async (shell: CompletionShell, options) => {
+      if (options.installInstructions) {
+        output(renderCompletionInstallInstructions(shell).trimEnd());
+        return;
+      }
+      const catalog = await loadGeneratedCatalog();
+      output(renderCompletion(shell, catalog).trimEnd());
     });
 
   return program;
@@ -1939,32 +2713,42 @@ export function createProgram(options: ProgramOptions = {}): Command {
 
 async function run(): Promise<void> {
   const controller = new AbortController();
-  const interruption = new Error("The operation was interrupted by SIGINT.");
-  interruption.name = "AbortError";
   let interrupted = false;
-  const interrupt = () => {
+  let interruption: AwfError | undefined;
+  let interruptionExitCode: 130 | 143 = 130;
+  const interrupt = (signal: "SIGINT" | "SIGTERM") => {
     if (interrupted) return;
     interrupted = true;
-    process.exitCode = 130;
+    interruptionExitCode = signal === "SIGINT" ? 130 : 143;
+    process.exitCode = interruptionExitCode;
+    interruption = new AwfError("INTERRUPTED", `The operation was interrupted by ${signal}.`, {
+      signal,
+      remediation:
+        "Wait for the active operation to stop safely, then run `awf doctor` before retrying.",
+    });
+    interruption.name = "AbortError";
     controller.abort(interruption);
-    process.stderr.write(
-      "Interrupt requested. Waiting for the active operation to stop safely; run awf doctor before retrying.\n",
-    );
   };
-  process.once("SIGINT", interrupt);
+  const interruptWithSigint = () => interrupt("SIGINT");
+  const interruptWithSigterm = () => interrupt("SIGTERM");
+  process.once("SIGINT", interruptWithSigint);
+  process.once("SIGTERM", interruptWithSigterm);
   try {
     await createProgram({ signal: controller.signal }).parseAsync();
   } catch (error) {
     if (
       !controller.signal.aborted ||
-      (error !== interruption && errorMessage(error) !== interruption.message)
+      (error !== interruption && errorMessage(error) !== interruption?.message)
     ) {
       throw error;
     }
   } finally {
-    process.removeListener("SIGINT", interrupt);
+    process.removeListener("SIGINT", interruptWithSigint);
+    process.removeListener("SIGTERM", interruptWithSigterm);
   }
-  if (interrupted) process.exitCode = 130;
+  if (interrupted && interruption) {
+    fail(interruption, process.argv.includes("--json"), interruptionExitCode);
+  }
 }
 
 const mainModule =

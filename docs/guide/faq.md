@@ -26,7 +26,8 @@ A recipe's text may suggest commands for you or your agent to run, which is exac
 
 ## How do I run the CLI from npm?
 
-Use `npx --yes @kauanpolydoro/agentic-workflows@latest list`, or install the package as a project dependency when you need to pin its version.
+Install `@kauanpolydoro/agentic-workflows` globally and use `awf` for regular interactive use.
+Use `npx --yes @kauanpolydoro/agentic-workflows@latest list` for an occasional run, or install the package as a project dependency when you need to pin its version.
 
 ## Can I edit a file after installing it?
 
