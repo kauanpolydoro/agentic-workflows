@@ -225,6 +225,70 @@ describe("delivery contracts", () => {
     expect(preview).not.toContain("Portable, testable");
   });
 
+  it("documents a complete first-use journey in both landing pages", async () => {
+    const english = await text("README.md");
+    const portuguese = await text("README.pt-BR.md");
+    for (const readme of [english, portuguese]) {
+      for (const requirement of [
+        "npm install --global @kauanpolydoro/agentic-workflows",
+        "awf context",
+        "awf init --agent codex",
+        "awf show review-pull-request",
+        "awf install review-pull-request --dry-run --show-content",
+        "awf install review-pull-request",
+        "awf status",
+        "$review-pull-request",
+        "/review-pull-request",
+        ".agentic-workflows/config.yml",
+      ]) {
+        expect(readme, `landing page omits ${requirement}`).toContain(requirement);
+      }
+      expect(
+        readme.indexOf("awf install review-pull-request --dry-run --show-content"),
+      ).toBeLessThan(readme.indexOf("awf install review-pull-request\n"));
+    }
+  });
+
+  it("keeps README operational claims aligned with source and release contracts", async () => {
+    const english = await text("README.md");
+    const portuguese = await text("README.pt-BR.md");
+    for (const readme of [english, portuguese]) {
+      expect(readme).toContain("pnpm --filter @kauanpolydoro/agentic-workflows pack");
+      expect(readme).toContain(".cursor/skills/<workflow-id>/SKILL.md");
+      expect(readme).toContain("@kauanpolydoro/agentic-workflows/output-contract");
+      expect(readme).toContain("not-applicable");
+    }
+    expect(english).toContain("operating system's native document handler");
+    expect(portuguese).toContain("manipulador nativo de documentos do sistema operacional");
+    expect(english).not.toContain("tested browser opening");
+    expect(english).not.toContain("produced with `pnpm pack`");
+    expect(portuguese).not.toContain("produzido com `pnpm pack`");
+    expect(await text("packages/cli/README.md")).toBe(english);
+  });
+
+  it("keeps the English and Portuguese landing pages equivalent in scope", async () => {
+    const english = await text("README.md");
+    const portuguese = await text("README.pt-BR.md");
+    const sectionPairs = [
+      ["## Why use it", "## Por que usar"],
+      ["## Quick start", "## Início rápido"],
+      ["## Choose an agent", "## Escolha um agente"],
+      ["## Try without a global installation", "## Experimente sem instalação global"],
+      ["## Featured workflows", "## Fluxos em destaque"],
+      ["## See a complete result", "## Veja um resultado completo"],
+      ["## How it works", "## Como funciona"],
+      ["## Safety and verification", "## Segurança e verificação"],
+      ["## CLI reference", "## Referência da CLI"],
+      ["## Develop and contribute", "## Desenvolvimento e contribuição"],
+      ["## Documentation map", "## Mapa da documentação"],
+      ["## Project status", "## Status do projeto"],
+    ] as const;
+    for (const [englishSection, portugueseSection] of sectionPairs) {
+      expect(english).toContain(englishSection);
+      expect(portuguese).toContain(portugueseSection);
+    }
+  });
+
   it("keeps the primary demonstration outcome-oriented without overstating execution", async () => {
     const demonstration = await text("scripts/demo-cli.ts");
     const fixtureAgent = await text("scripts/demo-fixture-agent.ts");

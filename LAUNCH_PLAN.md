@@ -1,12 +1,12 @@
 # Ethical launch plan
 
-## Pre-launch checklist
+## Release controls
 
 - Run the full acceptance suite from a clean clone.
 - Review all compatibility and verification claims against committed evidence.
 - Enable GitHub Pages, Issues, Discussions, private vulnerability reporting, and repository topics.
 - Capture a short CLI demonstration using only included fixtures.
-- Publish the initial npm packages and configure Trusted Publisher before the next package release.
+- Publish packages through the configured npm Trusted Publisher and retain provenance for each release.
 
 ## Positioning
 

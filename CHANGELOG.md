@@ -4,7 +4,10 @@ All notable project changes will be documented here.
 
 ## Unreleased
 
-No changes have been assigned to a later version.
+### Changed
+
+- Reworked the English and Brazilian Portuguese landing pages around a complete install-to-invocation journey, exact CLI contracts, and equivalent navigation.
+- Updated public status documents to reflect npm trusted publishing and the current pre-1.0 security support policy.
 
 ## 0.2.0 - 2026-07-21
 
