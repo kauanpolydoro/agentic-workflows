@@ -44,6 +44,10 @@ Do not skip a failing command or lower a threshold to make the suite pass.
 
 `pnpm test:automation` validates the public JSON contract across command boundaries in real subprocesses.
 
+Project-discovery fixtures must define their own discovery boundary instead of assuming the operating system's temporary directory has no Git or AWF marker.
+
+The package smoke test deliberately creates a hostile ancestor `.git` marker and must pass without a `TMPDIR` override.
+
 CI runs unit, automation, integration, acceptance, and packed-package smoke coverage on Linux, Windows, and macOS, with an additional Node.js 22 compatibility job.
 
 The matrix loads generated Bash completion on Linux, Zsh completion on macOS, Fish completion on Linux, and PowerShell completion on Windows, then verifies command-specific candidates in each native shell.

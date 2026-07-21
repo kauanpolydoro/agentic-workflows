@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseCliOutput } from "./output-contract.js";
+import { normalizeProjectContext, parseCliOutput } from "./output-contract.js";
 
 describe("CLI output contracts", () => {
   it("accepts a complete project-context report", () => {
@@ -61,5 +61,59 @@ describe("CLI output contracts", () => {
     expect(parseCliOutput("catalog_list", [])).toEqual([]);
     expect(() => parseCliOutput("recipe", { schema_version: 2 })).toThrow();
     expect(() => parseCliOutput("manifest", { schema_version: 1 })).toThrow();
+  });
+
+  it("normalizes context fields across compatible version 1 command shapes", () => {
+    const reason = "Selected explicitly.";
+    const expected = {
+      schema_version: 1,
+      project_root: "/project",
+      selection_source: "explicit",
+      project_root_fallback: false,
+      reason,
+    };
+    const context = { ...expected };
+    const status = {
+      schema_version: 1,
+      target: "/project",
+      project_context: {
+        project_root: "/project",
+        selection_source: "explicit",
+        project_root_fallback: false,
+        reason,
+      },
+      filter: "all",
+      summary: { total: 0, healthy: 0, drifted: 0, invalid: 0 },
+      installations: [],
+    };
+    const doctor = {
+      schema_version: 1,
+      status: "pass",
+      healthy: true,
+      exit_code: 0,
+      projectRoot: "/project",
+      projectContext: { root: "/project", source: "explicit", reason },
+      filter: "all",
+      summary: { total: 0, pass: 0, warn: 0, fail: 0 },
+      checks: [],
+    };
+    const init = {
+      schema_version: 1,
+      created: true,
+      replaced: false,
+      config_path: ".agentic-workflows/config.yml",
+      project_context: { root: "/project", source: "explicit", reason },
+      configuration: {
+        schema_version: 1,
+        default_agent: "generic",
+        default_target: ".",
+      },
+      next: "Run awf list.",
+    };
+
+    expect(normalizeProjectContext("context", context)).toEqual(expected);
+    expect(normalizeProjectContext("status", status)).toEqual(expected);
+    expect(normalizeProjectContext("doctor", doctor)).toEqual(expected);
+    expect(normalizeProjectContext("init", init)).toEqual(expected);
   });
 });

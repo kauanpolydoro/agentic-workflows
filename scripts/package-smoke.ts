@@ -299,6 +299,9 @@ const cleanup = () => {
   rmSync(artifacts, { recursive: true, force: true });
 };
 process.once("exit", cleanup);
+// A synthetic ancestor marker makes project-root assumptions deterministic on every runner.
+// Consumer commands must remain scoped by their explicit root instead of ambient temp state.
+await mkdir(path.join(workspace, ".git"));
 const consumer = path.join(workspace, "consumer project");
 await mkdir(consumer);
 
@@ -382,7 +385,7 @@ const outputContractProbe = run(
   [
     "--input-type=module",
     "--eval",
-    "import { cliOutputSchemas, parseCliOutput } from '@kauanpolydoro/agentic-workflows/output-contract'; const value = parseCliOutput('documentation_open', { schema_version: 1, target: 'https://example.invalid', opened: false }); const complete = ['catalog_list', 'recipe', 'manifest'].every((contract) => contract in cliOutputSchemas); process.stdout.write(String(!value.opened && complete));",
+    "import { cliOutputSchemas, normalizeProjectContext, parseCliOutput } from '@kauanpolydoro/agentic-workflows/output-contract'; const value = parseCliOutput('documentation_open', { schema_version: 1, target: 'https://example.invalid', opened: false }); const context = normalizeProjectContext('context', { schema_version: 1, project_root: '/project', selection_source: 'explicit', project_root_fallback: false, reason: 'Selected explicitly.' }); const complete = ['catalog_list', 'recipe', 'manifest'].every((contract) => contract in cliOutputSchemas); process.stdout.write(String(!value.opened && context.project_root === '/project' && complete));",
   ],
   consumer,
 ).trim();
@@ -505,12 +508,17 @@ const globalCatalog = JSON.parse(run(globalAwf, ["list", "--json"], workspace)) 
 if (globalCatalog.length !== 20) {
   throw new Error(`Globally installed awf returned ${globalCatalog.length} recipes.`);
 }
-const globalContext = JSON.parse(run(globalAwf, ["context", "--json"], workspace)) as {
+const globalContext = JSON.parse(
+  run(globalAwf, ["--project-root", workspace, "context", "--json"], workspace),
+) as {
   selection_source?: string;
   project_root_fallback?: boolean;
 };
-if (globalContext.selection_source !== "cwd" || globalContext.project_root_fallback !== true) {
-  throw new Error("The globally installed awf command did not explain its root fallback.");
+if (
+  globalContext.selection_source !== "explicit" ||
+  globalContext.project_root_fallback !== false
+) {
+  throw new Error("The globally installed awf command did not honor its explicit project root.");
 }
 const listed = JSON.parse(runCli(entrypoint, ["list", "--json"], consumer)) as unknown[];
 if (listed.length !== 20) throw new Error(`Packaged catalog returned ${listed.length} recipes.`);

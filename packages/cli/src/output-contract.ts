@@ -195,9 +195,41 @@ export type CliOutputByContract = {
   [Contract in CliOutputContract]: z.infer<(typeof cliOutputSchemas)[Contract]>;
 };
 
+export const projectContextContracts = ["context", "status", "doctor", "init"] as const;
+export type ProjectContextContract = (typeof projectContextContracts)[number];
+export interface NormalizedProjectContext {
+  schema_version: 1;
+  project_root: string;
+  selection_source: z.infer<typeof projectRootSourceSchema>;
+  project_root_fallback: boolean;
+  reason: string;
+}
+
 export function parseCliOutput<Contract extends CliOutputContract>(
   contract: Contract,
   value: unknown,
 ): CliOutputByContract[Contract] {
   return cliOutputSchemas[contract].parse(value) as CliOutputByContract[Contract];
+}
+
+export function normalizeProjectContext(
+  contract: ProjectContextContract,
+  value: unknown,
+): NormalizedProjectContext {
+  if (contract === "context") return parseCliOutput("context", value);
+  if (contract === "status") {
+    const context = parseCliOutput("status", value).project_context;
+    return { schema_version: 1, ...context };
+  }
+  const context =
+    contract === "doctor"
+      ? parseCliOutput("doctor", value).projectContext
+      : parseCliOutput("init", value).project_context;
+  return {
+    schema_version: 1,
+    project_root: context.root,
+    selection_source: context.source,
+    project_root_fallback: context.source === "cwd",
+    reason: context.reason,
+  };
 }

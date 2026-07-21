@@ -14,6 +14,7 @@ async function exists(candidate: string): Promise<boolean> {
 export interface ProjectRootOptions {
   explicitRoot?: string;
   allowPackageRoot?: boolean;
+  discoveryBoundary?: string;
 }
 
 export type ProjectRootSource = "explicit" | "git" | "config" | "package" | "cwd";
@@ -54,6 +55,17 @@ export async function findProjectContext(
     return { root: await explicitProjectRoot(options.explicitRoot), source: "explicit" };
   }
   const initial = path.resolve(start);
+  const discoveryBoundary = options.discoveryBoundary
+    ? path.resolve(options.discoveryBoundary)
+    : path.parse(initial).root;
+  const boundaryRelation = path.relative(discoveryBoundary, initial);
+  if (
+    boundaryRelation === ".." ||
+    boundaryRelation.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(boundaryRelation)
+  ) {
+    throw new Error("The project discovery boundary must contain the invocation directory.");
+  }
   let current = initial;
   let nearestPackage: string | null = null;
   while (true) {
@@ -65,7 +77,7 @@ export async function findProjectContext(
       nearestPackage = current;
     }
     const parent = path.dirname(current);
-    if (parent === current) {
+    if (current === discoveryBoundary || parent === current) {
       if (options.allowPackageRoot && nearestPackage) {
         return { root: nearestPackage, source: "package" };
       }

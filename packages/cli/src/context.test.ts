@@ -76,10 +76,10 @@ describe("project-root discovery", () => {
     const start = path.join(root, "package", "src");
     await mkdir(start, { recursive: true });
     await writeFile(path.join(root, "package", "package.json"), "{}\n");
-    await expect(findProjectRoot(start)).resolves.toBe(start);
-    await expect(findProjectRoot(start, { allowPackageRoot: true })).resolves.toBe(
-      path.join(root, "package"),
-    );
+    await expect(findProjectRoot(start, { discoveryBoundary: root })).resolves.toBe(start);
+    await expect(
+      findProjectRoot(start, { allowPackageRoot: true, discoveryBoundary: root }),
+    ).resolves.toBe(path.join(root, "package"));
   });
 
   it("honors an explicit project root", async () => {
@@ -101,11 +101,30 @@ describe("project-root discovery", () => {
     await mkdir(nested, { recursive: true });
     await writeFile(path.join(packageRoot, "package.json"), "{}\n");
 
-    await expect(findProjectContext(nested, { allowPackageRoot: true })).resolves.toEqual({
-      root: packageRoot,
-      source: "package",
+    await expect(
+      findProjectContext(nested, { allowPackageRoot: true, discoveryBoundary: root }),
+    ).resolves.toEqual({ root: packageRoot, source: "package" });
+    await expect(findProjectContext(nested, { discoveryBoundary: root })).resolves.toEqual({
+      root: nested,
+      source: "cwd",
     });
-    await expect(findProjectContext(nested)).resolves.toEqual({ root: nested, source: "cwd" });
+  });
+
+  it("keeps bounded discovery hermetic when an ancestor contains repository markers", async () => {
+    const ancestor = await mkdtemp(path.join(os.tmpdir(), "awf-bounded-root-"));
+    await mkdir(path.join(ancestor, ".git"));
+    const boundary = path.join(ancestor, "isolated test boundary");
+    const packageRoot = path.join(boundary, "package");
+    const start = path.join(packageRoot, "src");
+    await mkdir(start, { recursive: true });
+    await writeFile(path.join(packageRoot, "package.json"), "{}\n");
+
+    await expect(
+      findProjectContext(start, { allowPackageRoot: true, discoveryBoundary: boundary }),
+    ).resolves.toEqual({ root: packageRoot, source: "package" });
+    await expect(
+      findProjectContext(start, { discoveryBoundary: path.join(ancestor, "outside") }),
+    ).rejects.toThrow("must contain the invocation directory");
   });
 
   it("rejects explicit roots that are files or symbolic links", async () => {

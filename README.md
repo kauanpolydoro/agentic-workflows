@@ -182,6 +182,8 @@ The `awf` binary supports:
 
 Automation can validate every machine-readable result, including catalog recipes and manifests, through the public `@kauanpolydoro/agentic-workflows/output-contract` export.
 
+The same export provides `normalizeProjectContext` so `context`, `status`, `doctor`, and `init` share one canonical project-root shape in multi-command automation.
+
 Read the [CLI reference](docs/guide/cli-reference.md) for flags and exit codes.
 
 ## Author a workflow

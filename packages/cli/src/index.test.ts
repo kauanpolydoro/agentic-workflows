@@ -77,8 +77,12 @@ function syntheticUntestedEvidence(options: {
   };
 }
 
+function testProgram(options: Parameters<typeof createProgram>[0] = {}) {
+  return createProgram({ ...options, discoveryBoundary: project });
+}
+
 async function run(...args: string[]): Promise<void> {
-  await createProgram().parseAsync(args, { from: "user" });
+  await testProgram().parseAsync(args, { from: "user" });
 }
 
 async function createVerificationRepository(): Promise<{
@@ -409,7 +413,7 @@ describe.sequential("CLI command contracts", () => {
       { recursive: true },
     );
     process.env.AWF_CATALOG_ROOT = packagedCatalog;
-    await createProgram({ documentationOpener: async () => false }).parseAsync(
+    await testProgram({ documentationOpener: async () => false }).parseAsync(
       ["show", "write-release-notes", "--open"],
       { from: "user" },
     );
@@ -421,7 +425,7 @@ describe.sequential("CLI command contracts", () => {
 
   it("waits for the documentation opener to report its real exit status", async () => {
     const documentationOpener = vi.fn().mockResolvedValue(false);
-    await createProgram({ documentationOpener }).parseAsync(
+    await testProgram({ documentationOpener }).parseAsync(
       ["show", "write-release-notes", "--open"],
       { from: "user" },
     );
@@ -432,7 +436,7 @@ describe.sequential("CLI command contracts", () => {
 
   it("reports a successful documentation opener only after exit zero", async () => {
     const documentationOpener = vi.fn().mockResolvedValue(true);
-    await createProgram({ documentationOpener }).parseAsync(
+    await testProgram({ documentationOpener }).parseAsync(
       ["show", "write-release-notes", "--open"],
       { from: "user" },
     );
@@ -441,7 +445,7 @@ describe.sequential("CLI command contracts", () => {
     expect(stdout).toContain(path.join("docs", "catalog", "write-release-notes.md"));
 
     stdout = "";
-    await createProgram({ documentationOpener }).parseAsync(
+    await testProgram({ documentationOpener }).parseAsync(
       ["show", "write-release-notes", "--open", "--json"],
       { from: "user" },
     );
@@ -473,7 +477,7 @@ describe.sequential("CLI command contracts", () => {
           { once: true },
         );
       });
-    const pending = createProgram({
+    const pending = testProgram({
       signal: controller.signal,
       documentationOpener,
     }).parseAsync(["show", "write-release-notes", "--open"], { from: "user" });
@@ -565,7 +569,7 @@ describe.sequential("CLI command contracts", () => {
 
   it("guides interactive init while flags and non-interactive use remain deterministic", async () => {
     const wizard = vi.fn().mockResolvedValue({ agent: "codex", target: "guided target" });
-    await createProgram({ interactive: true, initWizard: wizard }).parseAsync(["init"], {
+    await testProgram({ interactive: true, initWizard: wizard }).parseAsync(["init"], {
       from: "user",
     });
     expect(wizard).toHaveBeenCalledOnce();
@@ -581,14 +585,14 @@ describe.sequential("CLI command contracts", () => {
 
     wizard.mockClear();
     await expect(
-      createProgram({ interactive: true, initWizard: wizard }).parseAsync(["init"], {
+      testProgram({ interactive: true, initWizard: wizard }).parseAsync(["init"], {
         from: "user",
       }),
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(wizard).not.toHaveBeenCalled();
 
     stdout = "";
-    await createProgram({ interactive: true, initWizard: wizard }).parseAsync(
+    await testProgram({ interactive: true, initWizard: wizard }).parseAsync(
       ["init", "--force", "--agent", "generic", "--target", "."],
       { from: "user" },
     );
@@ -597,7 +601,7 @@ describe.sequential("CLI command contracts", () => {
       parse(await readFile(path.join(project, ".agentic-workflows/config.yml"), "utf8")),
     ).toMatchObject({ default_agent: "generic", default_target: "." });
 
-    await createProgram({ interactive: true, initWizard: wizard }).parseAsync(
+    await testProgram({ interactive: true, initWizard: wizard }).parseAsync(
       ["init", "--force", "--no-interactive"],
       { from: "user" },
     );
@@ -605,7 +609,7 @@ describe.sequential("CLI command contracts", () => {
 
     wizard.mockClear();
     stdout = "";
-    await createProgram({ interactive: false, initWizard: wizard }).parseAsync(
+    await testProgram({ interactive: false, initWizard: wizard }).parseAsync(
       ["init", "--force", "--wizard"],
       { from: "user" },
     );
@@ -621,7 +625,7 @@ describe.sequential("CLI command contracts", () => {
       ["--target", "managed"],
     ]) {
       await expect(
-        createProgram({ interactive: false, initWizard: wizard }).parseAsync(
+        testProgram({ interactive: false, initWizard: wizard }).parseAsync(
           ["init", "--force", "--wizard", ...conflicting],
           { from: "user" },
         ),
@@ -634,7 +638,7 @@ describe.sequential("CLI command contracts", () => {
 
     wizard.mockClear();
     stdout = "";
-    await createProgram({ interactive: true, initWizard: wizard }).parseAsync(
+    await testProgram({ interactive: true, initWizard: wizard }).parseAsync(
       ["init", "--force", "--json", "--agent", "codex", "--target", "machine target"],
       { from: "user" },
     );
@@ -1237,7 +1241,7 @@ describe.sequential("CLI command contracts", () => {
     controller.abort(interruption);
 
     await expect(
-      createProgram({ signal: controller.signal }).parseAsync(
+      testProgram({ signal: controller.signal }).parseAsync(
         ["install", "write-release-notes", "--agent", "generic"],
         { from: "user" },
       ),
@@ -1251,7 +1255,7 @@ describe.sequential("CLI command contracts", () => {
     const signal = { aborted: true, reason: undefined } as AbortSignal;
 
     await expect(
-      createProgram({ signal }).parseAsync(["list"], { from: "user" }),
+      testProgram({ signal }).parseAsync(["list"], { from: "user" }),
     ).rejects.toMatchObject({ name: "AbortError" });
   });
 

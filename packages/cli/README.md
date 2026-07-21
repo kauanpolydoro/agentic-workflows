@@ -182,12 +182,18 @@ Windows forced termination has platform-defined process status, so acceptance ve
 Node.js automation can validate the published versioned records with the public subpath export:
 
 ```js
-import { parseCliOutput } from "@kauanpolydoro/agentic-workflows/output-contract";
+import {
+  normalizeProjectContext,
+  parseCliOutput,
+} from "@kauanpolydoro/agentic-workflows/output-contract";
 
 const status = JSON.parse(capturedStdout);
 parseCliOutput("status", status);
+const context = normalizeProjectContext("status", status);
 ```
 
 The same registry validates `catalog_list`, `recipe`, and `manifest` records, so consumers do not need a second schema import for `list`, `show`, or lifecycle output.
+
+`normalizeProjectContext` gives `context`, `status`, `doctor`, and `init` consumers the same `project_root`, `selection_source`, `project_root_fallback`, and `reason` fields without changing their strict version 1 records.
 
 See the [installation guide](https://kauanpolydoro.github.io/agentic-workflows/guide/installation.html), [CLI reference](https://kauanpolydoro.github.io/agentic-workflows/guide/cli-reference.html), and [output contracts](https://kauanpolydoro.github.io/agentic-workflows/guide/output-contracts.html) for the complete contract.

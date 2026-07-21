@@ -139,6 +139,8 @@ Não significa que um agente externo executou o fluxo de trabalho nem que o resu
 
 Consulte o [site com o catálogo completo](https://kauanpolydoro.github.io/agentic-workflows/catalog/), a [matriz de compatibilidade](docs/compatibility.md) e as [fontes dos adaptadores](docs/research/adapter-sources.md).
 
+Para automação, o export público `@kauanpolydoro/agentic-workflows/output-contract` valida as saídas e oferece `normalizeProjectContext` para unificar o contexto de projeto de `context`, `status`, `doctor` e `init`.
+
 ## Segurança
 
 Receitas são dados e documentação não confiáveis, nunca plugins executáveis.

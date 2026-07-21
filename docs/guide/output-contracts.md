@@ -167,12 +167,18 @@ Every `status --json` result includes `project_context.project_root`, `project_c
 
 The status context uses snake-case field names to match `context --json`, while `doctor --json` retains its existing `projectContext` contract.
 
-Code that consumes more than one report should normalize those version 1 fields explicitly instead of guessing their casing:
+The public `normalizeProjectContext` helper validates and maps all four compatible version 1 shapes to the canonical context field names:
 
 ```js
-const projectRoot =
-  contract === "doctor" ? report.projectContext.root : report.project_context.project_root;
+import { normalizeProjectContext } from "@kauanpolydoro/agentic-workflows/output-contract";
+
+const context = normalizeProjectContext(contract, report);
+console.log(context.project_root, context.selection_source, context.project_root_fallback);
 ```
+
+The accepted contract names are `context`, `status`, `doctor`, and `init`.
+
+This additive helper avoids changing the strict command records or breaking existing version 1 consumers.
 
 ## Error schema version 1
 

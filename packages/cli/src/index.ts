@@ -117,6 +117,8 @@ interface ProgramOptions {
   interactive?: boolean;
   initWizard?: InitWizard;
   documentationOpener?: DocumentationOpener;
+  /** Internal embedding and test boundary; the CLI normally searches to the filesystem root. */
+  discoveryBoundary?: string;
 }
 
 interface DoctorCheck {
@@ -1676,7 +1678,12 @@ export function createProgram(options: ProgramOptions = {}): Command {
     const explicitRoot = program.opts<{ projectRoot?: string }>().projectRoot;
     const context = await findProjectContext(
       process.cwd(),
-      explicitRoot ? { explicitRoot } : { allowPackageRoot: true },
+      explicitRoot
+        ? { explicitRoot }
+        : {
+            allowPackageRoot: true,
+            ...(options.discoveryBoundary ? { discoveryBoundary: options.discoveryBoundary } : {}),
+          },
     );
     if (context.source === "cwd" && !machineOutput && !fallbackNoticeShown) {
       fallbackNoticeShown = true;

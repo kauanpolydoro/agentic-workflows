@@ -11,4 +11,8 @@ What each kind of contribution needs:
 - **Adapters** need a current official source for the format, deterministic serialization, and tests that install into temporary directories.
 - **Verification evidence** must retain sanitized command output and must never promote an execution or outcome status beyond what actually happened.
 
+Project-discovery tests define an explicit fixture boundary, and the package smoke test adds an ancestor `.git` marker so temporary-directory behavior stays hermetic on every runner.
+
+Do not rely on a custom `TMPDIR` to make the test suite pass.
+
 Before submitting work, read the repository [contribution guide](https://github.com/kauanpolydoro/agentic-workflows/blob/main/CONTRIBUTING.md), [code of conduct](https://github.com/kauanpolydoro/agentic-workflows/blob/main/CODE_OF_CONDUCT.md), and [security policy](https://github.com/kauanpolydoro/agentic-workflows/blob/main/SECURITY.md).

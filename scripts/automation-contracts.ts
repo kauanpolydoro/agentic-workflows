@@ -3,7 +3,7 @@ import { rmSync } from "node:fs";
 import { mkdtemp, realpath, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { parseCliOutput } from "../packages/cli/src/output-contract.js";
+import { normalizeProjectContext, parseCliOutput } from "../packages/cli/src/output-contract.js";
 
 interface CommandResult {
   status: number | null;
@@ -308,6 +308,19 @@ if (
   )
 ) {
   throw new Error("Diagnostic automation did not receive its filtered versioned summary.");
+}
+for (const normalized of [
+  normalizeProjectContext("init", initialized),
+  normalizeProjectContext("status", status),
+  normalizeProjectContext("doctor", diagnostics),
+]) {
+  if (
+    normalized.project_root !== project ||
+    normalized.selection_source !== "explicit" ||
+    normalized.project_root_fallback
+  ) {
+    throw new Error("Cross-command project-context normalization lost root provenance.");
+  }
 }
 
 const manifest = jsonSuccess(["manifest", "write-release-notes", "--json"]);
