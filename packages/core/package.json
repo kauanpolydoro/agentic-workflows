@@ -1,6 +1,6 @@
 {
   "name": "@kauanpolydoro/agentic-workflows-core",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Schemas, catalog parsing, manifests, path safety, and agent exporters for Agentic Workflows.",
   "license": "MIT",
   "keywords": [

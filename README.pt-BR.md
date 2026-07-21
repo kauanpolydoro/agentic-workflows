@@ -120,7 +120,7 @@ Esses exemplos com `@latest` destinam-se intencionalmente a avaliações pontuai
 Instale a versão exata do repositório e versione o manifesto e o lockfile resultantes para uso no projeto ou CI:
 
 ```bash
-npm install --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.2.1
+npm install --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.2.2
 npx awf context --json
 npx awf list --json
 ```
@@ -278,6 +278,7 @@ pnpm check:clean
 
 O `README.md` da raiz é a fonte canônica do pacote da CLI.
 O build o copia para o arquivo publicado no npm, mantendo as páginas iniciais do GitHub e do npm sincronizadas em cada versão publicada.
+O tarball não contém outro arquivo `README*` na raiz, portanto o npm não pode selecionar um documento traduzido como página inicial do pacote.
 Os testes de contrato comparam o mapa de seções e os comandos de primeiro uso entre os dois idiomas, enquanto o teste do pacote compara byte por byte o README em inglês empacotado com esta fonte.
 
 ## Mapa da documentação
@@ -298,7 +299,7 @@ Os testes de contrato comparam o mapa de seções e os comandos de primeiro uso 
 
 A CLI [`@kauanpolydoro/agentic-workflows`](https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows) e a biblioteca [`@kauanpolydoro/agentic-workflows-core`](https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows-core) estão públicas no npm.
 As releases são acionadas por tags e usam publicação confiável do npm, proveniência, testes do pacote e verificação de integridade antes da sincronização da release no GitHub.
-O teste do pacote comprova que o tarball contém este README exato, e o publicador verifica o `dist.integrity` e os bytes do README no registro depois da publicação.
+O teste do pacote comprova que o tarball contém apenas este README na raiz, e o publicador verifica o `dist.integrity`, o nome selecionado `README.md` e os bytes do README no registro depois da publicação.
 Antes da publicação no npm, a release audita todos os links públicos permitidos da documentação para que um destino quebrado bloqueie o fluxo antes de uma escrita irreversível no registro.
 O GitHub pode exibir primeiro alterações ainda não publicadas, pois a página inicial do npm só muda quando uma nova versão contendo esses bytes é publicada.
 Consulte o [changelog](https://github.com/kauanpolydoro/agentic-workflows/blob/main/CHANGELOG.md) e o [processo de release](https://github.com/kauanpolydoro/agentic-workflows/blob/main/RELEASING.md) para conhecer a versão atual e o contrato de entrega.

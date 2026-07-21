@@ -16,6 +16,7 @@ export interface PublishedVersion {
   version: string;
   integrity: string;
   readme: string;
+  readmeFilename: string;
 }
 
 export function sha512Integrity(content: Uint8Array): string {
@@ -36,14 +37,18 @@ export function parsePublishedVersion(raw: string): PublishedVersion {
   if (
     typeof record.version !== "string" ||
     typeof record["dist.integrity"] !== "string" ||
-    typeof record.readme !== "string"
+    typeof record.readme !== "string" ||
+    typeof record.readmeFilename !== "string"
   ) {
-    throw new Error("npm view omitted the published version, tarball integrity, or README.");
+    throw new Error(
+      "npm view omitted the published version, tarball integrity, README, or README filename.",
+    );
   }
   return {
     version: record.version,
     integrity: record["dist.integrity"],
     readme: record.readme,
+    readmeFilename: record.readmeFilename,
   };
 }
 
@@ -63,17 +68,26 @@ export function assertMatchingPublication(
       "The npm version already exists with different tarball content. Published versions are immutable.",
     );
   }
+  if (published.readmeFilename !== "README.md") {
+    throw new Error(
+      `The npm registry selected ${published.readmeFilename} instead of the canonical README.md.`,
+    );
+  }
   if (published.readme !== expectedReadme) {
     throw new Error("The npm registry README differs from the README packed for this version.");
   }
 }
 
 function inspectRegistry(spec: string): PublishedVersion | null {
-  const viewed = spawnSync("npm", ["view", spec, "version", "dist.integrity", "readme", "--json"], {
-    encoding: "utf8",
-    shell: false,
-    maxBuffer: 2 * 1024 * 1024,
-  });
+  const viewed = spawnSync(
+    "npm",
+    ["view", spec, "version", "dist.integrity", "readme", "readmeFilename", "--json"],
+    {
+      encoding: "utf8",
+      shell: false,
+      maxBuffer: 2 * 1024 * 1024,
+    },
+  );
   if (viewed.error) throw viewed.error;
   if (viewed.status === 0) return parsePublishedVersion(viewed.stdout);
   if (/\bE404\b/.test(`${viewed.stdout}\n${viewed.stderr}`)) return null;

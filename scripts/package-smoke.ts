@@ -229,6 +229,14 @@ function assertPackedContents(
   requiredRuntimeFiles: readonly string[],
 ): void {
   const paths = report.files.map((file) => file.path);
+  const rootReadmes = paths.filter(
+    (file) => !file.includes(path.posix.sep) && /^README(?:\.|$)/i.test(file),
+  );
+  if (rootReadmes.length !== 1 || rootReadmes[0] !== "README.md") {
+    throw new Error(
+      `Tarball must contain exactly one root README named README.md; found: ${rootReadmes.join(", ") || "none"}.`,
+    );
+  }
   const unexpected = paths.filter(
     (file) => !allowedTopLevel.includes(file.split(path.posix.sep)[0] ?? ""),
   );
@@ -343,16 +351,7 @@ assertPackedContents(
 );
 assertPackedContents(
   cliPack,
-  [
-    "LICENSE",
-    "README.md",
-    "README.pt-BR.md",
-    "catalog",
-    "catalog.json",
-    "dist",
-    "docs",
-    "package.json",
-  ],
+  ["LICENSE", "README.md", "catalog", "catalog.json", "dist", "docs", "package.json"],
   [
     "completion.js",
     "context.js",
@@ -940,11 +939,6 @@ const canonicalReadme = await readFile(path.join(repository, "README.md"), "utf8
 if (packagedReadme !== canonicalReadme) {
   throw new Error("The packaged CLI README drifted from the repository README.");
 }
-const packagedPortugueseReadme = await readFile(path.join(packageRoot, "README.pt-BR.md"), "utf8");
-const canonicalPortugueseReadme = await readFile(path.join(repository, "README.pt-BR.md"), "utf8");
-if (packagedPortugueseReadme !== canonicalPortugueseReadme) {
-  throw new Error("The packaged Brazilian Portuguese README drifted from its canonical source.");
-}
 const documentedCommands = [
   "context",
   "list",
@@ -974,7 +968,6 @@ if (!initHelp.includes("--wizard") || !packagedReadme.includes("awf init --wizar
 }
 await assertPackagedMarkdownLinks(packageRoot, [
   "README.md",
-  "README.pt-BR.md",
   "docs/guide/installation.md",
   "docs/guide/cli-reference.md",
   "docs/guide/output-contracts.md",

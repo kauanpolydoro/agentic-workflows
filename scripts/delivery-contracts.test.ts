@@ -12,6 +12,7 @@ async function text(relative: string): Promise<string> {
 interface PackageMetadata {
   bugs?: { url?: unknown };
   engines?: { node?: unknown };
+  files?: unknown;
   homepage?: unknown;
   license?: unknown;
   name?: unknown;
@@ -292,10 +293,14 @@ describe("delivery contracts", () => {
     expect(english).not.toContain("belongs to a different package");
     expect(portuguese).not.toContain("pertence a outro pacote");
     expect(await text("packages/cli/README.md")).toBe(english);
-    expect(await text("packages/cli/README.pt-BR.md")).toBe(portuguese);
 
     const metadata = await packageMetadata("packages/cli/package.json");
     expect(typeof metadata.version).toBe("string");
+    expect(Array.isArray(metadata.files)).toBe(true);
+    const rootReadmes = (metadata.files as unknown[]).filter(
+      (file): file is string => typeof file === "string" && /^README(?:\.|$)/i.test(file),
+    );
+    expect(rootReadmes).toEqual(["README.md"]);
     const exactPackage = `@kauanpolydoro/agentic-workflows@${String(metadata.version)}`;
     expect(english).toContain(exactPackage);
     expect(portuguese).toContain(exactPackage);

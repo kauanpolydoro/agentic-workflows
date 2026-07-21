@@ -19,6 +19,7 @@ describe("resumable npm publication", () => {
         version: "1.2.3",
         "dist.integrity": "sha512-exact",
         readme: "# Exact\n",
+        readmeFilename: "README.md",
       }),
     );
     expect(() =>
@@ -33,13 +34,25 @@ describe("resumable npm publication", () => {
     expect(() =>
       assertMatchingPublication("1.2.3", "sha512-exact", "# Different\n", published),
     ).toThrow(/README differs/);
+    expect(() =>
+      assertMatchingPublication("1.2.3", "sha512-exact", "# Exact\n", {
+        ...published,
+        readmeFilename: "README.pt-BR.md",
+      }),
+    ).toThrow(/selected README\.pt-BR\.md/);
   });
 
   it("rejects incomplete or malformed registry responses", () => {
     expect(() => parsePublishedVersion("not json")).toThrow(/invalid JSON/);
     expect(() => parsePublishedVersion(JSON.stringify({ version: "1.2.3" }))).toThrow(/omitted/);
     expect(() =>
-      parsePublishedVersion(JSON.stringify({ version: "1.2.3", "dist.integrity": "sha512-exact" })),
-    ).toThrow(/README/);
+      parsePublishedVersion(
+        JSON.stringify({
+          version: "1.2.3",
+          "dist.integrity": "sha512-exact",
+          readme: "# Exact\n",
+        }),
+      ),
+    ).toThrow(/README filename/);
   });
 });
