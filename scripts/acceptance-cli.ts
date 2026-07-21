@@ -183,7 +183,7 @@ async function verifyInteractiveWizardInPty(): Promise<void> {
 set node [lindex $argv 0]
 set cli [lindex $argv 1]
 set project [lindex $argv 2]
-spawn -- $node $cli --project-root $project init
+spawn $node $cli --project-root $project init
 expect -glob "Choose a number or agent ID *"
 send -- "unknown-agent\\r"
 expect -glob "Choose one of: *"
@@ -260,11 +260,16 @@ if (
   throw new Error("Project context did not explain the explicit root used by acceptance.");
 }
 const recipes = JSON.parse(success(["list", "--json"]).stdout) as unknown[];
+parseCliOutput("catalog_list", recipes);
 if (recipes.length !== 20) throw new Error(`Expected 20 recipes, received ${recipes.length}.`);
 const documentationLocation = success(["show", "review-pull-request", "--location"]).stdout.trim();
-if (!documentationLocation.endsWith("/catalog/review-pull-request")) {
-  throw new Error("Documentation location output did not return the packaged catalog URL.");
+if (
+  documentationLocation.startsWith("http") ||
+  !documentationLocation.endsWith(path.join("docs", "catalog", "review-pull-request.md"))
+) {
+  throw new Error(`Documentation location output was not local: ${documentationLocation}.`);
 }
+await access(documentationLocation);
 for (const shell of ["bash", "zsh", "fish", "pwsh"]) {
   const completion = success(["completion", shell]).stdout;
   if (!completion.includes("review-pull-request") || !completion.includes("agentic-workflows")) {

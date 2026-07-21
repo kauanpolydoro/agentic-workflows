@@ -1,3 +1,8 @@
+import {
+  generatedCatalogRecipeSchema,
+  manifestSchema,
+  recipeSchema,
+} from "@kauanpolydoro/agentic-workflows-core";
 import { z } from "zod";
 
 const projectRootSourceSchema = z.enum(["explicit", "git", "config", "package", "cwd"]);
@@ -167,7 +172,14 @@ export const errorOutputSchema = z
   })
   .strict();
 
+export const catalogListOutputSchema = z.array(generatedCatalogRecipeSchema);
+export const recipeOutputSchema = recipeSchema;
+export const manifestOutputSchema = manifestSchema;
+
 export const cliOutputSchemas = {
+  catalog_list: catalogListOutputSchema,
+  recipe: recipeOutputSchema,
+  manifest: manifestOutputSchema,
   context: projectContextOutputSchema,
   lifecycle_plan: lifecyclePlanOutputSchema,
   status: installationStatusOutputSchema,

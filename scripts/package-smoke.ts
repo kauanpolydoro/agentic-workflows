@@ -377,12 +377,12 @@ const outputContractProbe = run(
   [
     "--input-type=module",
     "--eval",
-    "import { parseCliOutput } from '@kauanpolydoro/agentic-workflows/output-contract'; const value = parseCliOutput('documentation_open', { schema_version: 1, target: 'https://example.invalid', opened: false }); process.stdout.write(String(value.opened));",
+    "import { cliOutputSchemas, parseCliOutput } from '@kauanpolydoro/agentic-workflows/output-contract'; const value = parseCliOutput('documentation_open', { schema_version: 1, target: 'https://example.invalid', opened: false }); const complete = ['catalog_list', 'recipe', 'manifest'].every((contract) => contract in cliOutputSchemas); process.stdout.write(String(!value.opened && complete));",
   ],
   consumer,
 ).trim();
-if (outputContractProbe !== "false") {
-  throw new Error("The packaged executable output-contract export is unavailable.");
+if (outputContractProbe !== "true") {
+  throw new Error("The packaged executable output-contract registry is incomplete.");
 }
 const entrypoint = path.join(
   consumer,
@@ -512,9 +512,27 @@ const documentationLocation = runCli(
   ["show", "write-release-notes", "--location"],
   consumer,
 ).trim();
-if (!documentationLocation.endsWith("/catalog/write-release-notes")) {
-  throw new Error("Packaged documentation location lookup failed.");
+if (
+  documentationLocation.startsWith("http") ||
+  !documentationLocation.endsWith(path.join("docs", "catalog", "write-release-notes.md"))
+) {
+  throw new Error(`Packaged documentation location was not local: ${documentationLocation}.`);
 }
+await access(documentationLocation);
+const globalDocumentationLocation = run(
+  globalAwf,
+  ["show", "write-release-notes", "--location"],
+  workspace,
+).trim();
+if (
+  globalDocumentationLocation.startsWith("http") ||
+  !globalDocumentationLocation.endsWith(path.join("docs", "catalog", "write-release-notes.md"))
+) {
+  throw new Error(
+    `Globally installed documentation location was not local: ${globalDocumentationLocation}.`,
+  );
+}
+await access(globalDocumentationLocation);
 for (const shell of ["bash", "zsh", "fish", "pwsh"]) {
   const completion = runCli(entrypoint, ["completion", shell], consumer);
   if (!completion.includes("review-pull-request") || !completion.includes("agentic-workflows")) {
@@ -831,6 +849,9 @@ await assertPackagedMarkdownLinks(packageRoot, [
   "docs/guide/installation.md",
   "docs/guide/cli-reference.md",
   "docs/guide/output-contracts.md",
+  ...(await readdir(path.join(packageRoot, "docs", "catalog"))).map(
+    (page) => `docs/catalog/${page}`,
+  ),
   ...(await readdir(catalog)).map((recipe) => `catalog/${recipe}/README.md`),
 ]);
 const cliPackage = JSON.parse(
@@ -884,6 +905,7 @@ for (const packagedFile of [
   "agentic-workflows/docs/guide/installation.md",
   "agentic-workflows/docs/guide/cli-reference.md",
   "agentic-workflows/docs/guide/output-contracts.md",
+  "agentic-workflows/docs/catalog/write-release-notes.md",
   "agentic-workflows-core/README.md",
   "agentic-workflows-core/LICENSE",
 ]) {

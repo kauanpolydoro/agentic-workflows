@@ -117,7 +117,9 @@ Use a Node.js version manager, a user-owned npm prefix, or a one-off package env
 npm exec --yes --package=@kauanpolydoro/agentic-workflows@latest -- awf doctor
 ```
 
-The tarball produced by this source revision includes `docs/guide/installation.md`, `docs/guide/cli-reference.md`, and `docs/guide/output-contracts.md` for version-matched offline reference.
+The tarball produced by this source revision includes `docs/guide/installation.md`, `docs/guide/cli-reference.md`, `docs/guide/output-contracts.md`, and every `docs/catalog/<workflow-id>.md` page for version-matched offline reference.
+
+Use `awf show <workflow-id> --location` to print the bundled page path or `awf show <workflow-id> --open` to open it locally.
 
 ## Safety boundary
 
@@ -149,5 +151,7 @@ import { parseCliOutput } from "@kauanpolydoro/agentic-workflows/output-contract
 const status = JSON.parse(capturedStdout);
 parseCliOutput("status", status);
 ```
+
+The same registry validates `catalog_list`, `recipe`, and `manifest` records, so consumers do not need a second schema import for `list`, `show`, or lifecycle output.
 
 See the [installation guide](https://kauanpolydoro.github.io/agentic-workflows/guide/installation.html), [CLI reference](https://kauanpolydoro.github.io/agentic-workflows/guide/cli-reference.html), and [output contracts](https://kauanpolydoro.github.io/agentic-workflows/guide/output-contracts.html) for the complete contract.

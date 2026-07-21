@@ -64,9 +64,11 @@ Use `--agent` to focus compatibility details and limitations on one destination.
 
 Use `--raw` for the canonical workflow Markdown or `--json` for complete structured recipe metadata.
 
-Use `--location` to print the local documentation path or public catalog URL without launching another process.
+Use `--location` to print the version-matched local catalog page without launching another process.
 
-Use `--open` to open a repository-local documentation page when available, or the public catalog page from the npm package.
+The npm package and source checkout both include these pages, while the public catalog URL remains a fallback only when a local page is unavailable.
+
+Use `--open` to open that local page with the operating system's native document handler.
 
 Combine `--open --json` to receive `schema_version`, `target`, and `opened` without parsing presentation text.
 
@@ -250,6 +252,6 @@ SIGINT and SIGTERM use exit codes `130` and `143` after safe cancellation.
 
 When `--json` is active, interruption emits one `INTERRUPTED` error object to stderr and leaves stdout empty.
 
-The `@kauanpolydoro/agentic-workflows/output-contract` export provides executable Zod schemas and `parseCliOutput` for every CLI-owned versioned record.
+The `@kauanpolydoro/agentic-workflows/output-contract` export provides executable Zod schemas and `parseCliOutput` for every machine-readable result, including catalog recipes and installation manifests whose canonical schemas remain owned by core.
 
 See the [CLI output contracts](./output-contracts.md) for the schema owner and compatibility rules of every JSON mode.

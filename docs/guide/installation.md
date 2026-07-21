@@ -120,6 +120,8 @@ The unscoped `agentic-workflows` package on npm is unrelated, so keep `@kauanpol
 
 Package runners are useful for an occasional trial or an explicitly selected release.
 
+The installed package bundles every version-matched workflow page, so `awf show <workflow-id> --location` returns a local Markdown file and `awf show <workflow-id> --open` does not depend on the documentation website.
+
 ## Pin a project or CI version
 
 Install the package as a development dependency when the repository or CI pipeline must control the exact CLI version:

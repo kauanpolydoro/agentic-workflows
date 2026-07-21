@@ -161,7 +161,7 @@ The `awf` binary supports:
 - `validate`, `doctor`, and `init` for catalog and project maintenance;
 - `completion` for generated Bash, Zsh, Fish, and PowerShell completion.
 
-Automation can validate versioned CLI records through the public `@kauanpolydoro/agentic-workflows/output-contract` export.
+Automation can validate every machine-readable result, including catalog recipes and manifests, through the public `@kauanpolydoro/agentic-workflows/output-contract` export.
 
 Read the [CLI reference](docs/guide/cli-reference.md) for flags and exit codes.
 

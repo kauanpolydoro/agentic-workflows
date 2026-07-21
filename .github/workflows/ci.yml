@@ -95,6 +95,9 @@ jobs:
         shell: bash
         run: pnpm test:automation
       - run: pnpm test:integration
+      - name: Verify the macOS PTY driver
+        if: runner.os == 'macOS'
+        run: expect -v
       - name: Exercise CLI acceptance on ${{ runner.os }}
         run: pnpm test:acceptance
       - name: Exercise packed and globally installed CLI on ${{ runner.os }}

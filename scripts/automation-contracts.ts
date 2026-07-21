@@ -109,6 +109,7 @@ function jsonFailure(
 }
 
 const catalog = jsonSuccess<unknown[]>(["list", "--json"]);
+parseCliOutput("catalog_list", catalog);
 if (!Array.isArray(catalog) || catalog.length === 0) {
   throw new Error("Catalog automation did not receive any workflow records.");
 }
@@ -128,6 +129,7 @@ if (
 }
 
 const recipe = jsonSuccess<{ id?: string }>(["show", "write-release-notes", "--json"]);
+parseCliOutput("recipe", recipe);
 if (recipe.id !== "write-release-notes") {
   throw new Error("Show automation did not receive the selected workflow.");
 }
@@ -186,7 +188,8 @@ if (installPlan.plan?.schema_version !== 1 || installPlan.plan.operation !== "in
   throw new Error("Install automation did not receive a versioned lifecycle plan.");
 }
 
-jsonSuccess(["install", "write-release-notes", "--json"]);
+const installed = jsonSuccess(["install", "write-release-notes", "--json"]);
+parseCliOutput("manifest", installed);
 
 const status = jsonSuccess<{
   project_context?: {
@@ -307,7 +310,8 @@ if (
   throw new Error("Diagnostic automation did not receive its filtered versioned summary.");
 }
 
-jsonSuccess(["manifest", "write-release-notes", "--json"]);
+const manifest = jsonSuccess(["manifest", "write-release-notes", "--json"]);
+parseCliOutput("manifest", manifest);
 jsonSuccess(["update", "write-release-notes", "--dry-run", "--json"]);
 jsonSuccess(["remove", "write-release-notes", "--dry-run", "--json"]);
 
@@ -327,7 +331,8 @@ jsonFailure(["list", "--json"], "list", undefined, {
   AWF_GENERATED_CATALOG_PATH: invalidCatalog,
 });
 
-jsonSuccess(["remove", "write-release-notes", "--json"]);
+const removed = jsonSuccess(["remove", "write-release-notes", "--json"]);
+parseCliOutput("manifest", removed);
 
 process.stdout.write(
   "CLI automation contracts passed for success, failure, lifecycle, status, validation, diagnostics, and malformed inputs.\n",

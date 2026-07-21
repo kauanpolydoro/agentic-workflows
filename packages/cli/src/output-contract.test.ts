@@ -56,4 +56,10 @@ describe("CLI output contracts", () => {
       }),
     ).toMatchObject({ code: "INTERRUPTED" });
   });
+
+  it("exposes catalog, recipe, and manifest contracts from one public registry", () => {
+    expect(parseCliOutput("catalog_list", [])).toEqual([]);
+    expect(() => parseCliOutput("recipe", { schema_version: 2 })).toThrow();
+    expect(() => parseCliOutput("manifest", { schema_version: 1 })).toThrow();
+  });
 });

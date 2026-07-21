@@ -25,6 +25,9 @@ for (const entry of await readdir(path.join(repository, "recipes"), { withFileTy
   await cp(path.join(repository, "recipes", entry.name), path.join(target, entry.name), {
     recursive: true,
   });
+  const catalogPageTarget = path.join(documentationTarget, "catalog", `${entry.name}.md`);
+  await mkdir(path.dirname(catalogPageTarget), { recursive: true });
+  await cp(path.join(repository, "docs", "catalog", `${entry.name}.md`), catalogPageTarget);
 }
 
 for (const relative of packagedDocumentation) {

@@ -31,8 +31,8 @@ The following table identifies the version field that owns each machine-readable
 | Command or mode | Top-level JSON value | Version contract |
 | --- | --- | --- |
 | `context --json` | Project-context report | Top-level `schema_version: 1` |
-| `list --json` | Array of recipe records | Every recipe has `schema_version: 2` |
-| `show --json` | Recipe record | Recipe `schema_version: 2` |
+| `list --json` | Array of generated catalog recipe records | Every recipe has `schema_version: 3` |
+| `show --json` | Recipe record | Recipe `schema_version: 3` |
 | `show --open --json` | Documentation opener result | Top-level `schema_version: 1` |
 | Applied `install`, `update`, or `remove` | Installation manifest | Manifest `schema_version: 2` |
 | Lifecycle `--dry-run --json` | Command result with nested `plan` | `plan.schema_version: 1` |
@@ -45,7 +45,9 @@ The following table identifies the version field that owns each machine-readable
 
 ## Executable schemas
 
-The CLI package exports strict Zod schemas for every CLI-owned versioned record.
+The CLI package exports strict Zod schemas for every machine-readable result through one public subpath.
+
+The core package remains the canonical schema owner for recipe and manifest data, and the CLI contract registry exposes those same schema instances instead of maintaining duplicates.
 
 Import the parser through the public package subpath:
 
@@ -56,13 +58,13 @@ const report = JSON.parse(stdout);
 parseCliOutput("status", report);
 ```
 
-Available contracts are `context`, `lifecycle_plan`, `status`, `doctor`, `init`, `validation`, `documentation_open`, and `error`.
+Available contracts are `catalog_list`, `recipe`, `manifest`, `context`, `lifecycle_plan`, `status`, `doctor`, `init`, `validation`, `documentation_open`, and `error`.
 
 `parseCliOutput` returns the parsed, inferred record when validation succeeds and throws a Zod validation error when the value does not satisfy that contract.
 
-Catalog records and installation manifests continue to use the schemas owned by the core package.
+Use `catalog_list` for `list --json`, `recipe` for `show --json`, and `manifest` for applied lifecycle results or `manifest --json`.
 
-The package smoke test imports this public subpath from an installed tarball, and subprocess automation validates real command results against the schemas.
+The package smoke test imports this public subpath from an installed tarball, and subprocess automation validates real list, show, lifecycle, status, validation, diagnostic, initialization, documentation, and failure results against the schemas.
 
 ## Automation examples
 
