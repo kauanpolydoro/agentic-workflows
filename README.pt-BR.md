@@ -120,7 +120,7 @@ Esses exemplos com `@latest` destinam-se intencionalmente a avaliações pontuai
 Instale a versão exata do repositório e versione o manifesto e o lockfile resultantes para uso no projeto ou CI:
 
 ```bash
-npm install --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.2.0
+npm install --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.2.1
 npx awf context --json
 npx awf list --json
 ```

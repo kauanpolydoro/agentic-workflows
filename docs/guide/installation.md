@@ -141,14 +141,14 @@ GitHub source archives contain repository sources instead and require workspace 
 Install an explicit package version as a development dependency when the repository or CI pipeline must control the exact CLI version:
 
 ```bash
-npm install --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.2.0
+npm install --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.2.1
 npx awf list
 ```
 
 The pnpm equivalent is:
 
 ```bash
-pnpm add --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.2.0
+pnpm add --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.2.1
 pnpm exec awf list
 ```
 

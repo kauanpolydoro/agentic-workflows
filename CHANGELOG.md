@@ -4,13 +4,28 @@ All notable project changes will be documented here.
 
 ## Unreleased
 
+No changes have been recorded yet.
+
+## 0.2.1 - 2026-07-21
+
+Read the complete [v0.2.1 release notes](release-notes/v0.2.1.md).
+
+### Added
+
+- Added the Brazilian Portuguese README and the complete linked onboarding documentation to the published CLI package.
+- Added release-time public-link auditing, exact npm registry README verification, and semantic parity contracts for the English and Brazilian Portuguese landing pages.
+
 ### Changed
 
 - Reworked the English and Brazilian Portuguese landing pages around a complete install-to-invocation journey, exact CLI contracts, and equivalent navigation.
 - Updated public status documents to reflect npm trusted publishing and the current pre-1.0 security support policy.
 - Aligned adapter research with the active evidence registry and added observable checkpoints plus exact CI version pinning to both landing pages.
-- Added post-publication npm README verification, release-time public-link auditing, semantic translation contracts, and a complete contributor gate reference.
-- Aligned authoring and installation guides, clarified existing-project onboarding, and replaced browser-specific CLI wording with the native-handler contract.
+- Aligned authoring and installation guides, clarified existing-project onboarding, and documented the complete contributor validation gate.
+
+### Fixed
+
+- Replaced browser-specific CLI wording with the cross-platform native document-handler contract.
+- Removed archived pre-history-reset executions from active compatibility claims while retaining their historical context.
 
 ## 0.2.0 - 2026-07-21
 
