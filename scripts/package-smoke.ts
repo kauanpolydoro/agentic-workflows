@@ -290,6 +290,9 @@ const rootPackage = JSON.parse(await readFile(path.join(repository, "package.jso
   version?: unknown;
 };
 if (typeof rootPackage.version !== "string") throw new Error("The root package has no version.");
+const expectedRecipeCount = (
+  await readdir(path.join(repository, "recipes"), { withFileTypes: true })
+).filter((entry) => entry.isDirectory()).length;
 const workspace = await realpath(
   await mkdtemp(path.join(os.tmpdir(), "awf package smoke with spaces ")),
 );
@@ -340,7 +343,16 @@ assertPackedContents(
 );
 assertPackedContents(
   cliPack,
-  ["LICENSE", "README.md", "catalog", "catalog.json", "dist", "docs", "package.json"],
+  [
+    "LICENSE",
+    "README.md",
+    "README.pt-BR.md",
+    "catalog",
+    "catalog.json",
+    "dist",
+    "docs",
+    "package.json",
+  ],
   [
     "completion.js",
     "context.js",
@@ -437,7 +449,7 @@ packageRunnerEnvironment.NPM_CONFIG_REGISTRY = "http://127.0.0.1:9";
 assertCatalogOutput(
   "npx execution from the locally installed tarball",
   run("npx", ["--no-install", scopedPackage, "list", "--json"], consumer, packageRunnerEnvironment),
-  20,
+  expectedRecipeCount,
 );
 assertCatalogOutput(
   "npm exec selection from the locally installed tarball",
@@ -447,7 +459,7 @@ assertCatalogOutput(
     consumer,
     packageRunnerEnvironment,
   ),
-  20,
+  expectedRecipeCount,
 );
 const testedPackageRunners = ["npx", "npm exec"];
 if (process.env.AWF_TEST_BUNX === "1") {
@@ -459,7 +471,7 @@ if (process.env.AWF_TEST_BUNX === "1") {
       consumer,
       packageRunnerEnvironment,
     ),
-    20,
+    expectedRecipeCount,
   );
   testedPackageRunners.push("bunx");
 }
@@ -510,7 +522,7 @@ if (!globalCompletionInstructions.includes("~/.zshrc")) {
   throw new Error("The globally installed awf command omitted Zsh installation instructions.");
 }
 const globalCatalog = JSON.parse(run(globalAwf, ["list", "--json"], workspace)) as unknown[];
-if (globalCatalog.length !== 20) {
+if (globalCatalog.length !== expectedRecipeCount) {
   throw new Error(`Globally installed awf returned ${globalCatalog.length} recipes.`);
 }
 const globalContext = JSON.parse(
@@ -526,7 +538,9 @@ if (
   throw new Error("The globally installed awf command did not honor its explicit project root.");
 }
 const listed = JSON.parse(runCli(entrypoint, ["list", "--json"], consumer)) as unknown[];
-if (listed.length !== 20) throw new Error(`Packaged catalog returned ${listed.length} recipes.`);
+if (listed.length !== expectedRecipeCount) {
+  throw new Error(`Packaged catalog returned ${listed.length} recipes.`);
+}
 const shown = JSON.parse(
   runCli(entrypoint, ["show", "write-release-notes", "--json"], consumer),
 ) as {
@@ -917,7 +931,7 @@ const catalog = path.join(
 const validated = JSON.parse(
   runCli(entrypoint, ["validate", catalog, "--strict", "--json"], consumer),
 ) as { schema_version?: number; recipes?: number };
-if (validated.schema_version !== 1 || validated.recipes !== 20) {
+if (validated.schema_version !== 1 || validated.recipes !== expectedRecipeCount) {
   throw new Error("Packaged catalog strict validation failed.");
 }
 const packageRoot = path.dirname(catalog);
@@ -925,6 +939,11 @@ const packagedReadme = await readFile(path.join(packageRoot, "README.md"), "utf8
 const canonicalReadme = await readFile(path.join(repository, "README.md"), "utf8");
 if (packagedReadme !== canonicalReadme) {
   throw new Error("The packaged CLI README drifted from the repository README.");
+}
+const packagedPortugueseReadme = await readFile(path.join(packageRoot, "README.pt-BR.md"), "utf8");
+const canonicalPortugueseReadme = await readFile(path.join(repository, "README.pt-BR.md"), "utf8");
+if (packagedPortugueseReadme !== canonicalPortugueseReadme) {
+  throw new Error("The packaged Brazilian Portuguese README drifted from its canonical source.");
 }
 const documentedCommands = [
   "context",
@@ -955,6 +974,7 @@ if (!initHelp.includes("--wizard") || !packagedReadme.includes("awf init --wizar
 }
 await assertPackagedMarkdownLinks(packageRoot, [
   "README.md",
+  "README.pt-BR.md",
   "docs/guide/installation.md",
   "docs/guide/cli-reference.md",
   "docs/guide/output-contracts.md",

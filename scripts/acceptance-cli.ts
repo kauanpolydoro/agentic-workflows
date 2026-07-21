@@ -17,6 +17,9 @@ interface Result {
 }
 
 const cli = path.resolve("packages/cli/dist/index.js");
+const expectedRecipeCount = (
+  JSON.parse(await readFile(path.resolve("generated/catalog.json"), "utf8")) as unknown[]
+).length;
 const project = await realpath(
   await mkdtemp(path.join(os.tmpdir(), "awf acceptance path with spaces ")),
 );
@@ -463,7 +466,9 @@ if (
 }
 const recipes = JSON.parse(success(["list", "--json"]).stdout) as unknown[];
 parseCliOutput("catalog_list", recipes);
-if (recipes.length !== 20) throw new Error(`Expected 20 recipes, received ${recipes.length}.`);
+if (recipes.length !== expectedRecipeCount) {
+  throw new Error(`Expected ${expectedRecipeCount} recipes, received ${recipes.length}.`);
+}
 const documentationLocation = success(["show", "review-pull-request", "--location"]).stdout.trim();
 if (
   documentationLocation.startsWith("http") ||

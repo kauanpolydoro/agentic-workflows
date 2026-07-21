@@ -2,8 +2,9 @@
 
 ## Supported versions
 
-Before the first stable release, security fixes target the current `main` branch.
-Published support ranges will be added when versioned releases exist.
+Before version 1.0, security fixes target the current `main` branch and the latest published release when it is affected.
+Older pre-1.0 releases do not have a guaranteed support window.
+A stable version support policy will be defined before the first 1.0 release.
 
 ## Report a vulnerability
 

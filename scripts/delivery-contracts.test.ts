@@ -20,6 +20,35 @@ interface PackageMetadata {
   version?: unknown;
 }
 
+const completeValidationCommands = [
+  "pnpm generate:check",
+  "pnpm format:check",
+  "pnpm lint",
+  "pnpm typecheck",
+  "pnpm test",
+  "pnpm test:coverage",
+  "pnpm build",
+  "pnpm test:completion",
+  "pnpm test:automation",
+  "pnpm test:integration",
+  "pnpm test:acceptance",
+  "pnpm test:package",
+  "pnpm validate:recipes",
+  "pnpm validate:content",
+  "pnpm audit:similarity",
+  "pnpm test:fixtures",
+  "pnpm docs:build",
+  "pnpm check:links",
+  "pnpm check:clean",
+] as const;
+
+function markdownHeadings(content: string): string[] {
+  return content
+    .split("\n")
+    .filter((line) => /^## /.test(line))
+    .map((line) => line.slice(3));
+}
+
 async function packageMetadata(relative: string): Promise<PackageMetadata> {
   return JSON.parse(await text(relative)) as PackageMetadata;
 }
@@ -59,26 +88,7 @@ describe("delivery contracts", () => {
 
   it("documents the complete contributor validation suite", async () => {
     const contributing = await text("CONTRIBUTING.md");
-    for (const command of [
-      "pnpm generate:check",
-      "pnpm format:check",
-      "pnpm lint",
-      "pnpm typecheck",
-      "pnpm test",
-      "pnpm test:coverage",
-      "pnpm build",
-      "pnpm test:completion",
-      "pnpm test:integration",
-      "pnpm test:acceptance",
-      "pnpm test:package",
-      "pnpm validate:recipes",
-      "pnpm validate:content",
-      "pnpm audit:similarity",
-      "pnpm test:fixtures",
-      "pnpm docs:build",
-      "pnpm check:links",
-      "pnpm check:clean",
-    ]) {
+    for (const command of completeValidationCommands) {
       expect(contributing, `CONTRIBUTING.md omits ${command}`).toContain(command);
     }
   });
@@ -132,6 +142,7 @@ describe("delivery contracts", () => {
       "registry-url: https://registry.npmjs.org",
       "package-manager-cache: false",
       "publish-npm-tarball.ts",
+      "pnpm check:links:external",
       "sync-github-release.ts",
       "--notes-file",
     ]) {
@@ -140,6 +151,7 @@ describe("delivery contracts", () => {
     for (const requirement of [
       '"view"',
       '"dist.integrity"',
+      '"readme"',
       '"publish"',
       '"--access"',
       '"public"',
@@ -162,9 +174,13 @@ describe("delivery contracts", () => {
       workflow.indexOf("release-artifacts.ts prepare"),
     );
     expect(workflow).toContain("id-token: write");
+    expect(workflow.indexOf("pnpm check:links:external")).toBeLessThan(
+      workflow.indexOf("publish-npm-tarball.ts"),
+    );
     expect(workflow.indexOf("publish-npm-tarball.ts")).toBeLessThan(
       workflow.indexOf("sync-github-release.ts"),
     );
+    expect(workflow.match(/--readme/g)).toHaveLength(2);
   });
 
   it("keeps package versions, runtime floors, and project metadata consistent", async () => {
@@ -223,6 +239,186 @@ describe("delivery contracts", () => {
       expect(portuguese).not.toContain(untranslated);
     }
     expect(preview).not.toContain("Portable, testable");
+  });
+
+  it("documents a complete first-use journey in both landing pages", async () => {
+    const english = await text("README.md");
+    const portuguese = await text("README.pt-BR.md");
+    for (const readme of [english, portuguese]) {
+      for (const requirement of [
+        "npm install --global @kauanpolydoro/agentic-workflows",
+        "awf context",
+        "awf --version",
+        "awf init --agent codex",
+        "awf show review-pull-request",
+        "awf install review-pull-request --dry-run --show-content",
+        "awf install review-pull-request",
+        "awf status",
+        "$review-pull-request",
+        "/review-pull-request",
+        ".agentic-workflows/config.yml",
+        "awf --project-root <",
+        "awf init --force",
+        "awf update review-pull-request --dry-run --show-content",
+        "No files were changed.",
+        "Installed review-pull-request for codex:",
+        "Invoke explicitly with: $review-pull-request",
+        "healthy",
+      ]) {
+        expect(readme, `landing page omits ${requirement}`).toContain(requirement);
+      }
+      expect(
+        readme.indexOf("awf install review-pull-request --dry-run --show-content"),
+      ).toBeLessThan(readme.indexOf("awf install review-pull-request\n"));
+    }
+  });
+
+  it("keeps README operational claims aligned with source and release contracts", async () => {
+    const english = await text("README.md");
+    const portuguese = await text("README.pt-BR.md");
+    for (const readme of [english, portuguese]) {
+      expect(readme).toContain("pnpm --filter @kauanpolydoro/agentic-workflows pack");
+      expect(readme).toContain(".cursor/skills/<workflow-id>/SKILL.md");
+      expect(readme).toContain("@kauanpolydoro/agentic-workflows/output-contract");
+      expect(readme).toContain("not-applicable");
+    }
+    expect(english).toContain("active evidence");
+    expect(portuguese).toContain("evidência ativa");
+    expect(english).toContain("operating system's native document handler");
+    expect(portuguese).toContain("manipulador nativo de documentos do sistema operacional");
+    expect(english).not.toContain("tested browser opening");
+    expect(english).not.toContain("produced with `pnpm pack`");
+    expect(portuguese).not.toContain("produzido com `pnpm pack`");
+    expect(english).not.toContain("belongs to a different package");
+    expect(portuguese).not.toContain("pertence a outro pacote");
+    expect(await text("packages/cli/README.md")).toBe(english);
+    expect(await text("packages/cli/README.pt-BR.md")).toBe(portuguese);
+
+    const metadata = await packageMetadata("packages/cli/package.json");
+    expect(typeof metadata.version).toBe("string");
+    const exactPackage = `@kauanpolydoro/agentic-workflows@${String(metadata.version)}`;
+    expect(english).toContain(exactPackage);
+    expect(portuguese).toContain(exactPackage);
+
+    const recipeCount = (
+      await readdir(path.join(repository, "recipes"), { withFileTypes: true })
+    ).filter((entry) => entry.isDirectory()).length;
+    expect(english).toContain(`catalog of ${recipeCount} evidence-oriented workflow bundles`);
+    expect(portuguese).toContain(`catálogo com ${recipeCount} pacotes de fluxos`);
+  });
+
+  it("keeps the English and Portuguese landing pages equivalent in scope", async () => {
+    const english = await text("README.md");
+    const portuguese = await text("README.pt-BR.md");
+    const sectionPairs = [
+      ["## Why use it", "## Por que usar"],
+      ["## Quick start", "## Início rápido"],
+      ["## Choose an agent", "## Escolha um agente"],
+      ["## Try without a global installation", "## Experimente sem instalação global"],
+      ["## Featured workflows", "## Fluxos em destaque"],
+      ["## See a complete result", "## Veja um resultado completo"],
+      ["## How it works", "## Como funciona"],
+      ["## Safety and verification", "## Segurança e verificação"],
+      ["## CLI reference", "## Referência da CLI"],
+      ["## Develop and contribute", "## Desenvolvimento e contribuição"],
+      ["## Documentation map", "## Mapa da documentação"],
+      ["## Project status", "## Status do projeto"],
+    ] as const;
+    for (const [englishSection, portugueseSection] of sectionPairs) {
+      expect(english).toContain(englishSection);
+      expect(portuguese).toContain(portugueseSection);
+    }
+    expect(markdownHeadings(english)).toHaveLength(markdownHeadings(portuguese).length);
+    for (const command of [
+      "context",
+      "list",
+      "show",
+      "install",
+      "status",
+      "update",
+      "remove",
+      "validate",
+      "doctor",
+      "init",
+      "manifest",
+      "completion",
+    ]) {
+      expect(english).toContain(`awf ${command}`);
+      expect(portuguese).toContain(`awf ${command}`);
+    }
+    for (const command of completeValidationCommands) {
+      expect(english).toContain(command);
+      expect(portuguese).toContain(command);
+    }
+    for (const [englishClaim, portugueseClaim] of [
+      ["not an executable plugin", "não um plugin executável"],
+      ["never executes recipe instructions", "nunca executa as instruções das receitas"],
+      ["Generic Markdown has no agent command", "Markdown genérico não possui comando de agente"],
+      ["not active evidence", "não são evidências ativas"],
+      ["registry README bytes", "bytes do README no registro"],
+      ["only when a new package version", "só muda quando uma nova versão"],
+    ] as const) {
+      expect(english).toContain(englishClaim);
+      expect(portuguese).toContain(portugueseClaim);
+    }
+    for (const sharedDestination of [
+      "https://kauanpolydoro.github.io/agentic-workflows/catalog/write-release-notes#complete-example-input",
+      "https://kauanpolydoro.github.io/agentic-workflows/catalog/write-release-notes#complete-expected-output",
+      "https://kauanpolydoro.github.io/agentic-workflows/launch/reference-evaluations",
+    ]) {
+      expect(english).toContain(sharedDestination);
+      expect(portuguese).toContain(sharedDestination);
+    }
+  });
+
+  it("keeps linked onboarding guides on current recipe and pinning contracts", async () => {
+    const authoring = await text("docs/guide/authoring.md");
+    const installation = await text("docs/guide/installation.md");
+    const cliMetadata = await packageMetadata("packages/cli/package.json");
+    const exactPackage = `@kauanpolydoro/agentic-workflows@${String(cliMetadata.version)}`;
+    expect(authoring).toContain("schema version 3");
+    expect(authoring).not.toContain("schema version 2");
+    expect(installation).toContain(`npm install --save-dev --save-exact ${exactPackage}`);
+    expect(installation).toContain(`pnpm add --save-dev --save-exact ${exactPackage}`);
+    expect(installation).toContain("Commit the resulting package manifest and lockfile.");
+  });
+
+  it("uses the native document-handler contract consistently", async () => {
+    const cli = await text("packages/cli/src/index.ts");
+    const english = await text("README.md");
+    const reference = await text("docs/guide/cli-reference.md");
+    for (const document of [cli, english, reference]) {
+      expect(document).toMatch(/native (?:document )?handler/);
+    }
+    expect(cli).not.toContain("launch a browser");
+    expect(cli).not.toContain("page in a browser");
+  });
+
+  it("keeps historical adapter records separate from active compatibility claims", async () => {
+    const research = await text("docs/research/adapter-sources.md");
+    const compatibility = await text("docs/compatibility.md");
+    const recipeCount = (
+      await readdir(path.join(repository, "recipes"), { withFileTypes: true })
+    ).filter((entry) => entry.isDirectory()).length;
+    expect(research).toContain("They are not active evidence");
+    expect(research).toContain("review-pull-request-pre-history-reset.md");
+    expect(research).not.toContain("Separate retained records now establish");
+    for (const adapter of ["Claude Code", "OpenAI Codex"]) {
+      const researchRow = research
+        .split("\n")
+        .find(
+          (line) =>
+            line.startsWith(`| ${adapter} |`) &&
+            line.includes("| confirmed | implemented | passing |"),
+        );
+      const compatibilityRow = compatibility
+        .split("\n")
+        .find((line) => line.startsWith(`| ${adapter} |`));
+      expect(researchRow).toContain("| untested | untested | untested | untested |");
+      expect(compatibilityRow).toContain(
+        `| untested | 0/${recipeCount} | 0/${recipeCount} | 0/${recipeCount} | untested |`,
+      );
+    }
   });
 
   it("keeps the primary demonstration outcome-oriented without overstating execution", async () => {

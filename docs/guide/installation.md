@@ -124,7 +124,7 @@ npx --yes @kauanpolydoro/agentic-workflows@latest list
 bunx @kauanpolydoro/agentic-workflows list
 ```
 
-The unscoped `agentic-workflows` package on npm is unrelated, so keep `@kauanpolydoro/agentic-workflows` in package-runner commands.
+The unscoped `agentic-workflows` name does not identify this project, so keep `@kauanpolydoro/agentic-workflows` in package-runner commands.
 
 Package runners are useful for an occasional trial or an explicitly selected release.
 
@@ -138,14 +138,22 @@ GitHub source archives contain repository sources instead and require workspace 
 
 ## Pin a project or CI version
 
-Install the package as a development dependency when the repository or CI pipeline must control the exact CLI version:
+Install an explicit package version as a development dependency when the repository or CI pipeline must control the exact CLI version:
 
 ```bash
-npm install --save-dev @kauanpolydoro/agentic-workflows
+npm install --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.2.1
 npx awf list
 ```
 
-Commit the resulting package manifest and lockfile according to your project's dependency policy.
+The pnpm equivalent is:
+
+```bash
+pnpm add --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.2.1
+pnpm exec awf list
+```
+
+Commit the resulting package manifest and lockfile.
+The exact version in this guide is checked against the repository package version during release preparation.
 
 ## Troubleshoot installation
 

@@ -9,12 +9,14 @@ const packagedDocumentation = [
   "quality/recipe-quality-standard.md",
   "research/adapter-sources.md",
   "guide/contributing.md",
+  "guide/authoring.md",
   "guide/installation.md",
   "guide/cli-reference.md",
   "guide/output-contracts.md",
   "guide/verification.md",
   "guide/security.md",
   "decisions/0001-portable-core-and-data-only-recipes.md",
+  "public/terminal-demo.svg",
 ] as const;
 await rm(target, { recursive: true, force: true });
 await rm(documentationTarget, { recursive: true, force: true });
@@ -43,6 +45,10 @@ await writeFile(
 await writeFile(
   path.join(repository, "packages/cli/README.md"),
   await readFile(path.join(repository, "README.md"), "utf8"),
+);
+await writeFile(
+  path.join(repository, "packages/cli/README.pt-BR.md"),
+  await readFile(path.join(repository, "README.pt-BR.md"), "utf8"),
 );
 await writeFile(
   path.join(repository, "packages/cli/catalog.json"),
