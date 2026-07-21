@@ -39,7 +39,7 @@ describe("project-root discovery", () => {
     await expect(findProjectRoot(nested)).resolves.toBe(root);
   });
 
-  it("prefers the enclosing repository over a nested initialized project", async () => {
+  it("prefers a nested initialized project over an enclosing repository", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "awf-root-"));
     await mkdir(path.join(root, ".git"));
     const project = path.join(root, "nested");
@@ -47,7 +47,16 @@ describe("project-root discovery", () => {
     await mkdir(path.join(project, ".agentic-workflows"), { recursive: true });
     await mkdir(start);
     await writeFile(path.join(project, ".agentic-workflows", "config.yml"), "schema_version: 1\n");
-    await expect(findProjectRoot(start)).resolves.toBe(root);
+    await expect(findProjectContext(start)).resolves.toEqual({ root: project, source: "config" });
+  });
+
+  it("prefers an AWF configuration when it shares a root with Git", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "awf-root-"));
+    await mkdir(path.join(root, ".git"));
+    await mkdir(path.join(root, ".agentic-workflows"));
+    await writeFile(path.join(root, ".agentic-workflows", "config.yml"), "schema_version: 1\n");
+
+    await expect(findProjectContext(root)).resolves.toEqual({ root, source: "config" });
   });
 
   it("uses an initialized project when no repository marker exists", async () => {

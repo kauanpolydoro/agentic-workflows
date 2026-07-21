@@ -135,6 +135,8 @@ The CLI operates offline during normal use, has no telemetry, and does not execu
 It validates containment, symlink parents, overwrite intent, and managed-file hashes in tested local filesystem conditions.
 These controls are not a security boundary against a privileged process racing filesystem changes.
 
+Project-root detection prefers an explicit override, then the nearest initialized AWF project or Git boundary, so a configured nested project remains independent inside a monorepo.
+
 ## Verification without inflated claims
 
 The project separates four stages:

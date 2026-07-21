@@ -54,6 +54,10 @@ awf install review-pull-request
 awf validate . --strict
 ```
 
+Root detection prefers an explicit `--project-root`, then the nearest initialized AWF project or Git boundary, then a package root, and finally the invocation directory.
+
+A nested `.agentic-workflows/config.yml` therefore remains the selected project inside a larger Git monorepo.
+
 After installation, `awf` prints the generated entrypoint and the exact agent invocation when the selected adapter defines one.
 
 Use the manifest-backed lifecycle commands to inspect, update, or remove the bundle later:

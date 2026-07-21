@@ -31,6 +31,10 @@ awf status
 awf validate . --strict
 ```
 
+Project-root detection prefers an explicit `--project-root`, then the nearest initialized AWF project or Git boundary, then a package root, and finally the invocation directory.
+
+An AWF configuration nested inside a larger Git repository owns that nested project, and `awf context` shows the selected boundary before any write.
+
 `awf init` saves the default agent and target in `.agentic-workflows/config.yml` so later install commands do not need to repeat them.
 
 In an interactive terminal, you can run bare `awf init` and choose the agent and project-relative target from a short wizard.
@@ -121,6 +125,8 @@ The unscoped `agentic-workflows` package on npm is unrelated, so keep `@kauanpol
 Package runners are useful for an occasional trial or an explicitly selected release.
 
 The installed package bundles every version-matched workflow page, so `awf show <workflow-id> --location` returns a local Markdown file and `awf show <workflow-id> --open` does not depend on the documentation website.
+
+A source checkout reads the tracked `docs/catalog` page directly, while `pnpm build` prepares the same pages for package consumers.
 
 ## Pin a project or CI version
 

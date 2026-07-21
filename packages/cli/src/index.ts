@@ -398,9 +398,24 @@ async function openDocumentation(
 
 async function documentationLocation(id: string): Promise<string> {
   const localDocumentation = path.resolve(catalogRoot(), "..", "docs", "catalog", `${id}.md`);
-  return (await hasRegularFile(localDocumentation, "the local documentation page"))
-    ? localDocumentation
-    : `https://kauanpolydoro.github.io/agentic-workflows/catalog/${id}`;
+  if (await hasRegularFile(localDocumentation, "the packaged documentation page")) {
+    return localDocumentation;
+  }
+  const repositoryRoot = path.resolve(import.meta.dirname, "../../..");
+  const sourcePackageRoot = path.join(repositoryRoot, "packages", "cli");
+  const relativeCatalog = path.relative(sourcePackageRoot, catalogRoot());
+  const usesSourceCatalog =
+    relativeCatalog !== ".." &&
+    !relativeCatalog.startsWith(`..${path.sep}`) &&
+    !path.isAbsolute(relativeCatalog);
+  const sourceDocumentation = path.join(repositoryRoot, "docs", "catalog", `${id}.md`);
+  if (
+    usesSourceCatalog &&
+    (await hasRegularFile(sourceDocumentation, "the source documentation page"))
+  ) {
+    return sourceDocumentation;
+  }
+  return `https://kauanpolydoro.github.io/agentic-workflows/catalog/${id}`;
 }
 
 async function replaceConfiguration(destination: string, temporary: string): Promise<void> {

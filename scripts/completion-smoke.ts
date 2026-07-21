@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { rmSync } from "node:fs";
-import { chmod, mkdtemp, realpath, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, realpath, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import type { CompletionShell } from "../packages/cli/src/completion.js";
@@ -34,6 +34,8 @@ const workspace = await realpath(
 );
 const cleanup = () => rmSync(workspace, { recursive: true, force: true });
 process.once("exit", cleanup);
+await mkdir(path.join(workspace, "target-path"));
+await mkdir(path.join(workspace, "target directory"));
 
 const executable = path.join(workspace, process.platform === "win32" ? "awf.cmd" : "awf");
 await writeFile(
@@ -86,6 +88,16 @@ function assertCandidates(shell: CompletionShell, output: string): void {
   if (install?.includes("--category")) {
     throw new Error(`${shell} offered the list-only --category option to install.`);
   }
+  const directory = output.split(/\r?\n/).find((line) => line.startsWith("PATH:"));
+  if (!directory?.includes("target-path")) {
+    throw new Error(`${shell} completion omitted the directory candidate:\n${output}`);
+  }
+  const spacedDirectory = output.split(/\r?\n/).find((line) => line.startsWith("SPACED_PATH:"));
+  if (!spacedDirectory?.includes("target") || !spacedDirectory.includes("directory")) {
+    throw new Error(
+      `${shell} completion did not preserve a directory containing spaces:\n${output}`,
+    );
+  }
 }
 
 async function smoke(shell: CompletionShell): Promise<void> {
@@ -109,6 +121,10 @@ COMP_WORDS=(awf list --category co); COMP_CWORD=3; _awf_completion
 printf 'CATEGORY:%s\n' "\${COMPREPLY[*]}"
 COMP_WORDS=(awf install review-pull-request --); COMP_CWORD=3; _awf_completion
 printf 'INSTALL:%s\n' "\${COMPREPLY[*]}"
+COMP_WORDS=(awf init --target target-); COMP_CWORD=3; _awf_completion
+printf 'PATH:%s\n' "\${COMPREPLY[*]}"
+COMP_WORDS=(awf init --target 'target d'); COMP_CWORD=3; _awf_completion
+printf 'SPACED_PATH:%s\n' "\${COMPREPLY[*]}"
 `,
     );
     output = run("bash", ["--noprofile", "--norc", wrapper], environment);
@@ -119,7 +135,13 @@ printf 'INSTALL:%s\n' "\${COMPREPLY[*]}"
       `set -eu
 typeset -a CAPTURED
 compdef() { :; }
-_files() { CAPTURED=(__FILES__); }
+_directories() {
+  if [[ "\${words[CURRENT]}" == "target d" ]]; then
+    CAPTURED=('target directory/')
+  else
+    CAPTURED=(target-path/)
+  fi
+}
 compadd() {
   CAPTURED=()
   local candidate
@@ -136,6 +158,10 @@ words=(awf list --category co); CURRENT=4; _awf
 print -r -- "CATEGORY:\${(j: :)CAPTURED}"
 words=(awf install review-pull-request --); CURRENT=4; _awf
 print -r -- "INSTALL:\${(j: :)CAPTURED}"
+words=(awf init --target target-); CURRENT=4; _awf
+print -r -- "PATH:\${(j: :)CAPTURED}"
+words=(awf init --target 'target d'); CURRENT=4; _awf
+print -r -- "SPACED_PATH:\${(j: :)CAPTURED}"
 `,
     );
     output = run("zsh", ["-f", wrapper], environment);
@@ -151,6 +177,8 @@ printf 'OPTIONS:%s\\n' (complete_awf 'awf list --a')
 printf 'AGENT:%s\\n' (complete_awf 'awf list --agent co')
 printf 'CATEGORY:%s\\n' (complete_awf 'awf list --category co')
 printf 'INSTALL:%s\\n' (complete_awf 'awf install review-pull-request --')
+printf 'PATH:%s\\n' (complete_awf 'awf init --target target-')
+printf 'SPACED_PATH:%s\\n' (complete_awf 'awf init --target target\\ d')
 `,
     );
     output = run("fish", ["--no-config", wrapper], environment);
@@ -171,6 +199,8 @@ Write-Output "OPTIONS:$(Complete-Awf 'awf list --a')"
 Write-Output "AGENT:$(Complete-Awf 'awf list --agent co')"
 Write-Output "CATEGORY:$(Complete-Awf 'awf list --category co')"
 Write-Output "INSTALL:$(Complete-Awf 'awf install review-pull-request --')"
+Write-Output "PATH:$(Complete-Awf 'awf init --target target-')"
+Write-Output "SPACED_PATH:$((_awfCompleteDirectory 'target d' | ForEach-Object { $_.CompletionText }) -join ' ')"
 `,
     );
     output = run("pwsh", ["-NoLogo", "-NoProfile", "-File", wrapper], environment);

@@ -149,8 +149,11 @@ _awf_completion() {
   done
 
   case "$command:$previous" in
-    *:--project-root|install:--target|update:--target|remove:--target|status:--target|init:--target)
-      compopt -o default 2>/dev/null
+    *:--project-root|install:--target|update:--target|remove:--target|status:--target|init:--target|manifest:--target)
+      while IFS= read -r candidate; do
+        COMPREPLY+=("$candidate")
+      done < <(compgen -d -- "$current")
+      compopt -o filenames 2>/dev/null || true
       return ;;
     list:--agent|show:--agent|install:--agent|init:--agent)
       COMPREPLY=( $(compgen -W "${agentIds.join(" ")}" -- "$current") ); return ;;
@@ -217,8 +220,8 @@ _awf() {
   previous="\${words[CURRENT-1]}"
 
   case "$command:$previous" in
-    *:--project-root|install:--target|update:--target|remove:--target|status:--target|init:--target)
-      _files
+    *:--project-root|install:--target|update:--target|remove:--target|status:--target|init:--target|manifest:--target)
+      _directories
       return ;;
     list:--agent|show:--agent|install:--agent|init:--agent)
       compadd -- $agents
@@ -291,7 +294,9 @@ function fishOption(
                 ? verificationStatuses
                 : null;
   if (choices) parts.push(`-xa '${choices.join(" ")}'`);
-  else if (["--target", "--project-root"].includes(option)) parts.push("-r");
+  else if (["--target", "--project-root"].includes(option)) {
+    parts.push("-r", "-a '(__fish_complete_directories)'");
+  }
   return parts.join(" ");
 }
 
@@ -308,7 +313,7 @@ function fishCompletion(data: CompletionData): string {
     lines.push(
       `complete -c ${executable} -n '__fish_seen_subcommand_from ${workflowCommands.join(" ")}' -a '${data.workflows.join(" ")}'`,
       `complete -c ${executable} -n '__fish_seen_subcommand_from completion' -a '${completionShells.join(" ")}'`,
-      `complete -c ${executable} -l project-root -r`,
+      `complete -c ${executable} -l project-root -r -a '(__fish_complete_directories)'`,
       `complete -c ${executable} -l help`,
       `complete -c ${executable} -l version`,
     );
@@ -321,6 +326,32 @@ function powerShellCompletion(data: CompletionData): string {
     .map((command) => `    '${command}' = @('${completionCommandOptions[command].join("','")}')`)
     .join("\n");
   return `# PowerShell completion for awf
+function _awfCompleteDirectory([string]$prefix) {
+  $lastSeparator = [Math]::Max($prefix.LastIndexOf('/'), $prefix.LastIndexOf('\\'))
+  $typedParent = if ($lastSeparator -ge 0) { $prefix.Substring(0, $lastSeparator + 1) } else { '' }
+  $leaf = if ($lastSeparator -ge 0) { $prefix.Substring($lastSeparator + 1) } else { $prefix }
+  $searchParent = if ($typedParent) { $typedParent } else { '.' }
+  $separator = [IO.Path]::DirectorySeparatorChar
+
+  Get-ChildItem -LiteralPath $searchParent -Directory -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -like "$leaf*" } |
+    Sort-Object Name |
+    ForEach-Object {
+      $candidate = "$typedParent$($_.Name)$separator"
+      $completionText = if ($candidate.Contains(' ')) {
+        "'$($candidate.Replace("'", "''"))'"
+      } else {
+        $candidate
+      }
+      [System.Management.Automation.CompletionResult]::new(
+        $completionText,
+        $candidate,
+        'ProviderContainer',
+        $_.FullName
+      )
+    }
+}
+
 $awfCompleter = {
   param($wordToComplete, $commandAst, $cursorPosition)
   $tokens = @($commandAst.CommandElements | ForEach-Object { $_.Extent.Text })
@@ -337,8 +368,13 @@ ${commandOptions}
   $command = $tokens | Where-Object { $commands -contains $_ } | Select-Object -First 1
   $commandIndex = if ($command) { [Array]::IndexOf($tokens, $command) } else { -1 }
   $previous = if ($tokens.Count -gt 1) { $tokens[-2] } else { '' }
+  $targetCommands = @('install','update','remove','status','init','manifest')
+  $completesDirectory =
+    $previous -eq '--project-root' -or
+    ($previous -eq '--target' -and $targetCommands -contains $command)
 
-  if (-not $command) { $candidates = $commands + $globalOptions }
+  if ($completesDirectory) { return @(_awfCompleteDirectory $wordToComplete) }
+  elseif (-not $command) { $candidates = $commands + $globalOptions }
   elseif ($previous -eq '--agent') { $candidates = $agents }
   elseif ($command -eq 'list' -and $previous -eq '--category') { $candidates = $categories }
   elseif ($command -eq 'list' -and $previous -eq '--tag') { $candidates = $tags }

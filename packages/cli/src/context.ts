@@ -25,9 +25,11 @@ export interface ProjectContext {
 
 const projectRootSourceReasons: Record<ProjectRootSource, string> = {
   explicit: "Selected by the explicit --project-root option.",
-  git: "Selected by the nearest enclosing .git marker.",
-  config: "Selected by the nearest enclosing .agentic-workflows/config.yml file.",
-  package: "Selected by the nearest enclosing package.json file.",
+  git: "Selected by the nearest enclosing .git marker because no nearer AWF configuration exists.",
+  config:
+    "Selected by the nearest enclosing .agentic-workflows/config.yml file before an outer Git marker.",
+  package:
+    "Selected by the nearest enclosing package.json file because no AWF configuration or Git marker exists.",
   cwd: "No enclosing Git, AWF configuration, or package marker was found, so the invocation directory was selected.",
 };
 
@@ -53,19 +55,17 @@ export async function findProjectContext(
   }
   const initial = path.resolve(start);
   let current = initial;
-  let nearestConfig: string | null = null;
   let nearestPackage: string | null = null;
   while (true) {
-    if (await exists(path.join(current, ".git"))) return { root: current, source: "git" };
-    if (!nearestConfig && (await exists(path.join(current, ".agentic-workflows", "config.yml")))) {
-      nearestConfig = current;
+    if (await exists(path.join(current, ".agentic-workflows", "config.yml"))) {
+      return { root: current, source: "config" };
     }
+    if (await exists(path.join(current, ".git"))) return { root: current, source: "git" };
     if (!nearestPackage && (await exists(path.join(current, "package.json")))) {
       nearestPackage = current;
     }
     const parent = path.dirname(current);
     if (parent === current) {
-      if (nearestConfig) return { root: nearestConfig, source: "config" };
       if (options.allowPackageRoot && nearestPackage) {
         return { root: nearestPackage, source: "package" };
       }

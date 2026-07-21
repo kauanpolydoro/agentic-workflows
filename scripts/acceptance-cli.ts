@@ -237,6 +237,67 @@ exit [lindex $child 3]
   }
 }
 
+async function verifyNestedProjectRootPrecedence(): Promise<void> {
+  const monorepo = path.join(project, "root precedence monorepo");
+  const nestedProject = path.join(monorepo, "packages", "nested project");
+  const nestedSource = path.join(nestedProject, "src");
+  await mkdir(path.join(monorepo, ".git"), { recursive: true });
+  await mkdir(path.join(nestedProject, ".agentic-workflows"), { recursive: true });
+  await mkdir(nestedSource);
+  await writeFile(
+    path.join(nestedProject, ".agentic-workflows", "config.yml"),
+    "schema_version: 1\ndefault_agent: generic\ndefault_target: .\n",
+  );
+
+  const discovered = spawnSync(process.execPath, [cli, "context", "--json"], {
+    cwd: nestedSource,
+    encoding: "utf8",
+    env: process.env,
+  });
+  if (discovered.status !== 0 || discovered.stderr !== "") {
+    throw new Error(
+      `Nested project-root discovery failed.\nstdout:\n${discovered.stdout}\nstderr:\n${discovered.stderr}`,
+    );
+  }
+  const discoveredContext = JSON.parse(discovered.stdout) as {
+    project_root?: string;
+    selection_source?: string;
+  };
+  parseCliOutput("context", discoveredContext);
+  if (
+    discoveredContext.project_root !== (await realpath(nestedProject)) ||
+    discoveredContext.selection_source !== "config"
+  ) {
+    throw new Error("A nested initialized AWF project did not win over its enclosing Git root.");
+  }
+
+  const explicit = spawnSync(
+    process.execPath,
+    [cli, "--project-root", monorepo, "context", "--json"],
+    {
+      cwd: nestedSource,
+      encoding: "utf8",
+      env: process.env,
+    },
+  );
+  if (explicit.status !== 0 || explicit.stderr !== "") {
+    throw new Error(
+      `Explicit project-root override failed.\nstdout:\n${explicit.stdout}\nstderr:\n${explicit.stderr}`,
+    );
+  }
+  const explicitContext = JSON.parse(explicit.stdout) as {
+    project_root?: string;
+    selection_source?: string;
+  };
+  parseCliOutput("context", explicitContext);
+  if (
+    explicitContext.project_root !== (await realpath(monorepo)) ||
+    explicitContext.selection_source !== "explicit"
+  ) {
+    throw new Error("An explicit project root did not override nested auto-detection.");
+  }
+}
+
 const firstRun = success([]);
 if (
   !firstRun.stdout.includes("Usage: awf [options] [command]") ||
@@ -246,6 +307,7 @@ if (
   throw new Error("Empty invocation did not return clean, actionable first-run help.");
 }
 await verifyInteractiveWizardInPty();
+await verifyNestedProjectRootPrecedence();
 const context = JSON.parse(success(["context", "--json"]).stdout) as {
   schema_version?: number;
   selection_source?: string;

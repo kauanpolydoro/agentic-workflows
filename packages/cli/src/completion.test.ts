@@ -47,6 +47,13 @@ describe("shell completion", () => {
     expect(renderCompletion("zsh", catalog)).toContain("#compdef awf agentic-workflows");
   });
 
+  it("uses native directory completion for every supported shell", () => {
+    expect(renderCompletion("bash", catalog)).toContain("compgen -d");
+    expect(renderCompletion("zsh", catalog)).toContain("_directories");
+    expect(renderCompletion("fish", catalog)).toContain("__fish_complete_directories");
+    expect(renderCompletion("pwsh", catalog)).toContain("Get-ChildItem -LiteralPath");
+  });
+
   it("keeps command-specific completion options synchronized with Commander", () => {
     const program = createProgram({ interactive: false });
     for (const command of program.commands) {

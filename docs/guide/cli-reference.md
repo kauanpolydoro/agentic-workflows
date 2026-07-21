@@ -6,7 +6,7 @@ It reads the bundled catalog and writes only inside the detected or explicit pro
 
 Run `awf` without arguments for actionable help, or run `awf <command> --help` for every option accepted by one command.
 
-Use the global `--project-root <directory>` option when auto-detection should not select the nearest Git repository, initialized AWF project, or package root.
+Use the global `--project-root <directory>` option when auto-detection should not select an initialized AWF project, Git repository, or package root.
 
 ## Exit codes
 
@@ -38,6 +38,19 @@ Use `--json` for stable `schema_version`, `project_root`, `selection_source`, `p
 
 This command is the recommended preflight when a script or nested workspace must audit root selection before another command runs.
 
+Auto-detection uses the following precedence:
+
+| Order | Boundary | Behavior |
+| --- | --- | --- |
+| 1 | `--project-root <directory>` | An explicit real directory always wins. |
+| 2 | Nearest AWF configuration or Git marker | The CLI walks upward and stops at the first directory containing either boundary; `.agentic-workflows/config.yml` wins when both exist in that directory. |
+| 3 | Nearest `package.json` | A package root is used only when no AWF configuration or Git marker encloses the invocation. |
+| 4 | Invocation directory | The current directory is the explicit fallback when no marker exists. |
+
+An initialized nested project therefore remains independent inside a larger Git monorepo.
+
+Use `awf context --json` before automation or pass `--project-root` when the caller must make that choice explicit.
+
 ## `awf list`
 
 Print the catalog.
@@ -66,7 +79,9 @@ Use `--raw` for the canonical workflow Markdown or `--json` for complete structu
 
 Use `--location` to print the version-matched local catalog page without launching another process.
 
-The npm package and source checkout both include these pages, while the public catalog URL remains a fallback only when a local page is unavailable.
+The source checkout reads the tracked page under `docs/catalog`, and `pnpm build` copies the same page into the npm package.
+
+The public catalog URL remains a fallback only when neither local source nor packaged documentation is available.
 
 Use `--open` to open that local page with the operating system's native document handler.
 
@@ -84,7 +99,7 @@ An unknown workflow ID reports nearby IDs when a reliable match exists.
 
 Generate and copy a complete workflow bundle into a project.
 
-`--agent` selects the destination format, and `--target` selects a directory inside the project root.
+`--agent` selects the destination format, and `--target` selects a project-root-relative directory inside the root reported by `awf context`.
 
 `--dry-run` prints create, replace, unchanged, retire, modified, and missing file sets without changing the target.
 
