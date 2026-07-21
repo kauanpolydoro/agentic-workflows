@@ -9,7 +9,12 @@ function quoteWindowsCommandArgument(value: string): string {
   return /[\s"&|<>^()%!]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
 }
 
-function run(command: string, args: string[], cwd: string): string {
+function run(
+  command: string,
+  args: string[],
+  cwd: string,
+  environment: NodeJS.ProcessEnv = process.env,
+): string {
   const requiresCommandProcessor = process.platform === "win32" && command !== process.execPath;
   const executable = requiresCommandProcessor ? (process.env.ComSpec ?? "cmd.exe") : command;
   const executableArguments = requiresCommandProcessor
@@ -18,7 +23,7 @@ function run(command: string, args: string[], cwd: string): string {
   const result = spawnSync(executable, executableArguments, {
     cwd,
     encoding: "utf8",
-    env: { ...process.env, NO_COLOR: "1" },
+    env: { ...environment, NO_COLOR: "1" },
     shell: false,
     windowsVerbatimArguments: requiresCommandProcessor,
   });
@@ -409,25 +414,43 @@ if (npxVersion !== rootPackage.version) {
   throw new Error(`npx reported ${npxVersion}, expected ${rootPackage.version}.`);
 }
 const scopedPackage = `@kauanpolydoro/agentic-workflows@${rootPackage.version}`;
+const packageRunnerCache = path.join(workspace, "empty package runner cache");
+await mkdir(packageRunnerCache);
+// The consumer contains only the local tarballs. An empty cache and unreachable registry make
+// accidental cache or registry resolution fail while still exercising each package runner.
+const packageRunnerEnvironment = { ...process.env };
+for (const key of Object.keys(packageRunnerEnvironment)) {
+  if (["npm_config_cache", "npm_config_registry"].includes(key.toLowerCase())) {
+    delete packageRunnerEnvironment[key];
+  }
+}
+packageRunnerEnvironment.NPM_CONFIG_CACHE = packageRunnerCache;
+packageRunnerEnvironment.NPM_CONFIG_REGISTRY = "http://127.0.0.1:9";
 assertCatalogOutput(
-  "npx scoped package execution",
-  run("npx", ["--yes", "--offline", scopedPackage, "list", "--json"], consumer),
+  "npx execution from the locally installed tarball",
+  run("npx", ["--no-install", scopedPackage, "list", "--json"], consumer, packageRunnerEnvironment),
   20,
 );
 assertCatalogOutput(
-  "npm exec package selection",
+  "npm exec selection from the locally installed tarball",
   run(
     "npm",
-    ["exec", "--yes", "--offline", `--package=${scopedPackage}`, "--", "awf", "list", "--json"],
+    ["exec", "--offline", `--package=${scopedPackage}`, "--", "awf", "list", "--json"],
     consumer,
+    packageRunnerEnvironment,
   ),
   20,
 );
 const testedPackageRunners = ["npx", "npm exec"];
 if (process.env.AWF_TEST_BUNX === "1") {
   assertCatalogOutput(
-    "bunx scoped package execution",
-    run("bunx", ["@kauanpolydoro/agentic-workflows", "list", "--json"], consumer),
+    "bunx execution from the locally installed tarball",
+    run(
+      "bunx",
+      ["--no-install", "@kauanpolydoro/agentic-workflows", "list", "--json"],
+      consumer,
+      packageRunnerEnvironment,
+    ),
     20,
   );
   testedPackageRunners.push("bunx");
@@ -935,7 +958,7 @@ await assertMissing(
 );
 
 process.stdout.write(
-  `Package smoke test passed for ${listed.length} bundled recipes, ${testedPackageRunners.join(", ")}, shell completion, and the install lifecycle.\n`,
+  `Package smoke test passed for ${listed.length} bundled recipes, local-tarball execution through ${testedPackageRunners.join(", ")}, shell completion, and the install lifecycle.\n`,
 );
 cleanup();
 process.removeListener("exit", cleanup);
