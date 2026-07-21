@@ -15,8 +15,8 @@ Use the global `--project-root <directory>` option when auto-detection should no
 | `0` | The command completed normally. | Help, an empty filtered list, no installed workflows, a healthy status, or diagnostics containing warnings but no failures. |
 | `1` | The command completed with an unhealthy report or encountered an operational or validation failure. | Drifted or invalid installations, failed doctor checks, unsafe paths, conflicts, missing workflows, or strict validation issues. |
 | `2` | The command line is malformed or combines incompatible modes. | Unknown options, missing arguments, invalid option values, a status filter without `--agent`, or `--show-content` without `--dry-run`. |
-| `130` | `SIGINT` requested safe cancellation. | Usually produced by `Ctrl+C`. |
-| `143` | `SIGTERM` requested safe cancellation. | Usually produced by a process supervisor. |
+| `130` | `SIGINT` requested safe cancellation on POSIX systems. | Usually produced by `Ctrl+C`. |
+| `143` | `SIGTERM` requested safe cancellation on POSIX systems. | Usually produced by a process supervisor. |
 
 `awf status --json` and `awf doctor --json` are report commands.
 
@@ -27,6 +27,10 @@ Warnings alone do not make `doctor` fail.
 Other failed JSON operations write one versioned error object to stderr and leave stdout empty.
 
 Automation should inspect both the exit code and the documented stream before choosing the corresponding output schema.
+
+Windows forced termination does not expose the same portable POSIX signal result.
+
+The Windows acceptance contract therefore verifies filesystem safety by terminating guided initialization before selection and asserting that no partial configuration exists.
 
 ## `awf context`
 
@@ -181,6 +185,8 @@ Use `--json` for a structured success result or a structured error with issue co
 
 Run consumer health checks for Node compatibility, configuration, project root, target write access, catalog integrity, generated artifacts, installation integrity, lifecycle locks, and known agent commands.
 
+The diagnostic also inspects `.agentic-workflows/transactions` for staged lifecycle state left by an abnormal process exit.
+
 The target write check creates a unique temporary probe and removes it immediately.
 
 Missing Corepack or pnpm is a warning for npm package consumers.
@@ -201,6 +207,12 @@ The CLI never removes a lock automatically; confirm that the recorded process is
 
 Human lifecycle-conflict errors show the sanitized PID and acquisition time, then direct the user to verify both before removing the lock and rerunning `awf doctor`.
 
+The CLI also never removes staged transaction state automatically.
+
+If `lifecycle-transactions` fails, first confirm that no lifecycle process owns the target and preserve any state needed for recovery.
+
+Then run `awf status` and `awf validate <target> --strict`, reconcile managed files, remove only transaction directories proven abandoned, and rerun `awf doctor`.
+
 Finding an agent command on `PATH` does not establish workflow execution or outcome evidence.
 
 ## `awf init`
@@ -209,7 +221,11 @@ Create `.agentic-workflows/config.yml` with a default agent and target.
 
 Running bare `awf init` in an interactive terminal starts a short agent and target wizard.
 
+Use `awf init --wizard` to request that guided flow explicitly when standard input is redirected or a host cannot report an interactive terminal.
+
 Non-interactive execution keeps deterministic defaults of `generic` and `.`, and providing `--agent`, `--target`, or `--no-interactive` skips the wizard.
+
+`--wizard` is intentionally incompatible with `--json`, `--no-interactive`, `--agent`, and `--target`, while `--force` remains available for an explicitly reviewed configuration replacement.
 
 `--json` also skips the wizard and returns a versioned result with the selected project context, configuration path, defaults, and whether an existing file was replaced.
 
@@ -263,7 +279,7 @@ Every JSON error contains `error`, `message`, a stable `code`, `command`, `retry
 
 `details.help_command` provides an offline command-specific reference, while `help_url` points to the matching published section.
 
-SIGINT and SIGTERM use exit codes `130` and `143` after safe cancellation.
+On POSIX systems, SIGINT and SIGTERM use exit codes `130` and `143` after safe cancellation.
 
 When `--json` is active, interruption emits one `INTERRUPTED` error object to stderr and leaves stdout empty.
 

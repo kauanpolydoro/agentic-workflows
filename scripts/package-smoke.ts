@@ -744,6 +744,47 @@ if (
   throw new Error("The packaged CLI omitted actionable human lifecycle-lock recovery.");
 }
 rmSync(lifecycleLock);
+const abandonedTransaction = path.join(
+  targetRoot,
+  ".agentic-workflows",
+  "transactions",
+  "abandoned-package-transaction",
+);
+await mkdir(abandonedTransaction, { recursive: true });
+await writeFile(path.join(abandonedTransaction, "0.staged"), "retained package recovery state\n");
+const transactionDiagnostics = runCliFailure(entrypoint, ["doctor", "--json"], consumer);
+if (transactionDiagnostics.stderr !== "") {
+  throw new Error("Unhealthy packaged diagnostics wrote outside their JSON stdout contract.");
+}
+const transactionReport = JSON.parse(transactionDiagnostics.stdout) as {
+  status?: string;
+  checks?: Array<{
+    check?: string;
+    status?: string;
+    data?: { count?: number; entries?: string[] };
+  }>;
+};
+const transactionCheck = transactionReport.checks?.find(
+  (check) => check.check === "lifecycle-transactions",
+);
+if (
+  transactionReport.status !== "fail" ||
+  transactionCheck?.status !== "fail" ||
+  transactionCheck.data?.count !== 1 ||
+  !transactionCheck.data.entries?.includes("abandoned-package-transaction") ||
+  !(await readFile(path.join(abandonedTransaction, "0.staged"), "utf8")).includes(
+    "retained package recovery state",
+  )
+) {
+  throw new Error("The packaged CLI did not retain and diagnose abandoned transaction state.");
+}
+rmSync(path.dirname(abandonedTransaction), { recursive: true });
+const recoveredDiagnostics = JSON.parse(runCli(entrypoint, ["doctor", "--json"], consumer)) as {
+  status?: string;
+};
+if (recoveredDiagnostics.status !== "pass") {
+  throw new Error("Packaged diagnostics did not recover after exact transaction cleanup.");
+}
 failureCode(
   runCliFailure(entrypoint, ["status", "review-pull-request", "--json"], consumer),
   "NOT_FOUND",
@@ -867,6 +908,34 @@ if (validated.schema_version !== 1 || validated.recipes !== 20) {
   throw new Error("Packaged catalog strict validation failed.");
 }
 const packageRoot = path.dirname(catalog);
+const packagedReadme = await readFile(path.join(packageRoot, "README.md"), "utf8");
+const documentedCommands = [
+  "context",
+  "list",
+  "show",
+  "install",
+  "update",
+  "remove",
+  "status",
+  "validate",
+  "doctor",
+  "init",
+  "manifest",
+  "completion",
+] as const;
+for (const command of documentedCommands) {
+  if (!packagedReadme.includes(`awf ${command}`)) {
+    throw new Error(`The package README omitted the public awf ${command} command.`);
+  }
+  const help = runCli(entrypoint, [command, "--help"], consumer);
+  if (!help.includes(`Usage: awf ${command}`)) {
+    throw new Error(`The packed CLI help drifted from the documented awf ${command} command.`);
+  }
+}
+const initHelp = runCli(entrypoint, ["init", "--help"], consumer);
+if (!initHelp.includes("--wizard") || !packagedReadme.includes("awf init --wizard")) {
+  throw new Error("The explicit init wizard is missing from packed help or package documentation.");
+}
 await assertPackagedMarkdownLinks(packageRoot, [
   "README.md",
   "docs/guide/installation.md",

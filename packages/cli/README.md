@@ -4,6 +4,8 @@
 
 Node.js 22 or newer is required.
 
+[Leia a introdução em português brasileiro](https://github.com/kauanpolydoro/agentic-workflows/blob/main/README.pt-BR.md).
+
 ## Install once
 
 Install the public package globally to make the short `awf` command available in every project:
@@ -24,9 +26,29 @@ The generated completion is command-specific and completes workflow IDs, agents,
 
 Run `awf completion <shell> --install-instructions` for persistent profile setup that does not modify the profile automatically.
 
-Run bare `awf init` in an interactive terminal for a guided agent and target setup, or pass `--agent`, `--target`, or `--no-interactive` to keep automation non-interactive.
+Run bare `awf init` in an interactive terminal for a guided agent and target setup.
+
+Run `awf init --wizard` when standard input is redirected or the host cannot report an interactive terminal but a person still wants the guided prompts.
+
+Pass `--agent`, `--target`, or `--no-interactive` to keep automation non-interactive.
+
+`--wizard` cannot be combined with `--json`, `--no-interactive`, `--agent`, or `--target`.
 
 Add `--json` to initialization for a versioned machine result that also records how the project root was selected.
+
+## Choose the next command
+
+| Need | Command | Writes project files |
+| --- | --- | --- |
+| See the available commands | `awf` | No |
+| Audit which project root will be used | `awf context` | No |
+| Choose project defaults with prompts | `awf init` | Configuration only |
+| Configure project defaults in automation | `awf init --no-interactive --agent <agent> --target <directory>` | Configuration only |
+| Find or inspect a workflow | `awf list` or `awf show <workflow-id>` | No |
+| Review an exact installation plan | `awf install <workflow-id> --dry-run --show-content` | No |
+| Apply a reviewed installation | `awf install <workflow-id>` | Yes |
+| Inspect drift or interrupted lifecycle state | `awf status` and `awf doctor` | Only a temporary doctor probe |
+| Consume a stable machine contract | Add `--json` and validate with the output-contract export | Depends on the command |
 
 ## Complete first workflow
 
@@ -121,7 +143,9 @@ Use a Node.js version manager, a user-owned npm prefix, or a one-off package env
 npm exec --yes --package=@kauanpolydoro/agentic-workflows@latest -- awf doctor
 ```
 
-The tarball produced by this source revision includes `docs/guide/installation.md`, `docs/guide/cli-reference.md`, `docs/guide/output-contracts.md`, and every `docs/catalog/<workflow-id>.md` page for version-matched offline reference.
+The npm package archive produced by `pnpm --filter @kauanpolydoro/agentic-workflows pack` includes compiled `dist` files, the catalog, `docs/guide/installation.md`, `docs/guide/cli-reference.md`, `docs/guide/output-contracts.md`, and every `docs/catalog/<workflow-id>.md` page for version-matched offline reference.
+
+GitHub source archives are source snapshots, not npm package archives, and require workspace dependency installation plus a build before the CLI can run.
 
 Use `awf show <workflow-id> --location` to print the bundled page path or `awf show <workflow-id> --open` to open it locally.
 
@@ -143,9 +167,17 @@ Every error also prints an offline `awf <command> --help` path and retains the m
 
 If a lifecycle lock blocks an operation, human output identifies the recorded PID and acquisition time without exposing the ownership token, then explains how to verify staleness before manual removal.
 
+`awf doctor` also reports staged transaction directories left by an abnormal process exit and never removes that recovery state automatically.
+
+Confirm that no lifecycle process owns the target, preserve any state needed for recovery, run `awf status` and `awf validate <target> --strict`, reconcile managed files, remove only the exact directories proven abandoned, and rerun `awf doctor`.
+
 SIGINT and SIGTERM preserve the selected output mode after safe cancellation.
 
 Human commands receive a coded recovery message, while commands using `--json` receive one versioned `INTERRUPTED` object on stderr and leave stdout empty.
+
+POSIX signal exit codes are `130` for SIGINT and `143` for SIGTERM.
+
+Windows forced termination has platform-defined process status, so acceptance verifies the safety invariant instead: terminating the explicit wizard before selection leaves no partial configuration.
 
 Node.js automation can validate the published versioned records with the public subpath export:
 

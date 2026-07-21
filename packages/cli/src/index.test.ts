@@ -603,6 +603,36 @@ describe.sequential("CLI command contracts", () => {
     );
     expect(wizard).not.toHaveBeenCalled();
 
+    wizard.mockClear();
+    stdout = "";
+    await createProgram({ interactive: false, initWizard: wizard }).parseAsync(
+      ["init", "--force", "--wizard"],
+      { from: "user" },
+    );
+    expect(wizard).toHaveBeenCalledOnce();
+    expect(
+      parse(await readFile(path.join(project, ".agentic-workflows/config.yml"), "utf8")),
+    ).toMatchObject({ default_agent: "codex", default_target: "guided target" });
+
+    for (const conflicting of [
+      ["--json"],
+      ["--no-interactive"],
+      ["--agent", "codex"],
+      ["--target", "managed"],
+    ]) {
+      await expect(
+        createProgram({ interactive: false, initWizard: wizard }).parseAsync(
+          ["init", "--force", "--wizard", ...conflicting],
+          { from: "user" },
+        ),
+      ).rejects.toMatchObject({
+        code: "awf.conflictingInitialization",
+        exitCode: 2,
+      });
+    }
+    expect(wizard).toHaveBeenCalledOnce();
+
+    wizard.mockClear();
     stdout = "";
     await createProgram({ interactive: true, initWizard: wizard }).parseAsync(
       ["init", "--force", "--json", "--agent", "codex", "--target", "machine target"],
@@ -1084,6 +1114,47 @@ describe.sequential("CLI command contracts", () => {
     expect(stdout).not.toContain("must-not-leak");
   });
 
+  it("reports abandoned lifecycle transactions without deleting recovery state", async () => {
+    await run("init");
+    const transaction = path.join(
+      project,
+      ".agentic-workflows",
+      "transactions",
+      "abandoned-transaction",
+    );
+    await mkdir(transaction, { recursive: true });
+    await writeFile(path.join(transaction, "0.staged"), "retained recovery state\n");
+    stdout = "";
+    process.exitCode = undefined;
+
+    await run("--project-root", project, "doctor", "--json");
+
+    const result = JSON.parse(stdout) as {
+      checks: Array<{
+        check: string;
+        status: string;
+        remediation?: string;
+        data?: Record<string, unknown>;
+      }>;
+    };
+    expect(result.checks).toContainEqual(
+      expect.objectContaining({
+        check: "lifecycle-transactions",
+        status: "fail",
+        remediation: expect.stringContaining("remove only verified abandoned transaction"),
+        data: {
+          path: path.dirname(transaction),
+          count: 1,
+          entries: ["abandoned-transaction"],
+        },
+      }),
+    );
+    await expect(readFile(path.join(transaction, "0.staged"), "utf8")).resolves.toBe(
+      "retained recovery state\n",
+    );
+    expect(process.exitCode).toBe(1);
+  });
+
   it("keeps doctor structured when configuration prevents safe target resolution", async () => {
     const configurationDirectory = path.join(project, ".agentic-workflows");
     await mkdir(configurationDirectory);
@@ -1107,6 +1178,7 @@ describe.sequential("CLI command contracts", () => {
         expect.objectContaining({ check: "default-target", status: "fail" }),
         expect.objectContaining({ check: "target-writable", status: "fail" }),
         expect.objectContaining({ check: "lifecycle-lock", status: "fail" }),
+        expect.objectContaining({ check: "lifecycle-transactions", status: "fail" }),
         expect.objectContaining({ check: "installations", status: "fail" }),
       ]),
     );
@@ -1131,6 +1203,7 @@ describe.sequential("CLI command contracts", () => {
         expect.objectContaining({ check: "default-target", status: "warn" }),
         expect.objectContaining({ check: "target-writable", status: "warn" }),
         expect.objectContaining({ check: "lifecycle-lock", status: "pass" }),
+        expect.objectContaining({ check: "lifecycle-transactions", status: "pass" }),
         expect.objectContaining({ check: "installations", status: "pass" }),
       ]),
     );

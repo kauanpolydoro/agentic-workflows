@@ -16,9 +16,11 @@ An operational, validation, or syntax failure represented by the error schema wr
 
 Exit code `0` means normal completion, `1` means an unhealthy report or an operational or validation failure, and `2` means invalid command syntax.
 
-An interrupted process uses `130` for `SIGINT` and `143` for `SIGTERM` after requesting safe cancellation of the active operation.
+On POSIX systems, an interrupted process uses `130` for `SIGINT` and `143` for `SIGTERM` after requesting safe cancellation of the active operation.
 
 An interrupted JSON command writes one versioned `INTERRUPTED` object to stderr and leaves stdout empty.
+
+Windows forced termination has platform-defined process status and cannot promise those POSIX exit codes.
 
 Human output and errors are sanitized before they reach the terminal.
 
@@ -165,11 +167,30 @@ Every `status --json` result includes `project_context.project_root`, `project_c
 
 The status context uses snake-case field names to match `context --json`, while `doctor --json` retains its existing `projectContext` contract.
 
+Code that consumes more than one report should normalize those version 1 fields explicitly instead of guessing their casing:
+
+```js
+const projectRoot =
+  contract === "doctor" ? report.projectContext.root : report.project_context.project_root;
+```
+
 ## Error schema version 1
 
 Every JSON error includes `schema_version`, `error`, `message`, `code`, `command`, `retryable`, `help_url`, and `remediation`.
 
 Known operational failures use a stable `code` such as `NOT_FOUND`, `CONFLICT`, `MODIFIED_FILE`, or `INVALID_PATH`.
+
+| Code family | Meaning | Expected next action |
+| --- | --- | --- |
+| `CONFLICT` | Existing configuration, installation, or lifecycle ownership blocks the request. | Inspect ownership or the conflicting path before retrying. |
+| `MODIFIED_FILE` | A managed file differs from its retained hash. | Review the dry run and preserve the edit or approve `--force`. |
+| `MISSING_FILE`, `NOT_FOUND` | A requested workflow, path, or retained file is absent. | Verify the workflow ID, target, and selected project root. |
+| `INVALID_PATH` | The path violates containment, type, or symbolic-link rules. | Choose a real project-local path. |
+| `FILE_TOO_LARGE` | A bounded input exceeds its documented limit. | Reduce that input before retrying. |
+| `INVALID_RECIPE`, `INVALID_MANIFEST` | Retained data does not satisfy its strict contract. | Run strict validation and diagnostics. |
+| `INTERRUPTED` | Safe cancellation was requested before normal completion. | Follow `remediation` and inspect lifecycle state before retrying. |
+| `UNKNOWN_ERROR` | The failure did not map to a known operational class. | Use offline command help and `awf doctor`, then retain diagnostics for a report. |
+| `awf.*` syntax diagnostics | Commander rejected an incompatible or malformed invocation. | Correct the command line and retry; the process exits with code `2`. |
 
 Unexpected failures use `UNKNOWN_ERROR` instead of omitting the field.
 

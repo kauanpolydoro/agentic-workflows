@@ -39,7 +39,11 @@ An AWF configuration nested inside a larger Git repository owns that nested proj
 
 In an interactive terminal, you can run bare `awf init` and choose the agent and project-relative target from a short wizard.
 
+Use `awf init --wizard` when input is redirected or the host cannot report an interactive terminal but a person still wants the guided prompts.
+
 Passing `--agent`, `--target`, or `--no-interactive` skips the wizard, which keeps scripts and CI deterministic.
+
+Those flags and `--json` cannot be combined with `--wizard`.
 
 Use `--json` for deterministic initialization output in automation:
 
@@ -127,6 +131,10 @@ Package runners are useful for an occasional trial or an explicitly selected rel
 The installed package bundles every version-matched workflow page, so `awf show <workflow-id> --location` returns a local Markdown file and `awf show <workflow-id> --open` does not depend on the documentation website.
 
 A source checkout reads the tracked `docs/catalog` page directly, while `pnpm build` prepares the same pages for package consumers.
+
+The npm package archive is the `.tgz` produced by `pnpm --filter @kauanpolydoro/agentic-workflows pack` and contains compiled runtime files.
+
+GitHub source archives contain repository sources instead and require workspace dependency installation plus a build.
 
 ## Pin a project or CI version
 
@@ -232,7 +240,13 @@ When a lifecycle lock blocks an operation, read the PID and acquisition time in 
 
 The CLI never steals or removes a lifecycle lock automatically.
 
-If a command using `--json` is interrupted, wait for exit code `130` or `143`, parse the single `INTERRUPTED` object from stderr, and run the returned remediation before retrying.
+The `lifecycle-transactions` check reports staged transaction directories left by an abnormal process exit without deleting them.
+
+Confirm that no lifecycle process owns the target, preserve any state needed for recovery, run `awf status` and `awf validate <target> --strict`, reconcile managed files, remove only the exact directories proven abandoned, and rerun `awf doctor`.
+
+On POSIX systems, if a command using `--json` is interrupted, wait for exit code `130` or `143`, parse the single `INTERRUPTED` object from stderr, and run the returned remediation before retrying.
+
+Windows forced termination has platform-defined process status, while the tested safety invariant is that terminating guided initialization before selection leaves no partial configuration.
 
 Show only warnings and failures while retaining summary counts with:
 
@@ -265,3 +279,5 @@ pnpm awf install review-pull-request --agent generic --dry-run
 ```
 
 Use `git@github.com:kauanpolydoro/agentic-workflows.git` only when your GitHub SSH credentials are already configured.
+
+GitHub's generated source archives follow the same source setup path and are not substitutes for the built npm `.tgz` artifact.

@@ -41,7 +41,20 @@ awf status --json
 
 Run bare `awf init` in an interactive terminal when you prefer to choose the default agent and target through a short wizard.
 
-Providing `--agent`, `--target`, or `--no-interactive` skips the wizard for deterministic scripts and CI.
+Run `awf init --wizard` to request the prompts explicitly when input is redirected or the host cannot report an interactive terminal.
+
+Providing `--agent`, `--target`, or `--no-interactive` skips the wizard for deterministic scripts and CI, and those options cannot be combined with `--wizard`.
+
+| What you need | Start with |
+| --- | --- |
+| Understand the CLI | `awf` |
+| Confirm the selected project | `awf context` |
+| Save agent and target defaults | `awf init` |
+| Discover a workflow | `awf list` and `awf show <workflow-id>` |
+| Review without changing files | `awf install <workflow-id> --dry-run --show-content` |
+| Apply the reviewed plan | `awf install <workflow-id>` |
+| Inspect drift or recovery state | `awf status` and `awf doctor` |
+| Automate safely | Add `--json` and validate the public output contract |
 
 The first preview lists every create, replace, unchanged, and retire action.
 Add `--show-content` when you also want to inspect the complete generated files.
@@ -85,6 +98,10 @@ pnpm awf show review-pull-request
 ```
 
 Use `git@github.com:kauanpolydoro/agentic-workflows.git` instead only when your SSH credentials are already configured.
+
+GitHub source archives are source snapshots and require the same dependency installation and build steps.
+
+The npm publication artifact is a different `.tgz` produced with `pnpm pack`; it contains the compiled CLI, catalog, and version-matched offline documentation.
 
 Preview a local installation without writing files:
 

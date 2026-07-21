@@ -2341,6 +2341,82 @@ export function createProgram(options: ProgramOptions = {}): Command {
         });
       }
 
+      if (configuredTarget) {
+        const metadataDirectory = path.join(configuredTarget, ".agentic-workflows");
+        const transactionsDirectory = path.join(metadataDirectory, "transactions");
+        try {
+          const metadataInformation = await inspectOptionalPath(
+            metadataDirectory,
+            "the installation metadata directory",
+          );
+          if (metadataInformation) {
+            assertRealDirectory(
+              metadataInformation,
+              metadataDirectory,
+              "The installation metadata directory",
+            );
+          }
+          const transactionsInformation = metadataInformation
+            ? await inspectOptionalPath(
+                transactionsDirectory,
+                "the lifecycle transaction directory",
+              )
+            : null;
+          if (transactionsInformation) {
+            assertRealDirectory(
+              transactionsInformation,
+              transactionsDirectory,
+              "The lifecycle transaction directory",
+            );
+          }
+          const transactionEntries = transactionsInformation
+            ? (
+                await readDirectoryEntries(
+                  transactionsDirectory,
+                  "the lifecycle transaction directory",
+                )
+              )
+                .map((entry) => sanitizeTerminal(entry.name))
+                .sort()
+            : [];
+          checks.push({
+            check: "lifecycle-transactions",
+            status: transactionEntries.length === 0 ? "pass" : "fail",
+            detail:
+              transactionEntries.length === 0
+                ? `No staged lifecycle transactions are present at ${transactionsDirectory}`
+                : `${transactionEntries.length} staged lifecycle transaction(s) remain at ${transactionsDirectory}.`,
+            ...(transactionEntries.length > 0
+              ? {
+                  remediation:
+                    "Confirm that no lifecycle process owns the target, preserve any project state needed for recovery, run `awf status` and `awf validate <target> --strict`, reconcile managed files, then remove only verified abandoned transaction directories manually and rerun `awf doctor`.",
+                }
+              : {}),
+            data: {
+              path: transactionsDirectory,
+              count: transactionEntries.length,
+              entries: transactionEntries,
+            },
+          });
+        } catch (error) {
+          checks.push({
+            check: "lifecycle-transactions",
+            status: "fail",
+            detail: errorMessage(error),
+            remediation:
+              "Inspect the transaction path without following symbolic links, confirm lifecycle ownership, and preserve project state before any manual cleanup.",
+          });
+        }
+      } else {
+        checks.push({
+          check: "lifecycle-transactions",
+          status: "fail",
+          detail: "Cannot inspect lifecycle transactions without a safely resolved default target.",
+          remediation:
+            "Resolve the config and default-target checks before inspecting transaction state.",
+        });
+      }
+
       const installationConflicts: string[] = [];
       const installationEntries: string[] = [];
       if (configuredTarget) {
@@ -2480,10 +2556,24 @@ export function createProgram(options: ProgramOptions = {}): Command {
       new Option("--agent <agent>", "Set the default destination format").choices(agentIds),
     )
     .option("--target <directory>", "Default target inside the project")
+    .option("--wizard", "Run the guided wizard even when no interactive terminal is detected")
     .option("--no-interactive", "Skip the wizard and use flags or deterministic defaults")
     .option("--force", "Replace an existing AWF configuration")
     .option("--json", "Print a versioned configuration result and skip the wizard")
     .action(async (commandOptions) => {
+      if (
+        commandOptions.wizard &&
+        (commandOptions.json ||
+          commandOptions.interactive === false ||
+          commandOptions.agent !== undefined ||
+          commandOptions.target !== undefined)
+      ) {
+        throw new CommanderError(
+          2,
+          "awf.conflictingInitialization",
+          "--wizard cannot be combined with --json, --no-interactive, --agent, or --target.",
+        );
+      }
       const context = await resolveProjectContext(Boolean(commandOptions.json));
       const root = context.root;
       const directory = path.join(root, ".agentic-workflows");
@@ -2501,7 +2591,7 @@ export function createProgram(options: ProgramOptions = {}): Command {
         }
       }
       const guided =
-        interactive &&
+        (interactive || Boolean(commandOptions.wizard)) &&
         !commandOptions.json &&
         commandOptions.interactive !== false &&
         commandOptions.agent === undefined &&

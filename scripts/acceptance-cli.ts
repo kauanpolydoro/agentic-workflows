@@ -1,4 +1,9 @@
-import { spawn, spawnSync, type SpawnSyncReturns } from "node:child_process";
+import {
+  spawn,
+  spawnSync,
+  type ChildProcessWithoutNullStreams,
+  type SpawnSyncReturns,
+} from "node:child_process";
 import { rmSync } from "node:fs";
 import { access, chmod, mkdir, mkdtemp, readFile, realpath, writeFile } from "node:fs/promises";
 import os from "node:os";
@@ -80,6 +85,36 @@ async function waitForFile(file: string): Promise<void> {
     await new Promise<void>((resolve) => setTimeout(resolve, 10));
   }
   throw new Error(`Timed out waiting for subprocess readiness marker ${file}.`);
+}
+
+async function pathExists(file: string): Promise<boolean> {
+  try {
+    await access(file);
+    return true;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+    throw error;
+  }
+}
+
+function waitForChild(
+  child: ChildProcessWithoutNullStreams,
+  label: string,
+): Promise<{ code: number | null; signal: NodeJS.Signals | null }> {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      child.kill();
+      reject(new Error(`Timed out waiting for ${label}.`));
+    }, 15_000);
+    child.once("error", (error) => {
+      clearTimeout(timeout);
+      reject(error);
+    });
+    child.once("close", (code, signal) => {
+      clearTimeout(timeout);
+      resolve({ code, signal });
+    });
+  });
 }
 
 async function verifyInterruption(
@@ -237,6 +272,109 @@ exit [lindex $child 3]
   }
 }
 
+async function verifyExplicitWizardWithRedirectedInput(): Promise<void> {
+  const redirectedProject = path.join(project, "redirected wizard project");
+  await mkdir(redirectedProject);
+  await writeFile(path.join(redirectedProject, "package.json"), "{}\n");
+  const child = spawn(
+    process.execPath,
+    [cli, "--project-root", redirectedProject, "init", "--wizard"],
+    {
+      cwd: redirectedProject,
+      env: process.env,
+      stdio: ["pipe", "pipe", "pipe"],
+    },
+  );
+  child.stdout.setEncoding("utf8");
+  child.stderr.setEncoding("utf8");
+  let stdout = "";
+  let stderr = "";
+  let promptCursor = 0;
+  let responseIndex = 0;
+  const interactions = [
+    { prompt: "Choose a number or agent ID [generic]: ", response: "unknown-agent\n" },
+    { prompt: "Choose a number or agent ID [generic]: ", response: "3\n" },
+    { prompt: "Project-relative installation target [.]: ", response: "../outside\n" },
+    { prompt: "Project-relative installation target [.]: ", response: "redirected target\n" },
+  ] as const;
+  child.stdout.on("data", (chunk: string) => {
+    stdout += chunk;
+    while (responseIndex < interactions.length) {
+      const interaction = interactions[responseIndex];
+      if (!interaction) break;
+      const prompt = stdout.indexOf(interaction.prompt, promptCursor);
+      if (prompt < 0) break;
+      promptCursor = prompt + interaction.prompt.length;
+      child.stdin.write(interaction.response);
+      responseIndex += 1;
+      if (responseIndex === interactions.length) child.stdin.end();
+    }
+  });
+  child.stderr.on("data", (chunk: string) => {
+    stderr += chunk;
+  });
+  const result = await waitForChild(child, "the redirected init wizard");
+  if (
+    result.code !== 0 ||
+    result.signal !== null ||
+    responseIndex !== interactions.length ||
+    stderr !== "" ||
+    !stdout.includes("Configure Agentic Workflows for this project") ||
+    !stdout.includes("Choose one of: generic, claude-code, codex") ||
+    !stdout.includes("Use a relative path that stays inside the project root") ||
+    !stdout.includes("Default agent: codex")
+  ) {
+    throw new Error(
+      `Explicit redirected wizard failed with code=${String(result.code)} signal=${String(result.signal)} responses=${responseIndex}.\nstdout:\n${stdout}\nstderr:\n${stderr}`,
+    );
+  }
+  const configuration = await readFile(
+    path.join(redirectedProject, ".agentic-workflows", "config.yml"),
+    "utf8",
+  );
+  if (
+    !configuration.includes("default_agent: codex") ||
+    !configuration.includes("redirected target")
+  ) {
+    throw new Error("The explicit redirected wizard did not retain the selected defaults.");
+  }
+}
+
+async function verifyForcedWizardTerminationOnWindows(): Promise<void> {
+  if (process.platform !== "win32") return;
+  const interruptedProject = path.join(project, "interrupted windows wizard project");
+  await mkdir(interruptedProject);
+  await writeFile(path.join(interruptedProject, "package.json"), "{}\n");
+  const child = spawn(
+    process.execPath,
+    [cli, "--project-root", interruptedProject, "init", "--wizard"],
+    {
+      cwd: interruptedProject,
+      env: process.env,
+      stdio: ["pipe", "pipe", "pipe"],
+    },
+  );
+  child.stdout.setEncoding("utf8");
+  child.stderr.setEncoding("utf8");
+  let stdout = "";
+  let terminated = false;
+  child.stdout.on("data", (chunk: string) => {
+    stdout += chunk;
+    if (!terminated && stdout.includes("Choose a number or agent ID [generic]: ")) {
+      terminated = child.kill();
+    }
+  });
+  const result = await waitForChild(child, "the forced Windows wizard termination");
+  if (!terminated || result.code === 0) {
+    throw new Error(
+      `Forced Windows wizard termination was not observed: code=${String(result.code)} signal=${String(result.signal)} stdout=${JSON.stringify(stdout)}.`,
+    );
+  }
+  if (await pathExists(path.join(interruptedProject, ".agentic-workflows", "config.yml"))) {
+    throw new Error("Forced Windows wizard termination left a partial configuration file.");
+  }
+}
+
 async function verifyNestedProjectRootPrecedence(): Promise<void> {
   const monorepo = path.join(project, "root precedence monorepo");
   const nestedProject = path.join(monorepo, "packages", "nested project");
@@ -307,6 +445,8 @@ if (
   throw new Error("Empty invocation did not return clean, actionable first-run help.");
 }
 await verifyInteractiveWizardInPty();
+await verifyExplicitWizardWithRedirectedInput();
+await verifyForcedWizardTerminationOnWindows();
 await verifyNestedProjectRootPrecedence();
 const context = JSON.parse(success(["context", "--json"]).stdout) as {
   schema_version?: number;
@@ -505,7 +645,7 @@ await verifyInterruption("SIGTERM", 143, false);
 await verifyInterruption("SIGTERM", 143, true);
 
 process.stdout.write(
-  "CLI acceptance passed for onboarding, completion, versioned JSON, signals, NO_COLOR, spaced paths, and lifecycle safety.\n",
+  "CLI acceptance passed for guided onboarding, completion, versioned JSON, platform interruption safety, NO_COLOR, spaced paths, and lifecycle safety.\n",
 );
 cleanup();
 process.removeListener("exit", cleanup);

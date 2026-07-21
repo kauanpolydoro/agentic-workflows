@@ -39,7 +39,20 @@ awf install review-pull-request --dry-run --show-content
 
 Em um terminal interativo, execute apenas `awf init` para escolher o agente padrão e o destino em um wizard curto.
 
-Informar `--agent`, `--target` ou `--no-interactive` ignora o wizard e mantém scripts e CI determinísticos.
+Execute `awf init --wizard` para solicitar as perguntas explicitamente quando a entrada estiver redirecionada ou o ambiente não conseguir identificar um terminal interativo.
+
+Informar `--agent`, `--target` ou `--no-interactive` ignora o wizard e mantém scripts e CI determinísticos, e essas opções não podem ser combinadas com `--wizard`.
+
+| O que você precisa | Comece com |
+| --- | --- |
+| Entender a CLI | `awf` |
+| Confirmar o projeto selecionado | `awf context` |
+| Salvar agente e destino padrão | `awf init` |
+| Descobrir um fluxo | `awf list` e `awf show <workflow-id>` |
+| Revisar sem alterar arquivos | `awf install <workflow-id> --dry-run --show-content` |
+| Aplicar o plano revisado | `awf install <workflow-id>` |
+| Inspecionar divergências ou recuperação | `awf status` e `awf doctor` |
+| Automatizar com segurança | Adicione `--json` e valide o contrato público de saída |
 
 A primeira simulação lista cada criação, substituição, arquivo inalterado e retirada prevista.
 Adicione `--show-content` quando também quiser inspecionar o conteúdo completo dos arquivos gerados.
@@ -86,6 +99,10 @@ pnpm awf show review-pull-request
 ```
 
 Use `git@github.com:kauanpolydoro/agentic-workflows.git` apenas quando suas credenciais SSH já estiverem configuradas.
+
+Os arquivos-fonte gerados pelo GitHub são snapshots do código e exigem as mesmas etapas de instalação das dependências e build.
+
+O artefato publicado no npm é outro arquivo `.tgz`, produzido com `pnpm pack`, que contém a CLI compilada, o catálogo e a documentação offline correspondente à versão.
 
 Simule uma instalação sem escrever arquivos:
 

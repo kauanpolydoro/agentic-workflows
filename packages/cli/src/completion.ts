@@ -74,7 +74,7 @@ export const completionCommandOptions = {
   status: ["--target", "--failures-only", "--json"],
   validate: ["--json", "--strict"],
   doctor: ["--json", "--maintainer", "--failures-only"],
-  init: ["--agent", "--target", "--no-interactive", "--force", "--json"],
+  init: ["--agent", "--target", "--wizard", "--no-interactive", "--force", "--json"],
   manifest: ["--target", "--json"],
   completion: ["--install-instructions"],
 } as const satisfies Record<CompletionCommand, readonly string[]>;

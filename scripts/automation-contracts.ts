@@ -324,6 +324,7 @@ jsonFailure(
   "INVALID_PATH",
 );
 jsonFailure(["install", "--json"], "install", "commander.missingArgument");
+jsonFailure(["init", "--wizard", "--json"], "init", "awf.conflictingInitialization");
 
 const invalidCatalog = path.join(project, "invalid-catalog.json");
 await writeFile(invalidCatalog, "not JSON\n");
