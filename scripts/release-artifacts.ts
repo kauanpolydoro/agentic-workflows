@@ -1,11 +1,12 @@
 import { createHash } from "node:crypto";
-import { copyFile, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { copyFile, lstat, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 
 const semverPattern =
   /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*)?(?:\+[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*)?$/;
+const MAX_RELEASE_NOTES_BYTES = 256 * 1024;
 
 interface PackageMetadata {
   name?: unknown;
@@ -83,6 +84,34 @@ export function changelogContainsVersion(changelog: string, version: string): bo
   return new RegExp(`^##\\s+(?:\\[${escaped}\\]|${escaped})(?:\\s|$)`, "m").test(changelog);
 }
 
+export function releaseNotesContainTag(releaseNotes: string, tag: string): boolean {
+  const escaped = escapeRegExp(tag);
+  return new RegExp(`^#\\s+Agentic Workflows\\s+${escaped}\\s*$`, "m").test(releaseNotes);
+}
+
+async function verifyReleaseNotes(repository: string, tag: string): Promise<void> {
+  const relative = path.join("release-notes", `${tag}.md`);
+  const file = path.join(repository, relative);
+  let information: Awaited<ReturnType<typeof lstat>>;
+  try {
+    information = await lstat(file);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      throw new Error(`Release ${tag} is missing ${relative}.`);
+    }
+    throw error;
+  }
+  if (information.isSymbolicLink() || !information.isFile()) {
+    throw new Error(`Release notes must be a regular file without symbolic links: ${relative}.`);
+  }
+  if (information.size > MAX_RELEASE_NOTES_BYTES) {
+    throw new Error(`Release notes exceed ${MAX_RELEASE_NOTES_BYTES} bytes: ${relative}.`);
+  }
+  if (!releaseNotesContainTag(await readFile(file, "utf8"), tag)) {
+    throw new Error(`Release notes do not declare the exact tag ${tag}: ${relative}.`);
+  }
+}
+
 async function packageIdentity(repository: string, relative: string): Promise<[string, string]> {
   const metadata = JSON.parse(
     await readFile(path.join(repository, relative), "utf8"),
@@ -118,6 +147,7 @@ export async function verifyReleaseIdentity(
   if (!changelogContainsVersion(changelog, version)) {
     throw new Error(`CHANGELOG.md has no level-two section for ${version}.`);
   }
+  await verifyReleaseNotes(repository, tag);
 
   const tagRef = `refs/tags/${tag}`;
   if (runGit(repository, ["cat-file", "-t", tagRef]) !== "tag") {

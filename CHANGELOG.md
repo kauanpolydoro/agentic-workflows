@@ -8,6 +8,8 @@ No changes have been assigned to a later version.
 
 ## 0.2.0 - 2026-07-21
 
+Read the complete [v0.2.0 release notes](release-notes/v0.2.0.md).
+
 ### Added
 
 - First-run help, package-root detection, actionable empty states, and workflow ID suggestions.

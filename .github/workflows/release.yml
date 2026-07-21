@@ -97,3 +97,4 @@ jobs:
           pnpm exec tsx scripts/sync-github-release.ts
           --tag "$GITHUB_REF_NAME"
           --directory "$RUNNER_TEMP/release"
+          --notes-file "release-notes/${GITHUB_REF_NAME}.md"
