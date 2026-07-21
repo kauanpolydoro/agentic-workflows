@@ -20,6 +20,13 @@ interface PackageMetadata {
   version?: unknown;
 }
 
+function markdownHeadings(content: string): string[] {
+  return content
+    .split("\n")
+    .filter((line) => /^## /.test(line))
+    .map((line) => line.slice(3));
+}
+
 async function packageMetadata(relative: string): Promise<PackageMetadata> {
   return JSON.parse(await text(relative)) as PackageMetadata;
 }
@@ -240,6 +247,10 @@ describe("delivery contracts", () => {
         "$review-pull-request",
         "/review-pull-request",
         ".agentic-workflows/config.yml",
+        "No files were changed.",
+        "Installed review-pull-request for codex:",
+        "Invoke explicitly with: $review-pull-request",
+        "healthy",
       ]) {
         expect(readme, `landing page omits ${requirement}`).toContain(requirement);
       }
@@ -258,12 +269,20 @@ describe("delivery contracts", () => {
       expect(readme).toContain("@kauanpolydoro/agentic-workflows/output-contract");
       expect(readme).toContain("not-applicable");
     }
+    expect(english).toContain("active evidence");
+    expect(portuguese).toContain("evidência ativa");
     expect(english).toContain("operating system's native document handler");
     expect(portuguese).toContain("manipulador nativo de documentos do sistema operacional");
     expect(english).not.toContain("tested browser opening");
     expect(english).not.toContain("produced with `pnpm pack`");
     expect(portuguese).not.toContain("produzido com `pnpm pack`");
     expect(await text("packages/cli/README.md")).toBe(english);
+
+    const metadata = await packageMetadata("packages/cli/package.json");
+    expect(typeof metadata.version).toBe("string");
+    const exactPackage = `@kauanpolydoro/agentic-workflows@${String(metadata.version)}`;
+    expect(english).toContain(exactPackage);
+    expect(portuguese).toContain(exactPackage);
   });
 
   it("keeps the English and Portuguese landing pages equivalent in scope", async () => {
@@ -286,6 +305,46 @@ describe("delivery contracts", () => {
     for (const [englishSection, portugueseSection] of sectionPairs) {
       expect(english).toContain(englishSection);
       expect(portuguese).toContain(portugueseSection);
+    }
+    expect(markdownHeadings(english)).toHaveLength(markdownHeadings(portuguese).length);
+    for (const command of [
+      "context",
+      "list",
+      "show",
+      "install",
+      "status",
+      "update",
+      "remove",
+      "validate",
+      "doctor",
+      "init",
+      "manifest",
+      "completion",
+    ]) {
+      expect(english).toContain(`awf ${command}`);
+      expect(portuguese).toContain(`awf ${command}`);
+    }
+  });
+
+  it("keeps historical adapter records separate from active compatibility claims", async () => {
+    const research = await text("docs/research/adapter-sources.md");
+    const compatibility = await text("docs/compatibility.md");
+    expect(research).toContain("They are not active evidence");
+    expect(research).toContain("review-pull-request-pre-history-reset.md");
+    expect(research).not.toContain("Separate retained records now establish");
+    for (const adapter of ["Claude Code", "OpenAI Codex"]) {
+      const researchRow = research
+        .split("\n")
+        .find(
+          (line) =>
+            line.startsWith(`| ${adapter} |`) &&
+            line.includes("| confirmed | implemented | passing |"),
+        );
+      const compatibilityRow = compatibility
+        .split("\n")
+        .find((line) => line.startsWith(`| ${adapter} |`));
+      expect(researchRow).toContain("| untested | untested | untested | untested |");
+      expect(compatibilityRow).toContain("| untested | 0/20 | 0/20 | 0/20 | untested |");
     }
   });
 

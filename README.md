@@ -47,13 +47,25 @@ awf status
 The dry run then shows every planned file and its complete generated content without changing the installation target.
 The second install command writes the reviewed bundle and its hash-bearing manifest.
 
+Confirm these checkpoints before continuing:
+
+| After | Expected checkpoint |
+| --- | --- |
+| `awf context` | `Project root:` names the project you intended to modify |
+| `awf init --agent codex` | `Created .agentic-workflows/config.yml.` and `Default agent: codex` appear |
+| The install dry run | The plan ends with `No files were changed.` |
+| The real install | `Installed review-pull-request for codex:` and `Invoke explicitly with: $review-pull-request` appear |
+| `awf status` | The summary reports one `healthy` installation |
+
 After installation, invoke the workflow explicitly in Codex:
 
 ```text
 $review-pull-request Review pull request #123 against its stated acceptance criteria.
 ```
 
-The successful install output always prints the exact entrypoint and invocation command for the selected adapter.
+The successful install output always prints the exact entrypoint and invocation policy.
+For adapters that define an agent command, it also prints the exact explicit invocation.
+Generic Markdown has no agent command, so its installed entrypoint is the document to follow manually.
 Installing the package itself does not start a wizard or modify a project.
 
 Run bare `awf` for first-use help.
@@ -82,7 +94,7 @@ For example, a Claude Code, Cursor, Gemini CLI, or OpenCode installation of `rev
 
 Supported means the format is confirmed, the exporter is implemented, and local generation plus installation contract tests pass.
 It does not mean that an external agent executed the workflow or that a human reviewed its outcome.
-See the [adapter source research](https://github.com/kauanpolydoro/agentic-workflows/blob/main/docs/research/adapter-sources.md) and [generated compatibility matrix](https://github.com/kauanpolydoro/agentic-workflows/blob/main/docs/compatibility.md) for the exact evidence behind each status.
+See the [adapter source research](docs/research/adapter-sources.md) and [generated compatibility matrix](docs/compatibility.md) for the exact active evidence behind each status.
 
 ## Try without a global installation
 
@@ -95,16 +107,17 @@ bunx @kauanpolydoro/agentic-workflows list
 
 The unscoped `agentic-workflows` name belongs to a different package on npm.
 Keep `@kauanpolydoro/agentic-workflows` in `npx` and `bunx` commands.
+These `@latest` examples are intentionally for one-off evaluation, not reproducible automation.
 
-Pin the CLI in a project or CI environment when reproducibility matters:
+Install the exact repository version and commit the resulting manifest plus lockfile for project or CI use:
 
 ```bash
-npm install --save-dev @kauanpolydoro/agentic-workflows
+npm install --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.2.0
 npx awf context --json
 npx awf list --json
 ```
 
-If `awf` is unavailable after a global installation, use the [installation troubleshooting guide](https://github.com/kauanpolydoro/agentic-workflows/blob/main/docs/guide/installation.md#troubleshoot-installation) to check Node.js, npm's prefix, `PATH`, and permissions.
+If `awf` is unavailable after a global installation, use the [installation troubleshooting guide](docs/guide/installation.md#troubleshoot-installation) to check Node.js, npm's prefix, `PATH`, and permissions.
 
 ## Featured workflows
 
@@ -117,12 +130,12 @@ If `awf` is unavailable after a global installation, use the [installation troub
 
 ## See a complete result
 
-The `write-release-notes` golden recipe includes a [self-contained synthetic input](https://github.com/kauanpolydoro/agentic-workflows/blob/main/recipes/write-release-notes/examples/input.md) and its [complete expected release-note artifact](https://github.com/kauanpolydoro/agentic-workflows/blob/main/recipes/write-release-notes/examples/expected-output.md).
+The `write-release-notes` golden recipe includes a [self-contained synthetic input](https://kauanpolydoro.github.io/agentic-workflows/catalog/write-release-notes#complete-example-input) and its [complete expected release-note artifact](https://kauanpolydoro.github.io/agentic-workflows/catalog/write-release-notes#complete-expected-output).
 Every material statement in that expected output maps to an evidence ID from the input.
 The pair is an editorial reference maintained in the repository, not evidence that an external agent executed the recipe or that a real release outcome was approved.
 
 The reproducible demonstration also checks maintained reference outputs for `debug-failing-ci`, `review-pull-request`, and `synchronize-documentation` against their output contracts.
-See the [reference-evaluation record](https://github.com/kauanpolydoro/agentic-workflows/blob/main/docs/launch/reference-evaluations.md) for claim traces and the explicit verification boundary.
+See the [reference-evaluation record](https://kauanpolydoro.github.io/agentic-workflows/launch/reference-evaluations) for claim traces and the explicit verification boundary.
 
 ## How it works
 
@@ -157,9 +170,9 @@ The project reports four independent verification stages:
 | External-agent execution | A named agent version actually ran the workflow |
 | Human outcome review | A reviewer evaluated the produced result against completion criteria |
 
-No external-agent adapter currently has retained evidence that promotes external execution or human outcome review to passing.
+No external-agent adapter currently has active evidence that promotes external execution or human outcome review to passing.
 Generic Markdown reports consumer parsing, external execution, and outcome review as `not-applicable` because it is documentation rather than an agent integration.
-Historical Claude Code and Codex artifacts remain archived, but their source commit left the repository during the intentional history reset and they do not promote current status.
+Historical Claude Code and Codex evidence remains retained in the archive, but its source commit left the repository during the intentional history reset and it is not active evidence.
 Passing repository tests do not substitute for an external-agent run.
 
 ## CLI reference
@@ -193,7 +206,7 @@ Machine-readable commands use versioned JSON contracts, and automation should va
 | `130` or `143` | POSIX interruption through `SIGINT` or `SIGTERM` |
 
 Run `awf <command> --help` for command-specific options.
-Read the [complete CLI reference](https://github.com/kauanpolydoro/agentic-workflows/blob/main/docs/guide/cli-reference.md) for filters, JSON streams, lifecycle semantics, and exit-code details.
+Read the [complete CLI reference](docs/guide/cli-reference.md) for filters, JSON streams, lifecycle semantics, and exit-code details.
 
 Generate shell completion with `awf completion bash`, `awf completion zsh`, `awf completion fish`, or `awf completion pwsh`.
 Add `--install-instructions` to print persistent setup guidance without modifying your shell profile.
@@ -223,22 +236,23 @@ pnpm new:recipe my-workflow
 ```
 
 Every complete recipe contains `recipe.yml`, `workflow.md`, `checklist.md`, `README.md`, `output.schema.json`, `examples/input.md`, and `examples/expected-output.md`.
-Replace every scaffold marker, use original examples, declare support honestly, and follow the [recipe quality standard](https://github.com/kauanpolydoro/agentic-workflows/blob/main/docs/quality/recipe-quality-standard.md).
+Replace every scaffold marker, use original examples, declare support honestly, and follow the [recipe quality standard](docs/quality/recipe-quality-standard.md).
 The [contribution guide](https://github.com/kauanpolydoro/agentic-workflows/blob/main/CONTRIBUTING.md) is the authoritative source for the complete validation suite required before handoff.
 
 The root `README.md` is canonical for the CLI package.
 The build copies it into the npm archive, which keeps the GitHub and npm landing pages synchronized for each published version.
+Delivery-contract tests compare the section map and first-use commands across both languages, while the package smoke test compares the packaged English README byte for byte with this source.
 
 ## Documentation map
 
 | Need | Resource |
 | --- | --- |
-| Install or troubleshoot the CLI | [Installation guide](https://github.com/kauanpolydoro/agentic-workflows/blob/main/docs/guide/installation.md) |
-| Inspect every CLI flag and output | [CLI reference](https://github.com/kauanpolydoro/agentic-workflows/blob/main/docs/guide/cli-reference.md) |
-| Validate JSON in automation | [Output contracts](https://github.com/kauanpolydoro/agentic-workflows/blob/main/docs/guide/output-contracts.md) |
-| Understand evidence states | [Verification model](https://github.com/kauanpolydoro/agentic-workflows/blob/main/docs/guide/verification.md) |
-| Author or review a recipe | [Authoring guide](https://github.com/kauanpolydoro/agentic-workflows/blob/main/docs/guide/authoring.md) |
-| Compare agent support | [Compatibility matrix](https://github.com/kauanpolydoro/agentic-workflows/blob/main/docs/compatibility.md) |
+| Install or troubleshoot the CLI | [Installation guide](docs/guide/installation.md) |
+| Inspect every CLI flag and output | [CLI reference](docs/guide/cli-reference.md) |
+| Validate JSON in automation | [Output contracts](docs/guide/output-contracts.md) |
+| Understand evidence states | [Verification model](docs/guide/verification.md) |
+| Author or review a recipe | [Authoring guide](docs/guide/authoring.md) |
+| Compare agent support | [Compatibility matrix](docs/compatibility.md) |
 | Contribute changes | [CONTRIBUTING.md](https://github.com/kauanpolydoro/agentic-workflows/blob/main/CONTRIBUTING.md) |
 | Report a vulnerability privately | [SECURITY.md](https://github.com/kauanpolydoro/agentic-workflows/blob/main/SECURITY.md) |
 | Review shipped and planned work | [CHANGELOG.md](https://github.com/kauanpolydoro/agentic-workflows/blob/main/CHANGELOG.md) and [ROADMAP.md](https://github.com/kauanpolydoro/agentic-workflows/blob/main/ROADMAP.md) |
@@ -247,6 +261,8 @@ The build copies it into the npm archive, which keeps the GitHub and npm landing
 
 The CLI and shared core packages are public on npm.
 Releases are tag-driven and use npm trusted publishing, provenance, package smoke tests, and integrity verification before GitHub release synchronization.
+The package smoke test proves that the tarball contains this exact README, and registry `dist.integrity` verification covers the complete published tarball.
+GitHub can show unreleased README changes first, because the npm landing page changes only when a new package version containing those bytes is published.
 See the [changelog](https://github.com/kauanpolydoro/agentic-workflows/blob/main/CHANGELOG.md) and [release process](https://github.com/kauanpolydoro/agentic-workflows/blob/main/RELEASING.md) for the current version and delivery contract.
 
 Recipes are untrusted data and documentation.

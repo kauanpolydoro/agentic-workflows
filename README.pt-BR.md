@@ -47,13 +47,25 @@ awf status
 A simulação mostra cada arquivo planejado e seu conteúdo gerado completo sem alterar o destino da instalação.
 O segundo comando de instalação grava o pacote revisado e seu manifesto com hashes.
 
+Confirme estes checkpoints antes de continuar:
+
+| Depois de | Checkpoint esperado |
+| --- | --- |
+| `awf context` | `Project root:` identifica o projeto que você pretende modificar |
+| `awf init --agent codex` | `Created .agentic-workflows/config.yml.` e `Default agent: codex` aparecem |
+| A simulação da instalação | O plano termina com `No files were changed.` |
+| A instalação real | `Installed review-pull-request for codex:` e `Invoke explicitly with: $review-pull-request` aparecem |
+| `awf status` | O resumo informa uma instalação `healthy` |
+
 Depois da instalação, invoque o fluxo explicitamente no Codex:
 
 ```text
 $review-pull-request Revise o pull request #123 conforme seus critérios de aceite.
 ```
 
-A saída de uma instalação bem-sucedida sempre informa o entrypoint e o comando exato de invocação para o adaptador selecionado.
+A saída de uma instalação bem-sucedida sempre informa o entrypoint e a política de invocação exatos.
+Nos adaptadores que definem um comando de agente, ela também informa a invocação explícita exata.
+O Markdown genérico não possui comando de agente, portanto seu entrypoint instalado é o documento que deve ser seguido manualmente.
 Instalar o pacote não inicia um wizard nem modifica qualquer projeto.
 
 Execute apenas `awf` para ver a ajuda de primeiro uso.
@@ -82,7 +94,7 @@ Por exemplo, uma instalação de `review-pull-request` para Claude Code, Cursor,
 
 Suportado significa que o formato foi confirmado, o exportador foi implementado e os testes locais dos contratos de geração e instalação passam.
 Isso não significa que um agente externo executou o fluxo nem que uma pessoa revisou seu resultado.
-Consulte as [fontes dos adaptadores](docs/research/adapter-sources.md) e a [matriz de compatibilidade gerada](docs/compatibility.md) para ver as evidências exatas de cada status.
+Consulte as [fontes dos adaptadores](docs/research/adapter-sources.md) e a [matriz de compatibilidade gerada](docs/compatibility.md) para ver as evidências ativas exatas de cada status.
 
 ## Experimente sem instalação global
 
@@ -95,11 +107,12 @@ bunx @kauanpolydoro/agentic-workflows list
 
 O nome sem escopo `agentic-workflows` pertence a outro pacote no npm.
 Mantenha `@kauanpolydoro/agentic-workflows` nos comandos com `npx` e `bunx`.
+Esses exemplos com `@latest` destinam-se intencionalmente a avaliações pontuais, não a automações reproduzíveis.
 
-Fixe a CLI no projeto ou ambiente de CI quando a reprodutibilidade for importante:
+Instale a versão exata do repositório e versione o manifesto e o lockfile resultantes para uso no projeto ou CI:
 
 ```bash
-npm install --save-dev @kauanpolydoro/agentic-workflows
+npm install --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.2.0
 npx awf context --json
 npx awf list --json
 ```
@@ -157,9 +170,9 @@ O projeto informa quatro estágios independentes de verificação:
 | Execução por agente externo | Uma versão identificada do agente realmente executou o fluxo |
 | Revisão humana do resultado | Uma pessoa avaliou o resultado conforme os critérios de conclusão |
 
-Nenhum adaptador de agente externo possui atualmente evidência retida que promova execução externa ou revisão humana do resultado para aprovado.
+Nenhum adaptador de agente externo possui atualmente evidência ativa que promova execução externa ou revisão humana do resultado para aprovado.
 O Markdown genérico informa parsing pelo consumidor, execução externa e revisão do resultado como `not-applicable`, pois ele é documentação e não uma integração com agente.
-Artefatos históricos do Claude Code e Codex permanecem arquivados, mas o commit de origem saiu do repositório durante o reset intencional do histórico e eles não promovem o status atual.
+Evidências históricas do Claude Code e Codex permanecem retidas no arquivo, mas o commit de origem saiu do repositório durante o reset intencional do histórico e elas não são evidências ativas.
 Testes aprovados no repositório não substituem uma execução por agente externo.
 
 ## Referência da CLI
@@ -228,6 +241,7 @@ O [guia de contribuição](CONTRIBUTING.md) é a fonte oficial para a suíte com
 
 O `README.md` da raiz é a fonte canônica do pacote da CLI.
 O build o copia para o arquivo publicado no npm, mantendo as páginas iniciais do GitHub e do npm sincronizadas em cada versão publicada.
+Os testes de contrato comparam o mapa de seções e os comandos de primeiro uso entre os dois idiomas, enquanto o teste do pacote compara byte por byte o README em inglês empacotado com esta fonte.
 
 ## Mapa da documentação
 
@@ -247,6 +261,8 @@ O build o copia para o arquivo publicado no npm, mantendo as páginas iniciais d
 
 A CLI e o núcleo compartilhado estão públicos no npm.
 As releases são acionadas por tags e usam publicação confiável do npm, proveniência, testes do pacote e verificação de integridade antes da sincronização da release no GitHub.
+O teste do pacote comprova que o tarball contém este README exato, e a verificação de `dist.integrity` do registro cobre o tarball publicado completo.
+O GitHub pode exibir primeiro alterações ainda não publicadas, pois a página inicial do npm só muda quando uma nova versão contendo esses bytes é publicada.
 Consulte o [changelog](CHANGELOG.md) e o [processo de release](RELEASING.md) para conhecer a versão atual e o contrato de entrega.
 
 Receitas são dados e documentação não confiáveis.

@@ -18,7 +18,9 @@ Outcome review means that a retained run was reviewed against objective recipe c
 These stages are independent.
 A vendor URL does not prove local serialization, parsing, installation, discovery, execution, or outcome quality.
 This documentation research alone establishes no external discovery, agent execution, outcome review, or tested agent version.
-Separate retained records now establish explicit discovery, parsing, and execution for `review-pull-request` on Claude Code 2.1.209 and Codex CLI 0.144.4 only.
+Historical records once established explicit discovery, parsing, and execution for `review-pull-request` on Claude Code 2.1.209 and Codex CLI 0.144.4 only.
+Those records were retired after the intentional history reset and remain available only as [archived context](https://github.com/kauanpolydoro/agentic-workflows/blob/main/verification/archive/review-pull-request-pre-history-reset.md).
+They are not active evidence and do not promote the current compatibility status.
 
 ## Official format matrix
 
@@ -69,8 +71,8 @@ An observed fact must cite at least one repository evidence path, while an untes
 | Adapter | Format | Serializer | Local generation contract | Temporary installation contract | Vendor consumer parse | External discovery | External execution | Outcome review |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Generic Markdown | project-defined and confirmed | implemented | passing | passing | not-applicable | not-applicable | not-applicable | not-applicable |
-| Claude Code | confirmed | implemented | passing | passing | passing for `review-pull-request` | passing for explicit `review-pull-request` invocation | passing for `review-pull-request` | untested |
-| OpenAI Codex | confirmed | implemented | passing | passing | passing for `review-pull-request` | passing for explicit `review-pull-request` invocation | passing for `review-pull-request` | untested |
+| Claude Code | confirmed | implemented | passing | passing | untested | untested | untested | untested |
+| OpenAI Codex | confirmed | implemented | passing | passing | untested | untested | untested | untested |
 | Cursor | confirmed | implemented | passing | passing | untested | untested | untested | untested |
 | Gemini CLI | confirmed | implemented | passing | passing | untested | untested | untested | untested |
 | OpenCode | confirmed | implemented | passing | passing | untested | untested | untested | untested |
@@ -82,5 +84,6 @@ Official format decisions are retained in this document.
 
 The global status `supported` is available only when format, serializer, generation contract, and installation contract satisfy the registry rule.
 It does not imply vendor consumer parsing, external discovery, external execution, a tested agent version, or an approved outcome.
-The generated compatibility matrix records recipe counts so that the Claude Code and Codex evidence cannot be mistaken for corpus-wide execution coverage.
-No human outcome-review timestamp is recorded because no retained outcome review exists.
+The generated compatibility matrix records active recipe counts and therefore reports no current Claude Code or Codex execution coverage.
+Archived pre-reset records remain visible through the archive link above but cannot promote any current status.
+No human outcome-review timestamp is recorded because no active outcome review exists.

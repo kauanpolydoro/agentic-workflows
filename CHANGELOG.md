@@ -8,6 +8,7 @@ All notable project changes will be documented here.
 
 - Reworked the English and Brazilian Portuguese landing pages around a complete install-to-invocation journey, exact CLI contracts, and equivalent navigation.
 - Updated public status documents to reflect npm trusted publishing and the current pre-1.0 security support policy.
+- Aligned adapter research with the active evidence registry and added observable checkpoints plus exact CI version pinning to both landing pages.
 
 ## 0.2.0 - 2026-07-21
 

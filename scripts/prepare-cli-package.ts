@@ -9,6 +9,7 @@ const packagedDocumentation = [
   "quality/recipe-quality-standard.md",
   "research/adapter-sources.md",
   "guide/contributing.md",
+  "guide/authoring.md",
   "guide/installation.md",
   "guide/cli-reference.md",
   "guide/output-contracts.md",
