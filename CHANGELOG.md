@@ -6,6 +6,15 @@ All notable project changes will be documented here.
 
 No changes have been recorded yet.
 
+## 0.2.2 - 2026-07-21
+
+Read the complete [v0.2.2 release notes](release-notes/v0.2.2.md).
+
+### Fixed
+
+- Ensured each npm tarball contains exactly one root `README.md` so npm selects the same English landing page shown by GitHub.
+- Added pre-publication tarball ambiguity checks and post-publication verification of npm's selected README filename.
+
 ## 0.2.1 - 2026-07-21
 
 Read the complete [v0.2.1 release notes](release-notes/v0.2.1.md).

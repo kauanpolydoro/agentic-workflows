@@ -120,7 +120,7 @@ These `@latest` examples are intentionally for one-off evaluation, not reproduci
 Install the exact repository version and commit the resulting manifest plus lockfile for project or CI use:
 
 ```bash
-npm install --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.2.1
+npm install --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.2.2
 npx awf context --json
 npx awf list --json
 ```
@@ -278,6 +278,7 @@ pnpm check:clean
 
 The root `README.md` is canonical for the CLI package.
 The build copies it into the npm archive, which keeps the GitHub and npm landing pages synchronized for each published version.
+The tarball contains no other root `README*` file, so npm cannot select a translated document as the package landing page.
 Delivery-contract tests compare the section map and first-use commands across both languages, while the package smoke test compares the packaged English README byte for byte with this source.
 
 ## Documentation map
@@ -298,7 +299,7 @@ Delivery-contract tests compare the section map and first-use commands across bo
 
 The [`@kauanpolydoro/agentic-workflows`](https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows) CLI and [`@kauanpolydoro/agentic-workflows-core`](https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows-core) library are public on npm.
 Releases are tag-driven and use npm trusted publishing, provenance, package smoke tests, and integrity verification before GitHub release synchronization.
-The package smoke test proves that the tarball contains this exact README, and the publisher verifies both registry `dist.integrity` and the registry README bytes after publication.
+The package smoke test proves that the tarball contains only this root README, and the publisher verifies registry `dist.integrity`, the selected `README.md` filename, and the registry README bytes after publication.
 Before npm publication, the release audits every allowlisted public documentation link so a broken destination blocks the release before an irreversible registry write.
 GitHub can show unreleased README changes first, because the npm landing page changes only when a new package version containing those bytes is published.
 See the [changelog](https://github.com/kauanpolydoro/agentic-workflows/blob/main/CHANGELOG.md) and [release process](https://github.com/kauanpolydoro/agentic-workflows/blob/main/RELEASING.md) for the current version and delivery contract.

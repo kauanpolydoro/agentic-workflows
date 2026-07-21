@@ -47,10 +47,6 @@ await writeFile(
   await readFile(path.join(repository, "README.md"), "utf8"),
 );
 await writeFile(
-  path.join(repository, "packages/cli/README.pt-BR.md"),
-  await readFile(path.join(repository, "README.pt-BR.md"), "utf8"),
-);
-await writeFile(
   path.join(repository, "packages/cli/catalog.json"),
   await readFile(path.join(repository, "generated/catalog.json"), "utf8"),
 );
