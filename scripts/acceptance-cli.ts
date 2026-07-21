@@ -1,4 +1,4 @@
-import { spawn, spawnSync } from "node:child_process";
+import { spawn, spawnSync, type SpawnSyncReturns } from "node:child_process";
 import { rmSync } from "node:fs";
 import { access, chmod, mkdir, mkdtemp, readFile, realpath, writeFile } from "node:fs/promises";
 import os from "node:os";
@@ -174,21 +174,49 @@ async function verifyInteractiveWizardInPty(): Promise<void> {
   await mkdir(ptyProject);
   await writeFile(path.join(ptyProject, "package.json"), "{}\n");
   const command = '"$AWF_PTY_NODE" "$AWF_PTY_CLI" --project-root "$AWF_PTY_PROJECT" init';
-  const scriptArguments =
-    process.platform === "darwin"
-      ? ["-q", "/dev/null", process.execPath, cli, "--project-root", ptyProject, "init"]
-      : ["-qec", command, "/dev/null"];
-  const result = spawnSync("script", scriptArguments, {
-    cwd: ptyProject,
-    encoding: "utf8",
-    env: {
-      ...process.env,
-      AWF_PTY_NODE: process.execPath,
-      AWF_PTY_CLI: cli,
-      AWF_PTY_PROJECT: ptyProject,
-    },
-    input: "unknown-agent\n3\n../outside\npty target\n",
-  });
+  let result: SpawnSyncReturns<string>;
+  if (process.platform === "darwin") {
+    const expectScript = path.join(ptyProject, "wizard.expect");
+    await writeFile(
+      expectScript,
+      `set timeout 15
+set node [lindex $argv 0]
+set cli [lindex $argv 1]
+set project [lindex $argv 2]
+spawn -- $node $cli --project-root $project init
+expect -glob "Choose a number or agent ID *"
+send -- "unknown-agent\\r"
+expect -glob "Choose one of: *"
+expect -glob "Choose a number or agent ID *"
+send -- "3\\r"
+expect -glob "Project-relative installation target *"
+send -- "../outside\\r"
+expect -glob "Use a relative path that stays inside the project root.*"
+expect -glob "Project-relative installation target *"
+send -- "pty target\\r"
+expect eof
+set child [wait]
+exit [lindex $child 3]
+`,
+    );
+    result = spawnSync("expect", [expectScript, process.execPath, cli, ptyProject], {
+      cwd: ptyProject,
+      encoding: "utf8",
+      env: process.env,
+    });
+  } else {
+    result = spawnSync("script", ["-qec", command, "/dev/null"], {
+      cwd: ptyProject,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        AWF_PTY_NODE: process.execPath,
+        AWF_PTY_CLI: cli,
+        AWF_PTY_PROJECT: ptyProject,
+      },
+      input: "unknown-agent\n3\n../outside\npty target\n",
+    });
+  }
   if (
     result.status !== 0 ||
     !result.stdout.includes("Configure Agentic Workflows for this project") ||
