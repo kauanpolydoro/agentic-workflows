@@ -1,6 +1,6 @@
 {
   "name": "@kauanpolydoro/agentic-workflows",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Offline CLI for inspecting and safely installing Agentic Workflows bundles.",
   "license": "MIT",
   "keywords": [

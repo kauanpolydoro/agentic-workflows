@@ -41,7 +41,11 @@ await writeFile(
   await readFile(path.join(repository, "LICENSE"), "utf8"),
 );
 await writeFile(
+  path.join(repository, "packages/cli/README.md"),
+  await readFile(path.join(repository, "README.md"), "utf8"),
+);
+await writeFile(
   path.join(repository, "packages/cli/catalog.json"),
   await readFile(path.join(repository, "generated/catalog.json"), "utf8"),
 );
-process.stdout.write("Prepared the packaged CLI catalog and documentation.\n");
+process.stdout.write("Prepared the packaged CLI catalog, README, and documentation.\n");

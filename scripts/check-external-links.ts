@@ -6,11 +6,13 @@ const markdownRoots = ["README.md", "README.pt-BR.md", "CONTRIBUTING.md", "SECUR
 const allowedHosts = new Set([
   "code.claude.com",
   "cursor.com",
+  "docs.npmjs.com",
   "geminicli.com",
   "github.com",
   "kauanpolydoro.github.io",
   "learn.chatgpt.com",
   "opencode.ai",
+  "raw.githubusercontent.com",
   "www.npmjs.com",
 ]);
 const maximumCacheBytes = 1024 * 1024;

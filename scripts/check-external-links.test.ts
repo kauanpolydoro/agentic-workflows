@@ -25,15 +25,17 @@ describe("external link audit", () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
 
-  it("allows official npm package pages", async () => {
+  it.each([
+    "https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows",
+    "https://docs.npmjs.com/about-package-readme-files/",
+    "https://raw.githubusercontent.com/kauanpolydoro/agentic-workflows/main/docs/public/terminal-demo.svg",
+  ])("allows an official documentation or package URL at %s", async (url) => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 200 }));
 
-    await expect(
-      inspectExternalLink("https://www.npmjs.com/package/@kauanpolydoro/agentic-workflows", {
-        timeoutMs: 100,
-        fetcher,
-      }),
-    ).resolves.toMatchObject({ ok: true, status: 200 });
+    await expect(inspectExternalLink(url, { timeoutMs: 100, fetcher })).resolves.toMatchObject({
+      ok: true,
+      status: 200,
+    });
     expect(fetcher).toHaveBeenCalledOnce();
   });
 

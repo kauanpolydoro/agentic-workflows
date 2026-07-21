@@ -374,6 +374,11 @@ await writeFile(
         "@kauanpolydoro/agentic-workflows-core": `file:${path.join(artifacts, core)}`,
         "@kauanpolydoro/agentic-workflows": `file:${path.join(artifacts, cli)}`,
       },
+      pnpm: {
+        overrides: {
+          "@kauanpolydoro/agentic-workflows-core": `file:${path.join(artifacts, core)}`,
+        },
+      },
     },
     null,
     2,
@@ -917,6 +922,10 @@ if (validated.schema_version !== 1 || validated.recipes !== 20) {
 }
 const packageRoot = path.dirname(catalog);
 const packagedReadme = await readFile(path.join(packageRoot, "README.md"), "utf8");
+const canonicalReadme = await readFile(path.join(repository, "README.md"), "utf8");
+if (packagedReadme !== canonicalReadme) {
+  throw new Error("The packaged CLI README drifted from the repository README.");
+}
 const documentedCommands = [
   "context",
   "list",
@@ -960,8 +969,8 @@ const cliPackage = JSON.parse(
     "utf8",
   ),
 ) as InstalledPackageMetadata & { dependencies?: Record<string, string> };
-if (cliPackage.dependencies?.["@kauanpolydoro/agentic-workflows-core"]?.startsWith("workspace:")) {
-  throw new Error("Packed CLI retained an unresolved workspace dependency.");
+if (cliPackage.dependencies?.["@kauanpolydoro/agentic-workflows-core"] !== rootPackage.version) {
+  throw new Error("Packed CLI did not pin the matching core package version.");
 }
 const corePackage = JSON.parse(
   await readFile(

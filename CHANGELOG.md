@@ -4,6 +4,10 @@ All notable project changes will be documented here.
 
 ## Unreleased
 
+No changes have been assigned to a later version.
+
+## 0.2.0 - 2026-07-21
+
 ### Added
 
 - First-run help, package-root detection, actionable empty states, and workflow ID suggestions.
@@ -39,6 +43,7 @@ All notable project changes will be documented here.
 - Completion now scopes every option and enum to its owning command and guards against drift from the Commander surface.
 - SIGINT and SIGTERM now preserve JSON stream isolation through a versioned `INTERRUPTED` error.
 - Branch coverage was restored above the enforced 85 percent release threshold without lowering the gate.
+- The npm package README now uses the repository README as its canonical source so the npm and GitHub landing pages remain synchronized.
 
 ## 0.1.0
 
