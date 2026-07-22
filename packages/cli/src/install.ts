@@ -6,9 +6,11 @@ import {
   AwfError,
   adapters,
   assertNoSymlink,
+  bundleFingerprintHash,
   createManifest,
   type GeneratedAdapterBundle,
   generateAdapterBundle,
+  generatedBundleFingerprint,
   hashContent,
   type LegacyManifest,
   legacyManifestSchema,
@@ -16,12 +18,14 @@ import {
   loadRecipeSource,
   MAX_RECIPE_FILE_BYTES,
   type Manifest,
+  manifestBundleFingerprint,
   manifestSchema,
   type Recipe,
   readBoundedRegularFile,
   resolveInside,
 } from "@kauanpolydoro/agentic-workflows-core";
 import { parse, stringify } from "yaml";
+import { retainedV022ToV030Migrations } from "./migrations/v0-2-2-to-v0-3-0.js";
 import { CLI_VERSION } from "./version.js";
 
 const manifestRelative = (recipe: string) => `.agentic-workflows/installations/${recipe}.yml`;
@@ -45,21 +49,9 @@ interface FileMutation {
   verifyOnly?: boolean;
 }
 
-interface BundleFingerprint {
-  recipe: string;
-  recipeVersion: string;
-  adapter: { id: AgentId; version: string };
-  entrypoint: string;
-  invocation: Manifest["invocation"];
-  members: string[];
-}
-
 interface V2MigrationContract {
-  from: BundleFingerprint;
-  to: {
-    recipeVersion: string;
-    adapter: { id: AgentId; version: string };
-  };
+  fromHash: string;
+  toHash: string;
 }
 
 const migrationRegistryBrand: unique symbol = Symbol("awf-migration-registry");
@@ -393,67 +385,34 @@ function validateLegacyManifest(manifest: LegacyManifest): string {
   return file.path;
 }
 
-function sortedManifestMembers(files: Manifest["files"]): string[] {
-  return files.map((file) => `${file.role}:${file.path}:${file.hash}`).sort();
-}
-
-function sortedGeneratedMembers(files: GeneratedAdapterBundle["files"]): string[] {
-  return files.map((file) => `${file.role}:${file.path}:${hashContent(file.content)}`).sort();
-}
-
-function manifestFingerprint(manifest: Manifest): BundleFingerprint {
-  return {
-    recipe: manifest.recipe,
-    recipeVersion: manifest.recipe_version,
-    adapter: { ...manifest.adapter },
-    entrypoint: manifest.entrypoint,
-    invocation: { ...manifest.invocation },
-    members: sortedManifestMembers(manifest.files),
-  };
-}
-
-function sameFingerprint(left: BundleFingerprint, right: BundleFingerprint): boolean {
-  return JSON.stringify(left) === JSON.stringify(right);
-}
-
-function generatedFingerprint(
-  recipe: Recipe,
-  bundle: GeneratedAdapterBundle,
-  agent: AgentId,
-): BundleFingerprint {
-  return {
-    recipe: recipe.id,
-    recipeVersion: recipe.version,
-    adapter: { id: agent, version: adapters[agent].version },
-    entrypoint: bundle.entrypoint,
-    invocation: {
-      mode: bundle.invocation.mode,
-      command: bundle.invocation.command,
-      implicit_invocation_control: bundle.invocation.implicitInvocationControl,
-      warning: bundle.invocation.warning,
-    },
-    members: sortedGeneratedMembers(bundle.files),
-  };
-}
-
 function createMigrationRegistry(
   contracts: readonly V2MigrationContract[],
 ): SyntheticV2MigrationRegistry {
   return { [migrationRegistryBrand]: true, contracts };
 }
 
-// No historical schema-v2 bundle fingerprint exists yet. A future production migration must
-// add an exact retained source fingerprint here instead of weakening manifest comparison.
-const productionV2MigrationRegistry = createMigrationRegistry([]);
+const productionV2MigrationRegistry = createMigrationRegistry(
+  retainedV022ToV030Migrations.flatMap((migration) =>
+    Object.values(migration.bundles).map((bundle) => ({
+      fromHash: bundle.from,
+      toHash: bundle.to,
+    })),
+  ),
+);
 
 export function createSyntheticV2MigrationRegistryForTest(
   from: Manifest,
-  to: V2MigrationContract["to"],
+  to: Manifest,
 ): SyntheticV2MigrationRegistry {
   if (process.env.NODE_ENV !== "test") {
     throw new Error("Synthetic migration registries are available only to lifecycle tests.");
   }
-  return createMigrationRegistry([{ from: manifestFingerprint(from), to }]);
+  return createMigrationRegistry([
+    {
+      fromHash: bundleFingerprintHash(manifestBundleFingerprint(from)),
+      toHash: bundleFingerprintHash(manifestBundleFingerprint(to)),
+    },
+  ]);
 }
 
 function registryFrom(options?: LifecycleOptions): SyntheticV2MigrationRegistry {
@@ -467,39 +426,19 @@ function registryFrom(options?: LifecycleOptions): SyntheticV2MigrationRegistry 
   return options.migrationRegistry;
 }
 
-async function expectedBundleForManifest(
-  recipeDirectory: string,
-  manifest: Manifest,
-): Promise<GeneratedAdapterBundle> {
-  const { recipe, bundle } = await recipeBundle(recipeDirectory, manifest.adapter.id);
-  if (
-    !sameFingerprint(
-      manifestFingerprint(manifest),
-      generatedFingerprint(recipe, bundle, manifest.adapter.id),
-    )
-  ) {
-    throw new AwfError(
-      "INVALID_MANIFEST",
-      "Manifest identity, members, or invocation policy do not match the exact current adapter bundle.",
-    );
-  }
-  return bundle;
-}
-
 async function migratableBundleForManifest(
   recipeDirectory: string,
   manifest: Manifest,
   registry: SyntheticV2MigrationRegistry = productionV2MigrationRegistry,
 ): Promise<GeneratedAdapterBundle> {
   const { recipe, bundle } = await recipeBundle(recipeDirectory, manifest.adapter.id);
-  const current = generatedFingerprint(recipe, bundle, manifest.adapter.id);
-  if (sameFingerprint(manifestFingerprint(manifest), current)) return bundle;
+  const installedHash = bundleFingerprintHash(manifestBundleFingerprint(manifest));
+  const currentHash = bundleFingerprintHash(
+    generatedBundleFingerprint(recipe, bundle, manifest.adapter.id),
+  );
+  if (installedHash === currentHash) return bundle;
   const registered = registry.contracts.some(
-    (contract) =>
-      sameFingerprint(contract.from, manifestFingerprint(manifest)) &&
-      contract.to.recipeVersion === current.recipeVersion &&
-      contract.to.adapter.id === current.adapter.id &&
-      contract.to.adapter.version === current.adapter.version,
+    (contract) => contract.fromHash === installedHash && contract.toHash === currentHash,
   );
   if (!registered) {
     throw new AwfError(
@@ -510,11 +449,33 @@ async function migratableBundleForManifest(
   return bundle;
 }
 
+async function knownBundleForManifest(
+  recipeDirectory: string,
+  manifest: Manifest,
+  registry: SyntheticV2MigrationRegistry = productionV2MigrationRegistry,
+): Promise<GeneratedAdapterBundle> {
+  const { recipe, bundle } = await recipeBundle(recipeDirectory, manifest.adapter.id);
+  const installedHash = bundleFingerprintHash(manifestBundleFingerprint(manifest));
+  const currentHash = bundleFingerprintHash(
+    generatedBundleFingerprint(recipe, bundle, manifest.adapter.id),
+  );
+  const registered = registry.contracts.some(
+    (contract) => contract.fromHash === installedHash || contract.toHash === installedHash,
+  );
+  if (installedHash !== currentHash && !registered) {
+    throw new AwfError(
+      "INVALID_MANIFEST",
+      "Manifest bundle is neither the exact current bundle nor a retained historical bundle.",
+    );
+  }
+  return bundle;
+}
+
 export async function readManifest(recipeDirectory: string, target: string): Promise<Manifest> {
   const root = await safeTargetRoot(target, false);
   const recipe = await loadRecipe(recipeDirectory);
   const manifest = await readManifestFile(root, recipe.id);
-  await expectedBundleForManifest(recipeDirectory, manifest);
+  await knownBundleForManifest(recipeDirectory, manifest);
   for (const file of manifest.files) await assertSafeDestination(root, file.path);
   return manifest;
 }
@@ -1322,7 +1283,7 @@ async function plannedRemove(
   const currentRead = await readLifecycleManifestFile(root, recipe.id);
   const manifest = currentRead.manifest;
   if (manifest.schema_version === 1) validateLegacyManifest(manifest);
-  else await migratableBundleForManifest(recipeDirectory, manifest, registryFrom(options));
+  else await knownBundleForManifest(recipeDirectory, manifest, registryFrom(options));
   const observations = await observeManifestFiles(root, manifest);
   const states = statesFromObservations(manifest, observations);
   const modifiedManagedFiles = [...states]

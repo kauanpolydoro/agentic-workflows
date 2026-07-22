@@ -38,7 +38,9 @@
     "generate:schema": "tsx scripts/generate.ts schema",
     "generate:docs": "tsx scripts/generate.ts docs",
     "generate:compatibility": "tsx scripts/generate.ts compatibility",
-    "generate:check": "tsx scripts/generate.ts all --check",
+    "generate:migrations": "pnpm generate:migrations:v0.3.0",
+    "generate:migrations:v0.3.0": "tsx scripts/generate-v022-v030-migrations.ts",
+    "generate:check": "tsx scripts/generate.ts all --check && tsx scripts/generate-v022-v030-migrations.ts --check",
     "render:social-preview": "tsx scripts/render-social-preview.ts",
     "render:social-preview:check": "tsx scripts/render-social-preview.ts --check",
     "docs:dev": "vitepress dev docs",
@@ -53,6 +55,7 @@
     "test:acceptance": "tsx scripts/acceptance-cli.ts",
     "test:completion": "tsx scripts/completion-smoke.ts",
     "test:package": "tsx scripts/package-smoke.ts",
+    "test:upgrade": "tsx scripts/test-v022-upgrade.ts",
     "pack:smoke": "pnpm build && pnpm test:package"
   },
   "devDependencies": {

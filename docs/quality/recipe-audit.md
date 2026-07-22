@@ -26,8 +26,8 @@ That digest uses the repository's `hashNamedContent` contract over sorted relati
 Multiple independent agent reviews challenged the new bundle, but they do not satisfy the human editorial gate in the recipe quality standard.
 
 The frozen working tree passed the complete local automated pipeline on 2026-07-22.
-`pnpm build`, strict validation for all 21 recipes, content validation, deterministic generation check, lint, formatting, typecheck, link checking, documentation build, CLI automation, fixtures, acceptance, shell completion, and package smoke all completed successfully.
-The unit suite passed 471 tests in 30 files, coverage passed the same 471 tests with 91.94 percent statements, 85.61 percent branches, 95.07 percent functions, and 92.53 percent lines, and the integration suite passed 58 tests.
+`pnpm build`, strict validation for all 21 recipes, content validation, deterministic generation check, lint, formatting, typecheck, link checking, documentation build, CLI automation, fixtures, acceptance, shell completion, package smoke, and the exact v0.2.2 lifecycle upgrade smoke all completed successfully.
+The unit suite passed 472 tests in 30 files, coverage passed the same 472 tests with 91.97 percent statements, 85.65 percent branches, 95.09 percent functions, and 92.57 percent lines, and the integration suite passed 58 tests.
 Similarity review compared 1,260 recipe surfaces with no threshold crossing, stale review, or unresolved current-content review.
 The documentation build retained the known non-blocking VitePress chunk-size warning.
 These automated results establish structural and repository-level validation only, so they do not close either human review gate or advance installation, external-agent execution, or outcome evidence.

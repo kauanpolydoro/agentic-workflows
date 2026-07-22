@@ -20,6 +20,23 @@ The workflow uses npm OIDC authentication and does not require an npm token.
 14. Review the workflow logs, provenance, SBOM, checksums, and generated npm package tarballs.
 15. Verify both immutable npm publications before promoting the draft GitHub release.
 
+## Retained lifecycle migrations
+
+Any release that changes an installed recipe bundle must preserve exact lifecycle compatibility intentionally.
+Never overwrite a migration endpoint that has already shipped, because `status`, `manifest`, and `remove` must continue recognizing that released bundle after later versions exist.
+
+The v0.2.2 to v0.3.0 registry is deliberately pinned to both package versions.
+Before the target tag exists, its generator rejects any target package version other than v0.3.0.
+After the tag exists, the generator refuses writes and compares the retained registry and fixture byte for byte with the tagged commit.
+
+Before preparing a later bundle-changing release:
+
+1. Freeze every previously published source and target fingerprint.
+2. Add new exact edges from each supported released bundle to the new target instead of rewriting an old edge.
+3. Derive historical inputs from an immutable tag and commit, and retain a historical serializer if the serializer has changed.
+4. Exercise real prior-package installations through `status`, `manifest`, update dry-run and application, remove dry-run and application, drift handling, and tamper rejection.
+5. Keep the upgrade smoke in the pull-request, documentation, and tag publication gates.
+
 The published packages are:
 
 - `@kauanpolydoro/agentic-workflows-core`, which contains the reusable TypeScript core.

@@ -32,6 +32,7 @@ jobs:
       - run: pnpm test:coverage && pnpm test:integration
       - run: pnpm build && pnpm validate:recipes && pnpm validate:content && pnpm test:acceptance && pnpm test:fixtures
       - run: pnpm test:package
+      - run: pnpm test:upgrade
       - run: pnpm docs:build && pnpm check:links
       - run: pnpm audit:similarity
       - name: Ensure tracked and untracked generated artifacts are current

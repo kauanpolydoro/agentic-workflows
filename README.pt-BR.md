@@ -277,6 +277,7 @@ pnpm test:automation
 pnpm test:integration
 pnpm test:acceptance
 pnpm test:package
+pnpm test:upgrade
 pnpm validate:recipes
 pnpm validate:content
 pnpm audit:similarity

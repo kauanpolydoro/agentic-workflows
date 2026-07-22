@@ -8,14 +8,17 @@ import {
   AwfError,
   adapters,
   assertNoSymlink,
+  bundleFingerprintHash,
   compareManifestFiles,
   createManifest,
   filterRecipes,
   generateAdapterBundle,
+  generatedBundleFingerprint,
   hashContent,
   hashNamedContent,
   loadCatalog,
   loadRecipe,
+  manifestBundleFingerprint,
   manifestSchema,
   readBoundedRegularFile,
   recipeSchema,
@@ -205,6 +208,41 @@ describe("security and manifests", () => {
         ),
       ).installed_at,
     ).toContain("2026");
+  });
+  it("matches generated and installed bundle fingerprints exactly", () => {
+    const recipe = recipeSchema.parse(valid);
+    const bundle = generateAdapterBundle(recipe, bundleSources, "generic");
+    const manifest = createManifest(
+      recipe,
+      adapters.generic,
+      bundle,
+      "0.2.2",
+      new Date("2026-01-01T00:00:00Z"),
+    );
+    const generatedHash = bundleFingerprintHash(
+      generatedBundleFingerprint(recipe, bundle, "generic"),
+    );
+
+    expect(bundleFingerprintHash(manifestBundleFingerprint(manifest))).toBe(generatedHash);
+    expect(
+      bundleFingerprintHash(
+        manifestBundleFingerprint({
+          ...manifest,
+          installed_at: "2026-02-02T00:00:00.000Z",
+          cli_version: "9.9.9",
+          adapter: { version: manifest.adapter.version, id: manifest.adapter.id },
+          files: [...manifest.files].reverse(),
+        }),
+      ),
+    ).toBe(generatedHash);
+    expect(
+      bundleFingerprintHash(
+        manifestBundleFingerprint({
+          ...manifest,
+          invocation: { ...manifest.invocation, command: "forged invocation" },
+        }),
+      ),
+    ).not.toBe(generatedHash);
   });
   it("rejects incomplete or impossible retained verification evidence", () => {
     const base = {

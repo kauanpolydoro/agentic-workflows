@@ -14,8 +14,11 @@ import path from "node:path";
 import {
   type AgentId,
   adapters,
+  createManifest,
+  generateAdapterBundle,
   hashContent,
   loadRecipe,
+  loadRecipeSource,
   type Manifest,
 } from "@kauanpolydoro/agentic-workflows-core";
 import { parse as parseToml } from "smol-toml";
@@ -179,11 +182,27 @@ async function syntheticV2Migration(target: string): Promise<{
     workflow,
     `${await readFile(workflow, "utf8")}\n<!-- synthetic migration target -->\n`,
   );
-  const recipe = await loadRecipe(currentRecipeDirectory);
-  const registry = createSyntheticV2MigrationRegistryForTest(source, {
-    recipeVersion: recipe.version,
-    adapter: { id: "generic", version: adapters.generic.version },
-  });
+  const loaded = await loadRecipeSource(currentRecipeDirectory);
+  const bundle = generateAdapterBundle(
+    loaded.recipe,
+    {
+      workflow: loaded.files["workflow.md"],
+      checklist: loaded.files["checklist.md"],
+      exampleInput: loaded.files["examples/input.md"],
+      exampleOutput: loaded.files["examples/expected-output.md"],
+      metadata: loaded.files["recipe.yml"],
+      outputSchema: loaded.files["output.schema.json"],
+    },
+    "generic",
+  );
+  const targetManifest = createManifest(
+    loaded.recipe,
+    adapters.generic,
+    bundle,
+    "0.0.0-test.0",
+    new Date("2026-01-01T00:00:00.000Z"),
+  );
+  const registry = createSyntheticV2MigrationRegistryForTest(source, targetManifest);
   return {
     recipeDirectory: currentRecipeDirectory,
     source,
@@ -588,12 +607,9 @@ describe("transactional installation lifecycle", () => {
     const previous = process.env.NODE_ENV;
     process.env.NODE_ENV = "production";
     try {
-      expect(() =>
-        createSyntheticV2MigrationRegistryForTest(installed, {
-          recipeVersion: installed.recipe_version,
-          adapter: { id: "generic", version: adapters.generic.version },
-        }),
-      ).toThrow("lifecycle tests");
+      expect(() => createSyntheticV2MigrationRegistryForTest(installed, installed)).toThrow(
+        "lifecycle tests",
+      );
     } finally {
       if (previous === undefined) delete process.env.NODE_ENV;
       else process.env.NODE_ENV = previous;

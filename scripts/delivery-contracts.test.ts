@@ -49,6 +49,7 @@ const completeValidationCommands = [
   "pnpm test:integration",
   "pnpm test:acceptance",
   "pnpm test:package",
+  "pnpm test:upgrade",
   "pnpm validate:recipes",
   "pnpm validate:content",
   "pnpm audit:similarity",
@@ -104,6 +105,7 @@ describe("delivery contracts", () => {
     expect(workflow).toContain("needs: quality");
     expect(workflow).toContain("pnpm generate:check");
     expect(workflow).toContain("pnpm test:package");
+    expect(workflow).toContain("pnpm test:upgrade");
     expect(workflow).toContain("pnpm check:links");
     expect(workflow).toContain("pnpm check:clean");
     expect(workflow.indexOf("needs: quality")).toBeLessThan(
@@ -170,6 +172,7 @@ describe("delivery contracts", () => {
       "actions/attest-build-provenance@",
       "release-artifacts.ts finalize",
       "pnpm test:package",
+      "pnpm test:upgrade",
       "pnpm check:clean",
       "registry-url: https://registry.npmjs.org",
       "package-manager-cache: false",

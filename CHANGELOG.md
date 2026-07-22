@@ -21,6 +21,7 @@ Read the complete [v0.3.0 release notes](release-notes/v0.3.0.md).
 - Migrated recipe metadata from schema version 3 to version 4 and made `execution_mode` required for every recipe.
 - Autonomous recipes now require the strict `autonomy` contract and the `persistent-execution` capability, while the GitHub issue campaign also declares `distributed-coordination` and existing recipes declare `supervised` mode.
 - Bumped every migrated recipe version so installations and verification records can distinguish the schema version 4 bundles from their prior content.
+- Retained exact v0.2.2 bundle fingerprints for every recipe and adapter so status, inspection, update, and removal remain available without accepting unknown or tampered manifests.
 - Consumers authoring schema version 3 recipes must migrate to version 4 and choose an explicit execution mode.
 
 ### Breaking changes
