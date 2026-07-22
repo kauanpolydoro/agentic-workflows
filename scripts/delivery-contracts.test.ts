@@ -1,8 +1,8 @@
+import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { changelogContainsVersion, releaseVersionFromTag } from "./release-artifacts.js";
-import { renderSocialPreview } from "./render-social-preview.js";
 
 const repository = path.resolve(import.meta.dirname, "..");
 
@@ -20,6 +20,20 @@ interface PackageMetadata {
   publishConfig?: { access?: unknown };
   repository?: { directory?: unknown; type?: unknown; url?: unknown };
   version?: unknown;
+}
+
+interface SocialPreviewManifest {
+  font?: unknown;
+  font_sha256?: unknown;
+  height?: unknown;
+  output?: unknown;
+  output_sha256?: unknown;
+  recipe_count?: unknown;
+  renderer?: unknown;
+  schema_version?: unknown;
+  source?: unknown;
+  source_sha256?: unknown;
+  width?: unknown;
 }
 
 const completeValidationCommands = [
@@ -497,13 +511,37 @@ describe("delivery contracts", () => {
     expect(preview.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
     expect(preview.readUInt32BE(16)).toBe(1200);
     expect(preview.readUInt32BE(20)).toBe(630);
-    expect(preview.equals(await renderSocialPreview())).toBe(true);
 
     const recipeCount = (
       await readdir(path.join(repository, "recipes"), { withFileTypes: true })
     ).filter((entry) => entry.isDirectory()).length;
-    const source = await text("docs/public/social-preview.svg");
-    expect(source).toContain(`${recipeCount} structured workflows`);
+    const source = await readFile(path.join(repository, "docs/public/social-preview.svg"));
+    const manifest = JSON.parse(
+      await text("docs/public/social-preview.manifest.json"),
+    ) as SocialPreviewManifest;
+    const metadata = JSON.parse(await text("package.json")) as {
+      devDependencies?: Record<string, unknown>;
+    };
+    const font = await readFile(
+      path.join(
+        repository,
+        "node_modules/vitepress/dist/client/theme-default/fonts/inter-roman-latin.woff2",
+      ),
+    );
+    expect(manifest).toEqual({
+      schema_version: 1,
+      source: "social-preview.svg",
+      source_sha256: createHash("sha256").update(source).digest("hex"),
+      output: "social-preview.png",
+      output_sha256: createHash("sha256").update(preview).digest("hex"),
+      width: 1200,
+      height: 630,
+      recipe_count: recipeCount,
+      renderer: `@resvg/resvg-js@${String(metadata.devDependencies?.["@resvg/resvg-js"])}`,
+      font: `vitepress@${String(metadata.devDependencies?.vitepress)}/inter-roman-latin.woff2`,
+      font_sha256: createHash("sha256").update(font).digest("hex"),
+    });
+    expect(source.toString("utf8")).toContain(`${recipeCount} structured workflows`);
 
     const config = await text("docs/.vitepress/config.ts");
     for (const requiredMetadata of [

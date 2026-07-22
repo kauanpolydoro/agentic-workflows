@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "source": "social-preview.svg",
+  "source_sha256": "fca868ccd42025d93686c74d83ff1435d7806d9cf403172aa47822fab31abe1f",
+  "output": "social-preview.png",
+  "output_sha256": "2809a9b01128ed23be1efea7f0f3d60ad4b0f9b383883bdf1cec2dc65612f3a5",
+  "width": 1200,
+  "height": 630,
+  "recipe_count": 21,
+  "renderer": "@resvg/resvg-js@2.6.2",
+  "font": "vitepress@1.6.4/inter-roman-latin.woff2",
+  "font_sha256": "f7ab715caa2c78facb4334b211c81ee66f037cf9c99ca3f24acd543e84a93278"
+}
