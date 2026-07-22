@@ -2,7 +2,7 @@
 
 Instale fluxos de engenharia inspecionáveis no Codex, Claude Code, Cursor, Gemini CLI ou OpenCode, com uma exportação em Markdown simples para uso manual em outros ambientes.
 
-A árvore-fonte atual em Unreleased contém 21 pacotes de fluxos orientados a evidências e uma CLI offline que os instala com segurança dentro de um projeto.
+O candidato à release v0.3.0 contém 21 pacotes de fluxos orientados a evidências e uma CLI offline que os instala com segurança dentro de um projeto.
 Ele oferece aos agentes de programação entradas, pré-requisitos, passos observáveis, decisões, aprovações, saídas esperadas e critérios de conclusão explícitos para tarefas como revisão de pull request, diagnóstico de CI, migrações, segurança, testes e documentação.
 O corpus histórico do schema versão 3 preserva suas disposições editoriais registradas, mas as migrações atuais para o schema versão 4 ainda exigem uma revisão humana transversal antes da publicação, e o novo pacote autônomo exige sua própria revisão humana de domínio.
 
@@ -31,8 +31,8 @@ Instale-o globalmente uma vez para disponibilizar `awf` em qualquer projeto:
 npm install --global @kauanpolydoro/agentic-workflows
 ```
 
-O pacote `0.2.2` publicado antecede o schema versão 4, a receita autônoma e `--execution-mode`.
-Use um checkout do código-fonte para esses recursos em Unreleased até que uma versão posterior do pacote seja publicada.
+A versão `0.3.0` introduz o schema versão 4, a receita autônoma e `--execution-mode`.
+Até o candidato concluir as revisões humanas registradas e ser publicado, use um checkout do código-fonte para esses recursos.
 
 Para um repositório ou job de CI que precise fixar a CLI, use a [configuração com versão exata](#experimente-sem-instalação-global).
 
@@ -125,12 +125,12 @@ Esses exemplos com `@latest` destinam-se intencionalmente a avaliações pontuai
 Instale a versão exata do repositório e versione o manifesto e o lockfile resultantes para uso no projeto ou CI:
 
 ```bash
-npm install --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.2.2
+npm install --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.3.0
 npx awf context --json
 npx awf list --json
 ```
 
-Esse pin exato usa intencionalmente o contrato publicado da versão `0.2.2` e, portanto, não expõe a faceta de modo de execução em Unreleased.
+Esse pin exato seleciona o contrato do schema versão 4 e de modo de execução depois que a v0.3.0 for publicada.
 
 Se `awf` não estiver disponível depois da instalação global, use o [guia de diagnóstico da instalação](docs/guide/installation.md#troubleshoot-installation) para verificar Node.js, prefixo do npm, `PATH` e permissões.
 
@@ -140,9 +140,9 @@ Se `awf` não estiver disponível depois da instalação global, use o [guia de 
 - [`debug-failing-ci`](https://kauanpolydoro.github.io/agentic-workflows/catalog/debug-failing-ci) parte do primeiro log causal, testa hipóteses refutáveis e chega a uma correção mínima.
 - [`database-migration-review`](https://kauanpolydoro.github.io/agentic-workflows/catalog/database-migration-review) avalia locks, perda de dados, compatibilidade entre versões e recuperação do rollout.
 - [`security-review`](https://kauanpolydoro.github.io/agentic-workflows/catalog/security-review) permanece estritamente defensivo e exige escopo autorizado explícito.
-- [`resolve-github-issues`](https://kauanpolydoro.github.io/agentic-workflows/catalog/resolve-github-issues) define uma campanha finita e não assistida em Unreleased com checkpoints, subagentes revisores isolados, merges serializados e estados de parada honestos; seu status editorial é `blocked` enquanto aguarda a revisão humana de domínio exigida, portanto ela ainda não está pronta para publicação.
+- [`resolve-github-issues`](https://kauanpolydoro.github.io/agentic-workflows/catalog/resolve-github-issues) define uma campanha finita e não assistida com checkpoints, subagentes revisores isolados, merges serializados e estados de parada honestos; seu status editorial é `blocked` enquanto aguarda a revisão humana de domínio exigida, portanto o candidato ainda não está pronto para publicação.
 
-[Consulte todos os 21 fluxos](https://kauanpolydoro.github.io/agentic-workflows/catalog/) ou, em um build do código-fonte em Unreleased, encontre designs autônomos com `awf list --execution-mode autonomous`.
+[Consulte todos os 21 fluxos](https://kauanpolydoro.github.io/agentic-workflows/catalog/) ou encontre designs autônomos no candidato à v0.3.0 com `awf list --execution-mode autonomous`.
 Você pode combinar essa faceta com `--category <categoria>`, `--agent <agente>` ou `--tag <tag>`.
 
 O modo de execução descreve o design da recipe.

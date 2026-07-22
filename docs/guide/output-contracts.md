@@ -1,7 +1,7 @@
 # CLI output contracts
 
-This page describes the current Unreleased source tree.
-The published npm package at version `0.2.2` predates recipe schema version 4 and the execution-mode facet.
+This page describes the v0.3.0 release candidate.
+Version `0.3.0` uses recipe schema version 4 and exposes the execution-mode facet.
 
 `awf` separates human output from machine output so scripts never need to parse presentation text.
 

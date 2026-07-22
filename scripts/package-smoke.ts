@@ -1052,7 +1052,7 @@ const packagedCoreReadme = await readFile(
   "utf8",
 );
 for (const requiredCoreReadmeText of [
-  "current Unreleased source tree",
+  `v${rootPackage.version} release candidate`,
   "Recipe schema version 4",
   "execution_mode: supervised | autonomous",
 ]) {

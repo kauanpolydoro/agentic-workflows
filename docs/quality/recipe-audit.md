@@ -20,7 +20,8 @@ Those states require separate retained evidence and must not be inferred from a 
 ## Working-tree addition after the retained assessment
 
 The retained corpus hash, matrices, and integrated verification below cover the original 20-recipe schema version 3 assessment snapshot.
-The current working tree migrates those 20 bundles to schema version 4 and adds `resolve-github-issues` as the twenty-first recipe bundle, with ordered source-record SHA-256 `63cd1e95f139f054fb4b54577e892673b3c385bcdee49c72633a1f3eb89ee79d`.
+The current working tree migrates those 20 bundles to schema version 4 and adds `resolve-github-issues` as the twenty-first recipe bundle, with seven-file recipe-content SHA-256 `12bc6f565e3a6332a3c16981b6ef996d290add6c90709dc0c090f10447cc53e2`.
+That digest uses the repository's `hashNamedContent` contract over sorted relative filenames and their UTF-8 contents with null separators.
 
 Multiple independent agent reviews challenged the new bundle, but they do not satisfy the human editorial gate in the recipe quality standard.
 
@@ -205,7 +206,7 @@ The `profile-performance` example passes as a contracted blocked handoff rather 
 ## Retained 20-recipe cross-cutting disposition
 
 At the retained 20-recipe assessment snapshot, all 20 recipes used schema version 3 and declared an `output_contract` backed by `output.schema.json`.
-The current Unreleased working tree migrates those recipes to schema version 4 and assigns an explicit execution mode, but that later migration is outside the retained historical pipeline below.
+The current v0.3.0 candidate migrates those recipes to schema version 4 and assigns an explicit execution mode, but that later migration is outside the retained historical pipeline below.
 Recipe effects, adapter serialization, capability assessment, installation, external execution, and outcome review are modeled as separate states.
 
 Structural status is derived from current source and validators rather than manually promoted to an outcome claim.

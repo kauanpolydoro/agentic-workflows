@@ -2,7 +2,7 @@
 
 Install inspectable engineering workflows into Codex, Claude Code, Cursor, Gemini CLI, or OpenCode, with a plain Markdown export for manual use elsewhere.
 
-The current Unreleased source tree contains 21 evidence-oriented workflow bundles plus an offline CLI that installs them safely inside a project.
+The v0.3.0 release candidate contains 21 evidence-oriented workflow bundles plus an offline CLI that installs them safely inside a project.
 It gives coding agents explicit inputs, prerequisites, observable steps, decision points, approval gates, expected outputs, and completion criteria for work such as pull-request review, CI debugging, migrations, security review, testing, and documentation.
 The historical schema version 3 corpus retains its recorded editorial dispositions, but the current schema version 4 migrations still require one cross-cutting human review before publication, and the new autonomous bundle requires its own human domain review.
 
@@ -31,8 +31,8 @@ Install it globally once to make `awf` available from any project:
 npm install --global @kauanpolydoro/agentic-workflows
 ```
 
-The published `0.2.2` package predates schema version 4, the autonomous recipe, and `--execution-mode`.
-Use a source checkout for those Unreleased features until a later package version is published.
+Version `0.3.0` introduces schema version 4, the autonomous recipe, and `--execution-mode`.
+Until the candidate clears its recorded human review gates and is published, use a source checkout for those features.
 
 For a repository or CI job that must pin the CLI, use the [exact-version setup](#try-without-a-global-installation) instead.
 
@@ -125,12 +125,12 @@ These `@latest` examples are intentionally for one-off evaluation, not reproduci
 Install the exact repository version and commit the resulting manifest plus lockfile for project or CI use:
 
 ```bash
-npm install --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.2.2
+npm install --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.3.0
 npx awf context --json
 npx awf list --json
 ```
 
-That exact pin intentionally uses the published `0.2.2` contract and therefore does not expose the Unreleased execution-mode facet.
+That exact pin selects the schema version 4 and execution-mode contract after v0.3.0 is published.
 
 If `awf` is unavailable after a global installation, use the [installation troubleshooting guide](docs/guide/installation.md#troubleshoot-installation) to check Node.js, npm's prefix, `PATH`, and permissions.
 
@@ -140,9 +140,9 @@ If `awf` is unavailable after a global installation, use the [installation troub
 - [`debug-failing-ci`](https://kauanpolydoro.github.io/agentic-workflows/catalog/debug-failing-ci) moves from the first causal log through falsifiable hypotheses to a minimal fix.
 - [`database-migration-review`](https://kauanpolydoro.github.io/agentic-workflows/catalog/database-migration-review) evaluates locks, data loss, mixed-version compatibility, and rollout recovery.
 - [`security-review`](https://kauanpolydoro.github.io/agentic-workflows/catalog/security-review) stays strictly defensive and requires explicit authorized scope.
-- [`resolve-github-issues`](https://kauanpolydoro.github.io/agentic-workflows/catalog/resolve-github-issues) defines an Unreleased finite unattended issue campaign with checkpoints, isolated review subagents, serialized merges, and honest stop states; its editorial status is `blocked` pending the required human domain review, so it is not publication-ready.
+- [`resolve-github-issues`](https://kauanpolydoro.github.io/agentic-workflows/catalog/resolve-github-issues) defines a finite unattended issue campaign with checkpoints, isolated review subagents, serialized merges, and honest stop states; its editorial status is `blocked` pending the required human domain review, so the candidate is not publication-ready.
 
-[Browse all 21 workflows](https://kauanpolydoro.github.io/agentic-workflows/catalog/) or, in an Unreleased source build, find autonomous designs with `awf list --execution-mode autonomous`.
+[Browse all 21 workflows](https://kauanpolydoro.github.io/agentic-workflows/catalog/) or find autonomous designs in the v0.3.0 candidate with `awf list --execution-mode autonomous`.
 You can combine that facet with `--category <category>`, `--agent <agent>`, or `--tag <tag>`.
 
 Execution mode describes the recipe design.

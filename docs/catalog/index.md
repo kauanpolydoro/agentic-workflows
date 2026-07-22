@@ -14,7 +14,7 @@ import catalog from '../../generated/catalog.json'
 All 21 workflows are listed below.
 Use the filters to narrow the list; they run entirely in your browser and send nothing anywhere.
 
-This page reflects the current Unreleased schema version 4 source catalog.
+This page reflects the v0.3.0 schema version 4 release candidate.
 The historical schema version 3 editorial dispositions do not promote these migrated bundles automatically; the migration and the autonomous addition remain pending the human gates recorded in the [recipe audit](../quality/recipe-audit.md).
 
 <CatalogExplorer :recipes="catalog" />

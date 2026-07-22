@@ -2,7 +2,7 @@
 
 The command-line tool is called `awf`.
 
-Options listed under `Unreleased` in the changelog, including the execution-mode facet, require a source build until a later npm package is published.
+The execution-mode facet belongs to the v0.3.0 candidate and requires a source build until that version clears its recorded publication gates.
 
 It reads the bundled catalog and writes only inside the detected or explicit project root.
 

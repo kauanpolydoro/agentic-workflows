@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "recipe_source_sha256": "ed009beebea613b8852fd525e385fae0325576acd149fac5483535698a9046cc",
+  "recipe_source_sha256": "b6dfa662b0f74db596f9d2044d97f0c14e845735609f33df34585e1eb8d87a69",
   "artifacts": [
     {
       "path": "docs/catalog/api-contract-review.md",
@@ -44,7 +44,7 @@
     },
     {
       "path": "docs/catalog/index.md",
-      "sha256": "fe20b1346b485e5135ef4dcbe07449595a27229c48c4831a04ada7b0b68716c7"
+      "sha256": "acbab5b4d5d7dc6d2d1a0e7816b7d15224fd93e141ff249cdb55d810af4d63de"
     },
     {
       "path": "docs/catalog/migrate-framework.md",
@@ -100,7 +100,7 @@
     },
     {
       "path": "generated/catalog.json",
-      "sha256": "02937833b536ac607ad9d0151d5cbaec098728a1440cd0c37842b7cdf5d773c5"
+      "sha256": "19c5dabd7f9629a18ad349f31ad69632bc37db0e297211bcdec0a6b2e6f8583f"
     },
     {
       "path": "generated/catalog.schema.json",

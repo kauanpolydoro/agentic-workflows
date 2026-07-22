@@ -4,9 +4,9 @@
 
 The package does not execute external coding agents or approve generated outcomes.
 
-This README describes the current Unreleased source tree.
-The published `0.2.2` package still uses recipe schema version 3 and does not expose the execution-mode facet.
-The schema version 4 migrations remain pending one cross-cutting human editorial review before publication.
+This README describes the v0.3.0 release candidate.
+Version `0.3.0` uses recipe schema version 4 and exposes the execution-mode facet.
+The candidate remains pending one cross-cutting human editorial review before publication.
 
 ## Schema version 4
 

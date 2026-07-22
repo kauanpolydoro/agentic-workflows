@@ -3501,7 +3501,7 @@
           "relative-links",
           "output-contract"
         ],
-        "recipe_content_sha256": "63cd1e95f139f054fb4b54577e892673b3c385bcdee49c72633a1f3eb89ee79d"
+        "recipe_content_sha256": "12bc6f565e3a6332a3c16981b6ef996d290add6c90709dc0c090f10447cc53e2"
       }
     },
     "maintainers": ["project-maintainers"],

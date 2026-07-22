@@ -325,16 +325,16 @@ describe("delivery contracts", () => {
       await readdir(path.join(repository, "recipes"), { withFileTypes: true })
     ).filter((entry) => entry.isDirectory()).length;
     expect(english).toContain(
-      `current Unreleased source tree contains ${recipeCount} evidence-oriented workflow bundles`,
+      `v${String(metadata.version)} release candidate contains ${recipeCount} evidence-oriented workflow bundles`,
     );
     expect(portuguese).toContain(
-      `árvore-fonte atual em Unreleased contém ${recipeCount} pacotes de fluxos`,
+      `candidato à release v${String(metadata.version)} contém ${recipeCount} pacotes de fluxos`,
     );
     expect(english).toContain(
-      `published \`${String(metadata.version)}\` package predates schema version 4`,
+      `Version \`${String(metadata.version)}\` introduces schema version 4`,
     );
     expect(portuguese).toContain(
-      `pacote \`${String(metadata.version)}\` publicado antecede o schema versão 4`,
+      `versão \`${String(metadata.version)}\` introduz o schema versão 4`,
     );
   });
 

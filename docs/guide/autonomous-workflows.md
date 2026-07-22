@@ -13,7 +13,7 @@ Every autonomous recipe must also declare the `persistent-execution` capability.
 The category remains the work domain, such as `maintenance` or `security`.
 Execution mode is a separate facet, so future autonomous recipes can keep their correct domain classification.
 
-In a source build containing the Unreleased schema version 4 facet, use either catalog surface to find them:
+In the v0.3.0 candidate, use either catalog surface to find them:
 
 ```bash
 awf list --execution-mode autonomous
@@ -82,7 +82,7 @@ Otherwise use another owner-bound signal that the runtime can poll safely.
 ## Current autonomous recipe
 
 [`resolve-github-issues`](../catalog/resolve-github-issues.md) is the first autonomous design in the catalog.
-Its editorial status is `blocked`, so the Unreleased source bundle is not publication-ready until the required human domain review is retained against its final digest.
+Its editorial status is `blocked`, so the v0.3.0 candidate is not publication-ready until the required human domain review is retained against its final digest.
 Its external-agent execution and outcome remain `untested` until retained evidence from a named host and a human review establish otherwise.
 
 The architecture rationale is recorded in [ADR 0003](../decisions/0003-autonomy-as-execution-mode.md).

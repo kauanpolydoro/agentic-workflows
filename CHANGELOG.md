@@ -4,6 +4,12 @@ All notable project changes will be documented here.
 
 ## Unreleased
 
+No changes have been recorded yet.
+
+## 0.3.0 - 2026-07-22
+
+Read the complete [v0.3.0 release notes](release-notes/v0.3.0.md).
+
 ### Added
 
 - Added the autonomous `resolve-github-issues` campaign recipe with finite intake, durable fenced checkpoints, isolated workers, fresh adversarial review, direct squash integration, post-merge smoke verification, manual issue closure, bounded stop behavior, and honest partial terminal states.
@@ -16,7 +22,15 @@ All notable project changes will be documented here.
 - Autonomous recipes now require the strict `autonomy` contract and the `persistent-execution` capability, while the GitHub issue campaign also declares `distributed-coordination` and existing recipes declare `supervised` mode.
 - Bumped every migrated recipe version so installations and verification records can distinguish the schema version 4 bundles from their prior content.
 - Consumers authoring schema version 3 recipes must migrate to version 4 and choose an explicit execution mode.
-- The Unreleased schema version 4 migration remains pending one cross-cutting human editorial review, while `resolve-github-issues` remains pending its separate human domain review.
+
+### Breaking changes
+
+- Recipe metadata using schema version 3 is no longer accepted by the current core and CLI.
+- Every recipe must use schema version 4 and declare either `execution_mode: supervised` or `execution_mode: autonomous`.
+
+### Publication gate
+
+- The v0.3.0 candidate remains pending one cross-cutting human review of the schema version 4 migrations and a separate human domain review of `resolve-github-issues`.
 
 ## 0.2.2 - 2026-07-21
 

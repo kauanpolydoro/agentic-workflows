@@ -4,7 +4,7 @@ Use this recipe to let a capable agent runtime work through a finite GitHub back
 It prioritizes the backlog, handles independent issues concurrently, requires a fresh adversarial subagent for every correction, serializes merges, checkpoints every mutation, and leaves blocked work open rather than hiding it.
 
 > Editorial status: `blocked`.
-> The Unreleased source bundle remains available for inspection and validation, but it is not publication-ready until the required human domain review is retained against its final digest.
+> The v0.3.0 candidate remains available for inspection and validation, but it is not publication-ready until the required human domain review is retained against its final digest.
 
 ## Primary use cases
 
@@ -54,7 +54,7 @@ The charter, finite snapshot, isolated worktrees, reserved capacity, shared fenc
 5. On return, inspect the terminal status and counts before interpreting the result as backlog exhaustion.
 6. Resume with a new invocation only when the prior charter is still valid or a maintainer has approved a replacement charter.
 
-In a source build containing the unreleased schema v4 facet, find autonomous designs with `awf list --execution-mode autonomous`.
+In the v0.3.0 candidate, find autonomous designs with `awf list --execution-mode autonomous`.
 The separate `--execution <status>` filter reports retained external-agent execution evidence and does not describe the workflow design.
 
 ## Files
