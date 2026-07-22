@@ -23,23 +23,28 @@ The retained corpus hash, matrices, and integrated verification below cover the 
 The current working tree migrates those 20 bundles to schema version 4 and adds `resolve-github-issues` as the twenty-first recipe bundle, with seven-file recipe-content SHA-256 `08937a53ed476ca574a716b62832872f8ddd65466da30125c17348db9396fb09`.
 That digest uses the repository's `hashNamedContent` contract over sorted relative filenames and their UTF-8 contents with null separators.
 
-Multiple independent agent reviews challenged the new bundle, but they do not satisfy the human editorial gate in the recipe quality standard.
+Multiple independent agent reviews challenged the new bundle, but they did not substitute for the human editorial gate in the recipe quality standard.
+On 2026-07-22, the repository maintainer completed both required human reviews against this frozen working tree.
+The retained attestation confirms that every original-recipe migration is limited to the schema version, recipe patch version, and correct conservative `supervised` classification without an `autonomy` contract.
+It also confirms a complete domain review of all seven `resolve-github-issues` source files at recipe-content SHA-256 `08937a53ed476ca574a716b62832872f8ddd65466da30125c17348db9396fb09`, with no remaining publication-blocking editorial finding.
+This attestation establishes editorial readiness only and does not imply installation, external-agent execution, or outcome verification.
 
 The frozen working tree passed the complete local automated pipeline on 2026-07-22.
 `pnpm build`, strict validation for all 21 recipes, content validation, deterministic generation check, lint, formatting, typecheck, link checking, documentation build, CLI automation, fixtures, acceptance, shell completion, package smoke, and the exact v0.2.2 lifecycle upgrade smoke all completed successfully.
 The unit suite passed 472 tests in 30 files, coverage passed the same 472 tests with 91.97 percent statements, 85.65 percent branches, 95.09 percent functions, and 92.57 percent lines, and the integration suite passed 58 tests.
 Similarity review compared 1,260 recipe surfaces with no threshold crossing, stale review, or unresolved current-content review.
 The documentation build retained the known non-blocking VitePress chunk-size warning.
-These automated results establish structural and repository-level validation only, so they do not close either human review gate or advance installation, external-agent execution, or outcome evidence.
+These automated results establish structural and repository-level validation only.
+The separate maintainer attestation closes the two human editorial gates without advancing installation, external-agent execution, or outcome evidence.
 
 | Recipe | Adversarial findings | Primary files changed | Current decision | Remaining limitation and status justification | Status |
 | --- | --- | --- | --- | --- | --- |
-| Original 20 recipes, current schema version 4 variants | The mechanical migration changes bundle identity and adds a semantic `supervised` classification that the retained schema version 3 review did not assess | The 20 `recipe.yml` files | Require schema version 4, bump each recipe patch version, and use the conservative `supervised` mode without an `autonomy` contract | One cross-cutting human reviewer must confirm that every migration diff is limited to version, schema, and the correct supervised classification before the current variants become publication-ready | blocked |
-| `resolve-github-issues` | The initial design needed finite intake, complete pagination, durable distributed ownership, bounded retries and deadlines, safe remote-content handling, exact review boundaries, UX-aware triage, post-merge outcome verification, and race-safe closure plus cleanup | All seven recipe source files | Freeze one explicitly authorized finite cohort; coordinate through shared fenced compare-and-swap leases; treat remote content as untrusted evidence; exhaust nested API records; separate delivery state, delivery actor, tracker, closure, work, cleanup, and integration state; support direct squash merge only; use non-closing issue references; run smoke before manual closure; isolate workers and fresh reviewers; and use exact-OID cleanup | No human domain reviewer has yet completed and retained the editorial review required for publication; installation, external-agent execution, and outcome review also remain untested, so automated review cannot justify `pass` | blocked |
+| Original 20 recipes, current schema version 4 variants | The mechanical migration changes bundle identity and adds a semantic `supervised` classification that the retained schema version 3 review did not assess | The 20 `recipe.yml` files | Require schema version 4, bump each recipe patch version, and use the conservative `supervised` mode without an `autonomy` contract | The repository maintainer completed the cross-cutting review on 2026-07-22 and confirmed the migrations are limited to the reviewed fields with the correct classification | pass |
+| `resolve-github-issues` | The initial design needed finite intake, complete pagination, durable distributed ownership, bounded retries and deadlines, safe remote-content handling, exact review boundaries, UX-aware triage, post-merge outcome verification, and race-safe closure plus cleanup | All seven recipe source files | Freeze one explicitly authorized finite cohort; coordinate through shared fenced compare-and-swap leases; treat remote content as untrusted evidence; exhaust nested API records; separate delivery state, delivery actor, tracker, closure, work, cleanup, and integration state; support direct squash merge only; use non-closing issue references; run smoke before manual closure; isolate workers and fresh reviewers; and use exact-OID cleanup | The repository maintainer completed the human domain review on 2026-07-22 against the recorded digest with no publication-blocking editorial finding; installation, external-agent execution, and outcome review remain untested | pass |
 
 The historical schema version 3 dispositions remain `pass` for their retained digest only.
-The current schema version 4 variants remain `blocked` until the cross-cutting migration review is retained, and the autonomous bundle additionally requires its human domain review.
-If a recipe source file changes, this addendum's digest and review currency must be refreshed before that gate can close.
+The current schema version 4 variants and the autonomous bundle are editorially ready for publication at the recorded working-tree identities.
+If a recipe source file changes, this addendum's digest must be refreshed and the affected human review repeated before publication.
 
 ## Historical baseline at `cbe8c9d`
 
