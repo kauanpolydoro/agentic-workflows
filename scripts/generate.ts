@@ -461,16 +461,71 @@ async function validatedCatalogState(repository: string): Promise<{
   return { recipes, entries: generatedCatalog(recipes, evidence, recipeHashes), evidence };
 }
 
+const autonomousExecutionInvariants = [
+  {
+    if: {
+      properties: { execution_mode: { const: "autonomous" } },
+      required: ["execution_mode"],
+    },
+    // biome-ignore lint/suspicious/noThenProperty: JSON Schema uses then as a conditional keyword.
+    then: {
+      required: ["autonomy", "agent_requirements"],
+      properties: {
+        agent_requirements: {
+          type: "object",
+          required: ["capabilities"],
+          properties: {
+            capabilities: {
+              type: "array",
+              contains: { const: "persistent-execution" },
+              minContains: 1,
+            },
+          },
+        },
+      },
+    },
+  },
+  {
+    if: {
+      properties: { execution_mode: { const: "supervised" } },
+      required: ["execution_mode"],
+    },
+    // biome-ignore lint/suspicious/noThenProperty: JSON Schema uses then as a conditional keyword.
+    then: { not: { required: ["autonomy"] } },
+  },
+] as const;
+
+function withAutonomousExecutionInvariants<T extends object>(schema: T) {
+  const existingAllOf = (schema as { allOf?: unknown }).allOf;
+  if (existingAllOf !== undefined && !Array.isArray(existingAllOf)) {
+    throw new Error("Expected generated JSON Schema allOf to be an array.");
+  }
+  return {
+    ...schema,
+    allOf: [...(existingAllOf ?? []), ...autonomousExecutionInvariants],
+  };
+}
+
 async function generateSchemas(writer: ArtifactWriter): Promise<void> {
+  const recipeShape = z.toJSONSchema(recipeSchema);
+  const catalogShape = z.toJSONSchema(generatedCatalogRecipeSchema.array());
+  if (
+    catalogShape.items === null ||
+    typeof catalogShape.items !== "object" ||
+    Array.isArray(catalogShape.items)
+  ) {
+    throw new Error("Expected generated catalog JSON Schema items to be an object schema.");
+  }
   const recipeJsonSchema = {
-    ...z.toJSONSchema(recipeSchema),
+    ...withAutonomousExecutionInvariants(recipeShape),
     $comment:
-      "Field shape is portable JSON Schema. Cross-field recipe invariants are enforced by the Zod runtime validator and cannot be represented completely in JSON Schema.",
+      "Field shape and the autonomous execution contract invariants are portable JSON Schema. Remaining cross-field recipe invariants require the Zod runtime validator.",
   };
   const catalogJsonSchema = {
-    ...z.toJSONSchema(generatedCatalogRecipeSchema.array()),
+    ...catalogShape,
+    items: withAutonomousExecutionInvariants(catalogShape.items),
     $comment:
-      "Field shape is portable JSON Schema. Catalog equivalence with source recipe invariants is enforced by the Zod runtime validator and generator.",
+      "Field shape and the autonomous execution contract invariants are portable JSON Schema. Remaining catalog equivalence with source recipe invariants requires the Zod runtime validator and generator.",
   };
   const verificationJsonSchema = {
     ...z.toJSONSchema(verificationEvidenceSchema),
@@ -550,7 +605,7 @@ async function generateDocumentation(
   }
   await writer.file(
     "docs/catalog/index.md",
-    `---\nlayout: page\ntitle: Workflow catalog\ndescription: Browse every workflow in the catalog and see exactly what has been tested for each one.\n---\n\n<script setup>\nimport CatalogExplorer from '../.vitepress/theme/components/CatalogExplorer.vue'\nimport catalog from '../../generated/catalog.json'\n</script>\n\n# Workflow catalog\n\nAll ${recipes.length} workflows are listed below.\nUse the filters to narrow the list; they run entirely in your browser and send nothing anywhere.\n\n<CatalogExplorer :recipes="catalog" />\n\nIf JavaScript is disabled, you can still reach every workflow through the links below.\n\n${recipes.map((recipe) => `- [${recipe.title}](./${recipe.id}) - ${recipe.summary}`).join("\n")}\n`,
+    `---\nlayout: page\ntitle: Workflow catalog\ndescription: Browse every workflow in the catalog and see exactly what has been tested for each one.\n---\n\n<script setup>\nimport CatalogExplorer from '../.vitepress/theme/components/CatalogExplorer.vue'\nimport catalog from '../../generated/catalog.json'\n</script>\n\n# Workflow catalog\n\nAll ${recipes.length} workflows are listed below.\nUse the filters to narrow the list; they run entirely in your browser and send nothing anywhere.\n\nThis page reflects the current schema version 4 source catalog.\nThe historical schema version 3 editorial dispositions do not promote these migrated bundles automatically; the migration and the autonomous addition remain pending the human gates recorded in the [recipe audit](../quality/recipe-audit.md).\n\n<CatalogExplorer :recipes="catalog" />\n\nIf JavaScript is disabled, you can still reach every workflow through the links below.\n\n${recipes.map((recipe) => `- [${recipe.title}](./${recipe.id}) - ${recipe.summary}`).join("\n")}\n`,
   );
 }
 

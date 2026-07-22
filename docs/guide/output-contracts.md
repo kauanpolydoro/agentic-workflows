@@ -1,5 +1,8 @@
 # CLI output contracts
 
+This page describes the v0.3.0 release candidate.
+Version `0.3.0` uses recipe schema version 4 and exposes the execution-mode facet.
+
 `awf` separates human output from machine output so scripts never need to parse presentation text.
 
 Use `--json` whenever another process consumes a command result.
@@ -33,8 +36,8 @@ The following table identifies the version field that owns each machine-readable
 | Command or mode | Top-level JSON value | Version contract |
 | --- | --- | --- |
 | `context --json` | Project-context report | Top-level `schema_version: 1` |
-| `list --json` | Array of generated catalog recipe records | Every recipe has `schema_version: 3` |
-| `show --json` | Recipe record | Recipe `schema_version: 3` |
+| `list --json` | Array of generated catalog recipe records | Every recipe has `schema_version: 4` |
+| `show --json` | Recipe record | Recipe `schema_version: 4` |
 | `show --open --json` | Documentation opener result | Top-level `schema_version: 1` |
 | Applied `install`, `update`, or `remove` | Installation manifest | Manifest `schema_version: 2` |
 | Lifecycle `--dry-run --json` | Command result with nested `plan` | `plan.schema_version: 1` |

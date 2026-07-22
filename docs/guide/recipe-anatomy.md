@@ -16,8 +16,9 @@ recipes/<workflow-id>/
 
 Here is what each file is for:
 
-- **`recipe.yml`** holds the metadata: title, summary, inputs, outputs, safety rules, and which agents the recipe is compatible with.
+- **`recipe.yml`** holds the metadata: title, summary, domain category, execution mode, inputs, outputs, safety rules, and which agents the recipe is compatible with.
   It is validated against [a strict JSON Schema](https://github.com/kauanpolydoro/agentic-workflows/blob/main/generated/recipe.schema.json), so unknown fields, invalid values, malformed IDs, invalid dates, and missing files all fail validation.
+  Schema version 4 keeps domain `category` separate from `execution_mode`; an autonomous recipe also carries a strict `autonomy` contract.
 - **`workflow.md`** is the workflow itself and the single source of truth.
   Every workflow follows the same fifteen sections, from Objective through Example, so once you have read one recipe you can find your way around all of them.
 - **`README.md`** explains the recipe to a human who is deciding whether to use it.
@@ -27,3 +28,6 @@ Here is what each file is for:
 
 Adapter compatibility and verification status live in the metadata, not in the prose.
 That separation lets you tell portable content apart from tested claims about external tools.
+
+Execution mode is also separate from verification.
+`autonomous` means the workflow is designed to continue after upfront authorization, while the execution stage records whether a named external agent actually demonstrated that behavior.

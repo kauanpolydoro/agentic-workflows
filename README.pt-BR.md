@@ -2,8 +2,9 @@
 
 Instale fluxos de engenharia inspecionáveis no Codex, Claude Code, Cursor, Gemini CLI ou OpenCode, com uma exportação em Markdown simples para uso manual em outros ambientes.
 
-Agentic Workflows é um catálogo com 20 pacotes de fluxos orientados a evidências e uma CLI offline que os instala com segurança dentro de um projeto.
+O candidato à release v0.3.0 contém 21 pacotes de fluxos orientados a evidências e uma CLI offline que os instala com segurança dentro de um projeto.
 Ele oferece aos agentes de programação entradas, pré-requisitos, passos observáveis, decisões, aprovações, saídas esperadas e critérios de conclusão explícitos para tarefas como revisão de pull request, diagnóstico de CI, migrações, segurança, testes e documentação.
+O corpus histórico do schema versão 3 preserva suas disposições editoriais registradas, mas as migrações atuais para o schema versão 4 ainda exigem uma revisão humana transversal antes da publicação, e o novo pacote autônomo exige sua própria revisão humana de domínio.
 
 ![Demonstração da CLI Agentic Workflows](docs/public/terminal-demo.svg)
 
@@ -16,6 +17,7 @@ Ele oferece aos agentes de programação entradas, pré-requisitos, passos obser
 - Exporte a mesma receita canônica para o formato local esperado por cada agente suportado.
 - Atualize ou remova pacotes gerenciados sem descartar silenciosamente alterações locais.
 - Mantenha validação estrutural, testes de instalação, execução por agente externo e revisão humana do resultado como estados de evidência separados.
+- Encontre designs autônomos separadamente do domínio de engenharia e da evidência de que um agente realmente os executou.
 
 Uma receita é um pacote de sete arquivos de dados e documentação, não um plugin executável.
 A CLI serializa esse pacote para o agente escolhido e o grava localmente, mas nunca executa a receita nem concede permissão para os efeitos descritos por ela.
@@ -28,6 +30,9 @@ Instale-o globalmente uma vez para disponibilizar `awf` em qualquer projeto:
 ```bash
 npm install --global @kauanpolydoro/agentic-workflows
 ```
+
+A versão `0.3.0` introduz o schema versão 4, a receita autônoma e `--execution-mode`.
+Até o candidato concluir as revisões humanas registradas e ser publicado, use um checkout do código-fonte para esses recursos.
 
 Para um repositório ou job de CI que precise fixar a CLI, use a [configuração com versão exata](#experimente-sem-instalação-global).
 
@@ -120,10 +125,12 @@ Esses exemplos com `@latest` destinam-se intencionalmente a avaliações pontuai
 Instale a versão exata do repositório e versione o manifesto e o lockfile resultantes para uso no projeto ou CI:
 
 ```bash
-npm install --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.2.2
+npm install --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.3.0
 npx awf context --json
 npx awf list --json
 ```
+
+Esse pin exato seleciona o contrato do schema versão 4 e de modo de execução depois que a v0.3.0 for publicada.
 
 Se `awf` não estiver disponível depois da instalação global, use o [guia de diagnóstico da instalação](docs/guide/installation.md#troubleshoot-installation) para verificar Node.js, prefixo do npm, `PATH` e permissões.
 
@@ -133,8 +140,13 @@ Se `awf` não estiver disponível depois da instalação global, use o [guia de 
 - [`debug-failing-ci`](https://kauanpolydoro.github.io/agentic-workflows/catalog/debug-failing-ci) parte do primeiro log causal, testa hipóteses refutáveis e chega a uma correção mínima.
 - [`database-migration-review`](https://kauanpolydoro.github.io/agentic-workflows/catalog/database-migration-review) avalia locks, perda de dados, compatibilidade entre versões e recuperação do rollout.
 - [`security-review`](https://kauanpolydoro.github.io/agentic-workflows/catalog/security-review) permanece estritamente defensivo e exige escopo autorizado explícito.
+- [`resolve-github-issues`](https://kauanpolydoro.github.io/agentic-workflows/catalog/resolve-github-issues) define uma campanha finita e não assistida com checkpoints, subagentes revisores isolados, merges serializados e estados de parada honestos; seu status editorial é `blocked` enquanto aguarda a revisão humana de domínio exigida, portanto o candidato ainda não está pronto para publicação.
 
-[Consulte todos os 20 fluxos](https://kauanpolydoro.github.io/agentic-workflows/catalog/) ou filtre-os localmente com `awf list --category <categoria>`, `--agent <agente>` ou `--tag <tag>`.
+[Consulte todos os 21 fluxos](https://kauanpolydoro.github.io/agentic-workflows/catalog/) ou encontre designs autônomos no candidato à v0.3.0 com `awf list --execution-mode autonomous`.
+Você pode combinar essa faceta com `--category <categoria>`, `--agent <agente>` ou `--tag <tag>`.
+
+O modo de execução descreve o design da recipe.
+Ele não comprova que um host específico concluiu uma execução não assistida, que continua sendo um estado separado de evidência de execução.
 
 ## Veja um resultado completo
 
@@ -265,6 +277,7 @@ pnpm test:automation
 pnpm test:integration
 pnpm test:acceptance
 pnpm test:package
+pnpm test:upgrade
 pnpm validate:recipes
 pnpm validate:content
 pnpm audit:similarity

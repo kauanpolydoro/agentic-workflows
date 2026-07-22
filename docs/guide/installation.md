@@ -141,19 +141,39 @@ GitHub source archives contain repository sources instead and require workspace 
 Install an explicit package version as a development dependency when the repository or CI pipeline must control the exact CLI version:
 
 ```bash
-npm install --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.2.2
+npm install --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.3.0
 npx awf list
 ```
 
 The pnpm equivalent is:
 
 ```bash
-pnpm add --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.2.2
+pnpm add --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.3.0
 pnpm exec awf list
 ```
 
 Commit the resulting package manifest and lockfile.
 The exact version in this guide is checked against the repository package version during release preparation.
+
+## Upgrade an existing workflow bundle
+
+The v0.3.0 CLI recognizes exact bundles installed by v0.2.2 for every historical recipe and all six adapters.
+This retained compatibility keeps `status`, `manifest`, `update`, and `remove` available without treating arbitrary old manifests as trusted.
+
+Inspect the current state and the complete proposed migration before applying it:
+
+```bash
+awf status
+awf manifest <workflow-id> --json
+awf update <workflow-id> --dry-run --show-content
+awf update <workflow-id>
+```
+
+The update records migration provenance in the new installation manifest.
+An exact historical bundle can also be removed directly with `awf remove <workflow-id>`.
+
+Changes to manifest identity, adapter metadata, invocation, entrypoint, managed paths, roles, or retained hashes invalidate the historical fingerprint and fail closed.
+Changes to managed file contents are reported as drift and require review before an explicit `--force` update or removal.
 
 ## Troubleshoot installation
 

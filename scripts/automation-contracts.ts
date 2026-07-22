@@ -113,6 +113,20 @@ parseCliOutput("catalog_list", catalog);
 if (!Array.isArray(catalog) || catalog.length === 0) {
   throw new Error("Catalog automation did not receive any workflow records.");
 }
+const autonomousCatalog = jsonSuccess<Array<{ id?: string; execution_mode?: string }>>([
+  "list",
+  "--execution-mode",
+  "autonomous",
+  "--json",
+]);
+parseCliOutput("catalog_list", autonomousCatalog);
+if (
+  autonomousCatalog.length !== 1 ||
+  autonomousCatalog[0]?.id !== "resolve-github-issues" ||
+  autonomousCatalog[0]?.execution_mode !== "autonomous"
+) {
+  throw new Error("Autonomous catalog automation returned an unexpected workflow set.");
+}
 
 const projectContext = jsonSuccess<{
   schema_version?: number;

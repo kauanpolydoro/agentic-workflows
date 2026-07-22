@@ -1,9 +1,10 @@
-schema_version: 3
+schema_version: 4
 id: debug-failing-ci
 title: Diagnose and correct a failing CI job
 summary: Turn one failing CI job into an evidence-backed diagnosis, a minimal causal patch, and a local and external CI verification matrix, without weakening the failed control.
-version: 1.2.0
+version: 1.2.1
 category: debugging
+execution_mode: supervised
 difficulty: intermediate
 risk_level: medium
 estimated_duration: 1h

@@ -1,4 +1,5 @@
 import type {
+  ExecutionMode,
   GeneratedCatalogRecipe,
   RecipeCompatibilityStatus,
   SupportStatus,
@@ -17,6 +18,7 @@ type VerificationStatus =
 export interface CatalogFilters {
   query: string;
   category: string;
+  executionMode: AllOr<ExecutionMode>;
   adapter: AllOr<RegisteredAdapterId>;
   compatibility: AllOr<RecipeCompatibilityStatus>;
   support: AllOr<SupportStatus>;
@@ -41,6 +43,7 @@ export function createDefaultCatalogFilters(): CatalogFilters {
   return {
     query: "",
     category: "all",
+    executionMode: "all",
     adapter: "all",
     compatibility: "compatible",
     support: "all",
@@ -65,7 +68,14 @@ function matchesText(recipe: GeneratedCatalogRecipe, query: string): boolean {
   const terms = query.trim().toLowerCase().split(/\s+/u).filter(Boolean);
   if (terms.length === 0) return true;
 
-  const searchable = [recipe.id, recipe.title, recipe.summary, recipe.category, ...recipe.tags]
+  const searchable = [
+    recipe.id,
+    recipe.title,
+    recipe.summary,
+    recipe.category,
+    recipe.execution_mode,
+    ...recipe.tags,
+  ]
     .join(" ")
     .toLowerCase();
   return terms.every((term) => searchable.includes(term));
@@ -108,6 +118,7 @@ export function filterCatalog(
     (recipe) =>
       matchesText(recipe, filters.query) &&
       (filters.category === "all" || recipe.category === filters.category) &&
+      (filters.executionMode === "all" || recipe.execution_mode === filters.executionMode) &&
       matchesAdapterDimensions(recipe, filters),
   );
 }

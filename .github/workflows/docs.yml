@@ -39,6 +39,7 @@ jobs:
       - run: pnpm test:integration
       - run: pnpm test:acceptance
       - run: pnpm test:package
+      - run: pnpm test:upgrade
       - run: pnpm validate
       - run: pnpm audit:similarity
       - run: pnpm test:fixtures

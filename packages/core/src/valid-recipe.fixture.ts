@@ -1,12 +1,13 @@
 import type { Recipe } from "./schema.js";
 
 export const validRecipeMetadata = {
-  schema_version: 3,
+  schema_version: 4,
   id: "safe-review",
   title: "Review safe changes",
   summary: "Review a focused change using explicit evidence and completion criteria.",
   version: "1.0.0",
   category: "code-review",
+  execution_mode: "supervised",
   difficulty: "beginner",
   risk_level: "low",
   estimated_duration: "15m",

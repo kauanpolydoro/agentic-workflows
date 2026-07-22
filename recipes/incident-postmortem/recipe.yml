@@ -1,11 +1,12 @@
-schema_version: 3
+schema_version: 4
 id: incident-postmortem
 title: Produce an evidence-linked blameless incident postmortem
 summary: Build a bounded, blameless incident learning record from retained evidence,
   covering impact, timeline, causal confidence, organizational conditions, and
   corrective actions that can be verified.
-version: 1.2.0
+version: 1.2.1
 category: operations
+execution_mode: supervised
 difficulty: advanced
 risk_level: high
 estimated_duration: 2h

@@ -2,8 +2,9 @@
 
 Install inspectable engineering workflows into Codex, Claude Code, Cursor, Gemini CLI, or OpenCode, with a plain Markdown export for manual use elsewhere.
 
-Agentic Workflows is a catalog of 20 evidence-oriented workflow bundles plus an offline CLI that installs them safely inside a project.
+The v0.3.0 release candidate contains 21 evidence-oriented workflow bundles plus an offline CLI that installs them safely inside a project.
 It gives coding agents explicit inputs, prerequisites, observable steps, decision points, approval gates, expected outputs, and completion criteria for work such as pull-request review, CI debugging, migrations, security review, testing, and documentation.
+The historical schema version 3 corpus retains its recorded editorial dispositions, but the current schema version 4 migrations still require one cross-cutting human review before publication, and the new autonomous bundle requires its own human domain review.
 
 ![Agentic Workflows terminal demonstration](https://raw.githubusercontent.com/kauanpolydoro/agentic-workflows/main/docs/public/terminal-demo.svg)
 
@@ -16,6 +17,7 @@ It gives coding agents explicit inputs, prerequisites, observable steps, decisio
 - Export the same canonical recipe to the project-local format expected by each supported agent.
 - Update or remove managed bundles without silently discarding local edits.
 - Keep structural validation, installation tests, external-agent execution, and human outcome review as separate evidence states.
+- Discover autonomous designs separately from their engineering domain and from evidence that an agent actually ran them.
 
 A recipe is a seven-file data and documentation bundle, not an executable plugin.
 The CLI serializes that bundle for a selected agent and writes it locally, but it never executes the recipe or grants permission for the effects described by it.
@@ -28,6 +30,9 @@ Install it globally once to make `awf` available from any project:
 ```bash
 npm install --global @kauanpolydoro/agentic-workflows
 ```
+
+Version `0.3.0` introduces schema version 4, the autonomous recipe, and `--execution-mode`.
+Until the candidate clears its recorded human review gates and is published, use a source checkout for those features.
 
 For a repository or CI job that must pin the CLI, use the [exact-version setup](#try-without-a-global-installation) instead.
 
@@ -120,10 +125,12 @@ These `@latest` examples are intentionally for one-off evaluation, not reproduci
 Install the exact repository version and commit the resulting manifest plus lockfile for project or CI use:
 
 ```bash
-npm install --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.2.2
+npm install --save-dev --save-exact @kauanpolydoro/agentic-workflows@0.3.0
 npx awf context --json
 npx awf list --json
 ```
+
+That exact pin selects the schema version 4 and execution-mode contract after v0.3.0 is published.
 
 If `awf` is unavailable after a global installation, use the [installation troubleshooting guide](docs/guide/installation.md#troubleshoot-installation) to check Node.js, npm's prefix, `PATH`, and permissions.
 
@@ -133,8 +140,13 @@ If `awf` is unavailable after a global installation, use the [installation troub
 - [`debug-failing-ci`](https://kauanpolydoro.github.io/agentic-workflows/catalog/debug-failing-ci) moves from the first causal log through falsifiable hypotheses to a minimal fix.
 - [`database-migration-review`](https://kauanpolydoro.github.io/agentic-workflows/catalog/database-migration-review) evaluates locks, data loss, mixed-version compatibility, and rollout recovery.
 - [`security-review`](https://kauanpolydoro.github.io/agentic-workflows/catalog/security-review) stays strictly defensive and requires explicit authorized scope.
+- [`resolve-github-issues`](https://kauanpolydoro.github.io/agentic-workflows/catalog/resolve-github-issues) defines a finite unattended issue campaign with checkpoints, isolated review subagents, serialized merges, and honest stop states; its editorial status is `blocked` pending the required human domain review, so the candidate is not publication-ready.
 
-[Browse all 20 workflows](https://kauanpolydoro.github.io/agentic-workflows/catalog/) or filter them locally with `awf list --category <category>`, `--agent <agent>`, or `--tag <tag>`.
+[Browse all 21 workflows](https://kauanpolydoro.github.io/agentic-workflows/catalog/) or find autonomous designs in the v0.3.0 candidate with `awf list --execution-mode autonomous`.
+You can combine that facet with `--category <category>`, `--agent <agent>`, or `--tag <tag>`.
+
+Execution mode describes the recipe design.
+It does not prove that a particular host completed an unattended run, which remains a separate execution-evidence state.
 
 ## See a complete result
 
@@ -265,6 +277,7 @@ pnpm test:automation
 pnpm test:integration
 pnpm test:acceptance
 pnpm test:package
+pnpm test:upgrade
 pnpm validate:recipes
 pnpm validate:content
 pnpm audit:similarity

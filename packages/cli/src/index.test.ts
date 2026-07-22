@@ -279,6 +279,15 @@ describe.sequential("CLI command contracts", () => {
     stdout = "";
     await run("list", "--category", "release");
     expect(stdout).toContain("write-release-notes");
+    stdout = "";
+    await run("list", "--execution-mode", "autonomous");
+    expect(stdout).toContain("resolve-github-issues");
+    expect(stdout).toContain("autonomous");
+    expect(stdout).not.toContain("write-release-notes");
+    stdout = "";
+    await run("show", "resolve-github-issues");
+    expect(stdout).toContain("Category: maintenance");
+    expect(stdout).toContain("Execution mode: autonomous");
   });
 
   it("excludes catalog entries that fail each agent-specific filter", async () => {
@@ -307,6 +316,7 @@ describe.sequential("CLI command contracts", () => {
     await run("show", "write-release-notes");
     expect(stdout).toContain("Risk:");
     expect(stdout).toContain("Difficulty:");
+    expect(stdout).toContain("Execution mode: supervised");
     expect(stdout).toContain("Required inputs:");
     expect(stdout).toContain("Agent compatibility:");
     expect(stdout).toContain("- codex: compatible; capability unknown");
@@ -794,10 +804,10 @@ describe.sequential("CLI command contracts", () => {
 
   it("validates a catalog and a single recipe in strict mode", async () => {
     await run("validate", "--strict", "--json");
-    expect(JSON.parse(stdout)).toMatchObject({ valid: true, recipes: 20 });
+    expect(JSON.parse(stdout)).toMatchObject({ valid: true, recipes: 21 });
     stdout = "";
     await run("validate", path.join(repositoryRoot, "recipes"), "--strict", "--json");
-    expect(JSON.parse(stdout)).toMatchObject({ valid: true, recipes: 20 });
+    expect(JSON.parse(stdout)).toMatchObject({ valid: true, recipes: 21 });
     stdout = "";
     await run(
       "validate",

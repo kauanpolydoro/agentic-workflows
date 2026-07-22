@@ -26,6 +26,10 @@ So use the CLI only in a project directory whose parent hierarchy you control, a
 Review a workflow before installing it, because its prose may recommend commands for you or your agent to run later.
 Installation is never approval to execute those commands.
 
+An `autonomous` execution mode does not change that boundary.
+It means the workflow is designed to continue after explicit invocation and one complete upfront authorization, not that installation starts a process or grants permissions.
+Use an autonomous workflow only with a host that can enforce its stop, deadline, checkpoint, isolation, and resume contract.
+
 ## Reporting a vulnerability
 
 Report vulnerabilities through the private process described in [SECURITY.md](https://github.com/kauanpolydoro/agentic-workflows/blob/main/SECURITY.md).

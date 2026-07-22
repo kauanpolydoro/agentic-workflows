@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -21,6 +22,20 @@ interface PackageMetadata {
   version?: unknown;
 }
 
+interface SocialPreviewManifest {
+  font?: unknown;
+  font_sha256?: unknown;
+  height?: unknown;
+  output?: unknown;
+  output_sha256?: unknown;
+  recipe_count?: unknown;
+  renderer?: unknown;
+  schema_version?: unknown;
+  source?: unknown;
+  source_sha256?: unknown;
+  width?: unknown;
+}
+
 const completeValidationCommands = [
   "pnpm generate:check",
   "pnpm format:check",
@@ -34,6 +49,7 @@ const completeValidationCommands = [
   "pnpm test:integration",
   "pnpm test:acceptance",
   "pnpm test:package",
+  "pnpm test:upgrade",
   "pnpm validate:recipes",
   "pnpm validate:content",
   "pnpm audit:similarity",
@@ -55,6 +71,22 @@ async function packageMetadata(relative: string): Promise<PackageMetadata> {
 }
 
 describe("delivery contracts", () => {
+  it("keeps architecture decision numbers unique", async () => {
+    const files = (await readdir(path.join(repository, "docs/decisions"))).filter((file) =>
+      /^\d{4}-.+\.md$/u.test(file),
+    );
+    const byNumber = new Map<string, string[]>();
+    for (const file of files) {
+      const number = file.slice(0, 4);
+      byNumber.set(number, [...(byNumber.get(number) ?? []), file]);
+    }
+    const duplicates = [...byNumber.entries()]
+      .filter(([, names]) => names.length > 1)
+      .map(([number, names]) => `${number}: ${names.join(", ")}`);
+
+    expect(duplicates).toEqual([]);
+  });
+
   it("pins every external workflow action to an immutable commit", async () => {
     const directory = path.join(repository, ".github/workflows");
     for (const file of await readdir(directory)) {
@@ -73,6 +105,7 @@ describe("delivery contracts", () => {
     expect(workflow).toContain("needs: quality");
     expect(workflow).toContain("pnpm generate:check");
     expect(workflow).toContain("pnpm test:package");
+    expect(workflow).toContain("pnpm test:upgrade");
     expect(workflow).toContain("pnpm check:links");
     expect(workflow).toContain("pnpm check:clean");
     expect(workflow.indexOf("needs: quality")).toBeLessThan(
@@ -139,6 +172,7 @@ describe("delivery contracts", () => {
       "actions/attest-build-provenance@",
       "release-artifacts.ts finalize",
       "pnpm test:package",
+      "pnpm test:upgrade",
       "pnpm check:clean",
       "registry-url: https://registry.npmjs.org",
       "package-manager-cache: false",
@@ -308,8 +342,18 @@ describe("delivery contracts", () => {
     const recipeCount = (
       await readdir(path.join(repository, "recipes"), { withFileTypes: true })
     ).filter((entry) => entry.isDirectory()).length;
-    expect(english).toContain(`catalog of ${recipeCount} evidence-oriented workflow bundles`);
-    expect(portuguese).toContain(`catálogo com ${recipeCount} pacotes de fluxos`);
+    expect(english).toContain(
+      `v${String(metadata.version)} release candidate contains ${recipeCount} evidence-oriented workflow bundles`,
+    );
+    expect(portuguese).toContain(
+      `candidato à release v${String(metadata.version)} contém ${recipeCount} pacotes de fluxos`,
+    );
+    expect(english).toContain(
+      `Version \`${String(metadata.version)}\` introduces schema version 4`,
+    );
+    expect(portuguese).toContain(
+      `versão \`${String(metadata.version)}\` introduz o schema versão 4`,
+    );
   });
 
   it("keeps the English and Portuguese landing pages equivalent in scope", async () => {
@@ -381,7 +425,7 @@ describe("delivery contracts", () => {
     const installation = await text("docs/guide/installation.md");
     const cliMetadata = await packageMetadata("packages/cli/package.json");
     const exactPackage = `@kauanpolydoro/agentic-workflows@${String(cliMetadata.version)}`;
-    expect(authoring).toContain("schema version 3");
+    expect(authoring).toContain("schema version 4");
     expect(authoring).not.toContain("schema version 2");
     expect(installation).toContain(`npm install --save-dev --save-exact ${exactPackage}`);
     expect(installation).toContain(`pnpm add --save-dev --save-exact ${exactPackage}`);
@@ -470,6 +514,37 @@ describe("delivery contracts", () => {
     expect(preview.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
     expect(preview.readUInt32BE(16)).toBe(1200);
     expect(preview.readUInt32BE(20)).toBe(630);
+
+    const recipeCount = (
+      await readdir(path.join(repository, "recipes"), { withFileTypes: true })
+    ).filter((entry) => entry.isDirectory()).length;
+    const source = await readFile(path.join(repository, "docs/public/social-preview.svg"));
+    const manifest = JSON.parse(
+      await text("docs/public/social-preview.manifest.json"),
+    ) as SocialPreviewManifest;
+    const metadata = JSON.parse(await text("package.json")) as {
+      devDependencies?: Record<string, unknown>;
+    };
+    const font = await readFile(
+      path.join(
+        repository,
+        "node_modules/vitepress/dist/client/theme-default/fonts/inter-roman-latin.woff2",
+      ),
+    );
+    expect(manifest).toEqual({
+      schema_version: 1,
+      source: "social-preview.svg",
+      source_sha256: createHash("sha256").update(source).digest("hex"),
+      output: "social-preview.png",
+      output_sha256: createHash("sha256").update(preview).digest("hex"),
+      width: 1200,
+      height: 630,
+      recipe_count: recipeCount,
+      renderer: `@resvg/resvg-js@${String(metadata.devDependencies?.["@resvg/resvg-js"])}`,
+      font: `vitepress@${String(metadata.devDependencies?.vitepress)}/inter-roman-latin.woff2`,
+      font_sha256: createHash("sha256").update(font).digest("hex"),
+    });
+    expect(source.toString("utf8")).toContain(`${recipeCount} structured workflows`);
 
     const config = await text("docs/.vitepress/config.ts");
     for (const requiredMetadata of [

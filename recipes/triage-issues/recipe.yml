@@ -1,11 +1,12 @@
-schema_version: 3
+schema_version: 4
 id: triage-issues
 title: Triage a bounded repository issue queue
 summary: Turn a frozen snapshot of an issue queue into a policy-linked
   disposition for every issue, plus duplicate evidence, draft responses, and
   closure criteria.
-version: 1.2.0
+version: 1.2.1
 category: maintenance
+execution_mode: supervised
 difficulty: intermediate
 risk_level: medium
 estimated_duration: 1h

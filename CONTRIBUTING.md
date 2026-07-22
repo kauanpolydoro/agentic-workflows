@@ -29,6 +29,7 @@ pnpm test:automation
 pnpm test:integration
 pnpm test:acceptance
 pnpm test:package
+pnpm test:upgrade
 pnpm validate:recipes
 pnpm validate:content
 pnpm audit:similarity
@@ -43,6 +44,12 @@ Do not skip a failing command or lower a threshold to make the suite pass.
 `pnpm check:clean` is the final guard: it must see no stale generated artifact and no unintended tracked or untracked file.
 
 `pnpm test:automation` validates the public JSON contract across command boundaries in real subprocesses.
+
+`pnpm test:upgrade` hydrates an exact retained v0.2.2 installation and exercises status, inspection, update, drift recovery, tamper rejection, and removal with the current compiled CLI.
+
+After changing `docs/public/social-preview.svg`, run `pnpm render:social-preview` to update the published PNG.
+Inspect the resulting 1200x630 image before committing it because automated checks do not perform OCR or judge visual quality.
+The unit suite verifies the retained SVG and PNG hashes, dimensions, pinned renderer and font, and workflow count.
 
 Project-discovery fixtures must define their own discovery boundary instead of assuming the operating system's temporary directory has no Git or AWF marker.
 

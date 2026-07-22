@@ -22,8 +22,10 @@ describe("shell completion", () => {
     expect(completion).toContain("context");
     expect(completion).toContain("codex");
     expect(completion).toContain("regression-test");
+    expect(completion).toContain("autonomous");
     for (const option of [
       "category",
+      "execution-mode",
       "tag",
       "adapter-status",
       "compatibility",

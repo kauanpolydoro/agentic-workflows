@@ -66,7 +66,7 @@ Do not turn metadata into a duplicate of the procedure.
 | Field or concern | Ready criterion |
 | --- | --- |
 | Identity | `id` exactly matches the directory, the title is specific, and the summary names an observable result. |
-| Classification | Category and tags describe the actual domain, and difficulty reflects the procedure rather than document length. |
+| Classification | Category describes the actual domain, execution mode describes expected human interaction, tags improve discovery, and difficulty reflects the procedure rather than document length. |
 | Risk and duration | Risk matches the possible impact, and duration is explicitly approximate and plausible for the declared scope. |
 | Inputs | Each input names concrete data such as immutable revisions, complete logs, contracts, measurements, commands, files, or records. |
 | Outputs | Each output names a concrete artifact represented in `workflow.md`. |
@@ -75,6 +75,32 @@ Do not turn metadata into a duplicate of the procedure.
 | Ownership | Maintainers resolve to identities defined by the repository, and the declared license exists. |
 | Adapters | Agent IDs resolve to the central adapter registry, and recipe-specific limitations do not contradict global capabilities. |
 | Verification | Status, version, date, and evidence fields describe only checks that actually occurred. |
+
+Increment the recipe version whenever any of its seven source files changes.
+A schema-only metadata migration still changes the bundle identity and must not reuse the previous recipe version.
+
+### Autonomous execution mode
+
+Use `execution_mode: autonomous` only when the workflow's normal path requires no human response after explicit invocation and one complete upfront authorization.
+The required `autonomy` object is a strict baseline contract rather than evidence that any agent has executed the workflow.
+
+An autonomous recipe is ready for editorial review only when all of these conditions hold:
+
+- Every normal-path mutation, approval, limit, protected domain, and policy decision is covered by the upfront authorization.
+- The declared failure policy fits the workflow shape: item-oriented campaigns defer only the affected item and continue eligible work, while atomic workflows fail closed and checkpoint without inventing an item queue.
+- The workflow defines a finite scope or bounded intake cutoff, an absolute hard deadline, a positive shutdown reserve, and an observable owner-bound stop signal.
+- The stop signal is checked before every consequential mutation and at a bounded interval during polling or long-running work.
+- Durable state records expected prior state, mutation intent, idempotency key, remote confirmation, ownership, retries, and the next safe transition.
+- Resume begins with read-only reconciliation and never blindly repeats an uncertain mutation.
+- Parallel workers have isolated mutable resources, explicit leases, bounded concurrency, conflict serialization, and a single owner for shared state.
+- Global circuit breakers stop mutations for lost authority, state corruption, ambiguous external mutation, systemic failure, security risk, or unsafe downstream effects.
+- Item-oriented terminal states distinguish complete exhaustion from user stop, deadline, circuit breaker, deferred work, and unattempted work; atomic workflows instead distinguish complete, failed, interrupted, cleanup-pending, and ambiguous effects without inventing a queue.
+- An item-oriented final output reconciles resolution, deferred, active, queued, unattempted, cleanup-pending, and out-of-scope counts without overstating completion.
+- An atomic final output reconciles completed, pending, failed, ambiguous, cleanup, and recovery states for its declared steps and effects.
+- The README states that the recipe is an instruction bundle and names every unverified host capability needed for unattended execution.
+
+If a human response is required on the normal path, classify the recipe as `supervised`.
+If the host capability has not been demonstrated by a retained external run, keep execution and outcome status `untested` even when the design is autonomous.
 
 Avoid inputs such as `repository data`, `relevant files`, `project information`, `change records`, or `logs` unless the description states exactly which records, boundaries, fields, and integrity checks are required.
 

@@ -72,6 +72,7 @@ function assertCandidates(shell: CompletionShell, output: string): void {
     ["OPTIONS", "--agent"],
     ["AGENT", "codex"],
     ["CATEGORY", "code-review"],
+    ["EXECUTION_MODE", "autonomous"],
     ["INSTALL", "--dry-run"],
   ] as const) {
     const line = output.split(/\r?\n/).find((value) => value.startsWith(`${label}:`));
@@ -87,6 +88,9 @@ function assertCandidates(shell: CompletionShell, output: string): void {
   const install = output.split(/\r?\n/).find((line) => line.startsWith("INSTALL:"));
   if (install?.includes("--category")) {
     throw new Error(`${shell} offered the list-only --category option to install.`);
+  }
+  if (install?.includes("--execution-mode")) {
+    throw new Error(`${shell} offered the list-only --execution-mode option to install.`);
   }
   const directory = output.split(/\r?\n/).find((line) => line.startsWith("PATH:"));
   if (!directory?.includes("target-path")) {
@@ -119,6 +123,8 @@ COMP_WORDS=(awf list --agent co); COMP_CWORD=3; _awf_completion
 printf 'AGENT:%s\n' "\${COMPREPLY[*]}"
 COMP_WORDS=(awf list --category co); COMP_CWORD=3; _awf_completion
 printf 'CATEGORY:%s\n' "\${COMPREPLY[*]}"
+COMP_WORDS=(awf list --execution-mode au); COMP_CWORD=3; _awf_completion
+printf 'EXECUTION_MODE:%s\n' "\${COMPREPLY[*]}"
 COMP_WORDS=(awf install review-pull-request --); COMP_CWORD=3; _awf_completion
 printf 'INSTALL:%s\n' "\${COMPREPLY[*]}"
 COMP_WORDS=(awf init --target target-); COMP_CWORD=3; _awf_completion
@@ -156,6 +162,8 @@ words=(awf list --agent co); CURRENT=4; _awf
 print -r -- "AGENT:\${(j: :)CAPTURED}"
 words=(awf list --category co); CURRENT=4; _awf
 print -r -- "CATEGORY:\${(j: :)CAPTURED}"
+words=(awf list --execution-mode au); CURRENT=4; _awf
+print -r -- "EXECUTION_MODE:\${(j: :)CAPTURED}"
 words=(awf install review-pull-request --); CURRENT=4; _awf
 print -r -- "INSTALL:\${(j: :)CAPTURED}"
 words=(awf init --target target-); CURRENT=4; _awf
@@ -176,6 +184,7 @@ end
 printf 'OPTIONS:%s\\n' (complete_awf 'awf list --a')
 printf 'AGENT:%s\\n' (complete_awf 'awf list --agent co')
 printf 'CATEGORY:%s\\n' (complete_awf 'awf list --category co')
+printf 'EXECUTION_MODE:%s\\n' (complete_awf 'awf list --execution-mode au')
 printf 'INSTALL:%s\\n' (complete_awf 'awf install review-pull-request --')
 printf 'PATH:%s\\n' (complete_awf 'awf init --target target-')
 printf 'SPACED_PATH:%s\\n' (complete_awf 'awf init --target target\\ d')
@@ -198,6 +207,7 @@ function Complete-Awf([string]$InputText) {
 Write-Output "OPTIONS:$(Complete-Awf 'awf list --a')"
 Write-Output "AGENT:$(Complete-Awf 'awf list --agent co')"
 Write-Output "CATEGORY:$(Complete-Awf 'awf list --category co')"
+Write-Output "EXECUTION_MODE:$(Complete-Awf 'awf list --execution-mode au')"
 Write-Output "INSTALL:$(Complete-Awf 'awf install review-pull-request --')"
 Write-Output "PATH:$(Complete-Awf 'awf init --target target-')"
 Write-Output "SPACED_PATH:$((_awfCompleteDirectory 'target d' | ForEach-Object { $_.CompletionText }) -join ' ')"

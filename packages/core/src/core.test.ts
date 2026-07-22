@@ -8,14 +8,17 @@ import {
   AwfError,
   adapters,
   assertNoSymlink,
+  bundleFingerprintHash,
   compareManifestFiles,
   createManifest,
   filterRecipes,
   generateAdapterBundle,
+  generatedBundleFingerprint,
   hashContent,
   hashNamedContent,
   loadCatalog,
   loadRecipe,
+  manifestBundleFingerprint,
   manifestSchema,
   readBoundedRegularFile,
   recipeSchema,
@@ -59,6 +62,8 @@ describe("recipe validation", () => {
   it("rejects malformed slugs and enums", () => {
     expect(() => recipeSchema.parse({ ...valid, id: "../bad" })).toThrow();
     expect(() => recipeSchema.parse({ ...valid, risk_level: "severe" })).toThrow();
+    expect(() => recipeSchema.parse({ ...valid, schema_version: 3 })).toThrow();
+    expect(() => recipeSchema.parse({ ...valid, execution_mode: "background" })).toThrow();
   });
   it("rejects duplicate, untrimmed, and impossible metadata states", () => {
     expect(() => recipeSchema.parse({ ...valid, tags: ["review", "review"] })).toThrow();
@@ -204,6 +209,41 @@ describe("security and manifests", () => {
       ).installed_at,
     ).toContain("2026");
   });
+  it("matches generated and installed bundle fingerprints exactly", () => {
+    const recipe = recipeSchema.parse(valid);
+    const bundle = generateAdapterBundle(recipe, bundleSources, "generic");
+    const manifest = createManifest(
+      recipe,
+      adapters.generic,
+      bundle,
+      "0.2.2",
+      new Date("2026-01-01T00:00:00Z"),
+    );
+    const generatedHash = bundleFingerprintHash(
+      generatedBundleFingerprint(recipe, bundle, "generic"),
+    );
+
+    expect(bundleFingerprintHash(manifestBundleFingerprint(manifest))).toBe(generatedHash);
+    expect(
+      bundleFingerprintHash(
+        manifestBundleFingerprint({
+          ...manifest,
+          installed_at: "2026-02-02T00:00:00.000Z",
+          cli_version: "9.9.9",
+          adapter: { version: manifest.adapter.version, id: manifest.adapter.id },
+          files: [...manifest.files].reverse(),
+        }),
+      ),
+    ).toBe(generatedHash);
+    expect(
+      bundleFingerprintHash(
+        manifestBundleFingerprint({
+          ...manifest,
+          invocation: { ...manifest.invocation, command: "forged invocation" },
+        }),
+      ),
+    ).not.toBe(generatedHash);
+  });
   it("rejects incomplete or impossible retained verification evidence", () => {
     const base = {
       schema_version: 2,
@@ -306,6 +346,8 @@ describe("catalog and adapters", () => {
       }),
     ).toHaveLength(1);
     expect(filterRecipes([recipe], { category: "other" })).toHaveLength(0);
+    expect(filterRecipes([recipe], { executionMode: "supervised" })).toHaveLength(1);
+    expect(filterRecipes([recipe], { executionMode: "autonomous" })).toHaveLength(0);
     expect(filterRecipes([recipe], { tag: "other" })).toHaveLength(0);
     expect(filterRecipes([recipe], { agent: "cursor" })).toHaveLength(1);
     expect(filterRecipes([recipe], { agent: "generic", support: "partial" })).toHaveLength(0);
@@ -315,6 +357,33 @@ describe("catalog and adapters", () => {
     expect(
       filterRecipes([recipe], { agent: "cursor", compatibility: "incompatible" }),
     ).toHaveLength(0);
+  });
+  it("filters autonomous execution independently from domain category", () => {
+    const autonomous = recipeSchema.parse({
+      ...valid,
+      execution_mode: "autonomous",
+      agent_requirements: {
+        ...valid.agent_requirements,
+        capabilities: [...valid.agent_requirements.capabilities, "persistent-execution"],
+      },
+      autonomy: {
+        unattended_execution: true,
+        authorization: "upfront",
+        mid_run_human_input: "not-required",
+        user_stop_signal: "required",
+        hard_deadline: "required",
+        durable_checkpoints: "required",
+        resume: "required",
+        failure_policy: "defer-and-continue",
+      },
+    });
+
+    expect(
+      filterRecipes([recipe, autonomous], {
+        category: "code-review",
+        executionMode: "autonomous",
+      }),
+    ).toEqual([autonomous]);
   });
   it.each(Object.keys(adapters))("generates the %s adapter", (agent) => {
     const adapter = adapters[agent as keyof typeof adapters];

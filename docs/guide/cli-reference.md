@@ -2,6 +2,8 @@
 
 The command-line tool is called `awf`.
 
+The execution-mode facet belongs to the v0.3.0 candidate and requires a source build until that version clears its recorded publication gates.
+
 It reads the bundled catalog and writes only inside the detected or explicit project root.
 
 Run `awf` without arguments for actionable help, or run `awf <command> --help` for every option accepted by one command.
@@ -59,7 +61,9 @@ Use `awf context --json` before automation or pass `--project-root` when the cal
 
 Print the catalog.
 
-Narrow the list with `--category`, `--agent`, `--tag`, `--adapter-status`, `--compatibility`, `--installation`, `--execution`, and `--outcome`.
+Human output includes each workflow's execution mode beside its ID and summary so autonomous designs remain visible even without a filter.
+
+Narrow the list with `--category`, `--execution-mode`, `--agent`, `--tag`, `--adapter-status`, `--compatibility`, `--installation`, `--execution`, and `--outcome`.
 
 Use `--json` for complete machine-readable catalog records.
 
@@ -71,11 +75,15 @@ Any status filter that depends on an agent requires `--agent`.
 
 Combined filters narrow the list together.
 
+`--execution-mode autonomous` selects workflows designed to continue without mid-run human input after upfront authorization.
+
+`--execution-mode` describes workflow design, while `--execution` filters retained evidence that a selected external agent actually ran the workflow.
+
 Installation, execution, and outcome are independent evidence stages, so filtering on one says nothing about the others.
 
 ## `awf show <workflow-id>`
 
-Print the workflow identity, difficulty, duration, tags, inputs, outputs, approvals, effects, and agent compatibility in human mode.
+Print the workflow identity, domain category, execution mode, difficulty, duration, tags, inputs, outputs, approvals, effects, and agent compatibility in human mode.
 
 Use `--agent` to focus compatibility details and limitations on one destination.
 
@@ -259,7 +267,7 @@ The instruction mode does not modify the profile or any path outside the project
 
 The generated script includes commands, options, agents, shell names, and the workflow IDs bundled with the installed CLI version.
 
-Options are scoped to their commands, and `list` also completes categories, tags, adapter support, compatibility, and installation, execution, and outcome states.
+Options are scoped to their commands, and `list` also completes categories, execution modes, tags, adapter support, compatibility, and installation, execution, and outcome states.
 
 The CI matrix loads generated Bash, Zsh, Fish, and PowerShell scripts in their native shells and verifies returned candidates.
 

@@ -3,8 +3,8 @@
   <rect width="1200" height="630" fill="#101b18"/><path d="M0 0h1200v630H0z" fill="url(#grid)" opacity=".2"/>
   <defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0v40" fill="none" stroke="#63d6b4"/></pattern></defs>
   <path d="M90 134h180l64 64-64 64H170v90h150M430 352H250l-64-64 64-64h100v-90H200" fill="none" stroke="#63d6b4" stroke-width="28"/>
-  <text x="500" y="210" fill="#63d6b4" font-family="monospace" font-size="28" letter-spacing="4">AGENTIC WORKFLOWS</text>
-  <text x="500" y="286" fill="#fff" font-family="sans-serif" font-size="44" font-weight="700">Evidence-oriented workflows</text>
-  <text x="500" y="340" fill="#fff" font-family="sans-serif" font-size="44" font-weight="700">for AI coding agents.</text>
-  <text x="500" y="430" fill="#a9bbb5" font-family="monospace" font-size="24">20 structured workflows • Exporter contracts • Offline CLI</text>
+  <text x="500" y="210" fill="#63d6b4" font-family="Inter, sans-serif" font-size="28" letter-spacing="4">AGENTIC WORKFLOWS</text>
+  <text x="500" y="286" fill="#fff" font-family="Inter, sans-serif" font-size="44" font-weight="700">Evidence-oriented workflows</text>
+  <text x="500" y="340" fill="#fff" font-family="Inter, sans-serif" font-size="44" font-weight="700">for AI coding agents.</text>
+  <text x="500" y="430" fill="#a9bbb5" font-family="Inter, sans-serif" font-size="22">21 structured workflows • Exporter contracts • Offline CLI</text>
 </svg>

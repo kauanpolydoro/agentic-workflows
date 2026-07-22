@@ -1,5 +1,6 @@
 export * from "./adapters.js";
 export * from "./adapter-registry.js";
+export * from "./bundle-fingerprint.js";
 export * from "./content-validation.js";
 export * from "./catalog.js";
 export * from "./errors.js";

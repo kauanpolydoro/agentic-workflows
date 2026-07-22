@@ -1,9 +1,10 @@
-schema_version: 3
+schema_version: 4
 id: improve-type-safety
 title: Harden an untrusted TypeScript boundary
 summary: Replace unchecked type assumptions at an untrusted TypeScript boundary with runtime narrowing and verified state models, keeping documented public behavior and compatibility intact.
-version: 1.2.0
+version: 1.2.1
 category: refactoring
+execution_mode: supervised
 difficulty: intermediate
 risk_level: medium
 estimated_duration: 1h

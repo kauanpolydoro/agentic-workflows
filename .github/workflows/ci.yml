@@ -43,6 +43,8 @@ jobs:
         run: pnpm test:package
         env:
           AWF_TEST_BUNX: "1"
+      - name: Exercise exact v0.2.2 lifecycle upgrades
+        run: pnpm test:upgrade
       - run: pnpm validate:recipes
       - run: pnpm validate:content
       - run: pnpm audit:similarity
@@ -107,6 +109,8 @@ jobs:
         run: pnpm test:package
         env:
           AWF_TEST_BUNX: "1"
+      - name: Exercise exact v0.2.2 lifecycle upgrades on ${{ runner.os }}
+        run: pnpm test:upgrade
 
   node-22-compatibility:
     runs-on: ubuntu-latest
@@ -129,3 +133,4 @@ jobs:
       - run: pnpm test:integration
       - run: pnpm test:acceptance
       - run: pnpm test:package
+      - run: pnpm test:upgrade

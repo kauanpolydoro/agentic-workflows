@@ -1,4 +1,4 @@
-import { lstat, mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
+import { lstat, mkdir, mkdtemp, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parse } from "yaml";
@@ -34,12 +34,13 @@ function scaffoldFiles(id: string): Record<(typeof requiredFiles)[number], strin
   const title = humanTitle(id);
   const artifact = `${id}-result.md`;
   return {
-    "recipe.yml": `schema_version: 3
+    "recipe.yml": `schema_version: 4
 id: ${id}
 title: Author the ${title} workflow
 summary: Produce a bounded ${title} result with explicit evidence, decisions, limitations, and verification steps.
 version: 1.0.0
 category: maintenance
+execution_mode: supervised
 difficulty: intermediate
 risk_level: medium
 estimated_duration: 30m

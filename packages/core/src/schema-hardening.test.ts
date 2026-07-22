@@ -92,6 +92,34 @@ const recipeInvariantCases: Array<{
       recipe.maintainers = ["project-maintainers", "project-maintainers"];
     },
   },
+  {
+    name: "autonomous execution without its unattended contract",
+    mutate: (recipe) => {
+      recipe.execution_mode = "autonomous";
+      recipe.agent_requirements.capabilities.push("persistent-execution");
+    },
+  },
+  {
+    name: "a missing execution mode",
+    mutate: (recipe) => {
+      delete (recipe as Partial<Recipe>).execution_mode;
+    },
+  },
+  {
+    name: "an unattended contract on a supervised recipe",
+    mutate: (recipe) => {
+      recipe.autonomy = {
+        unattended_execution: true,
+        authorization: "upfront",
+        mid_run_human_input: "not-required",
+        user_stop_signal: "required",
+        hard_deadline: "required",
+        durable_checkpoints: "required",
+        resume: "required",
+        failure_policy: "defer-and-continue",
+      };
+    },
+  },
 ];
 
 const hash = "a".repeat(64);
@@ -303,6 +331,42 @@ describe("recipe cross-field hardening", () => {
   it.each(recipeInvariantCases)("rejects $name", ({ mutate }) => {
     const recipe = recipeFixture();
     mutate(recipe);
+    expect(recipeSchema.safeParse(recipe).success).toBe(false);
+  });
+
+  it("accepts the autonomous execution facet alongside a domain category", () => {
+    const recipe = recipeFixture();
+    recipe.execution_mode = "autonomous";
+    recipe.agent_requirements.capabilities.push("persistent-execution", "distributed-coordination");
+    recipe.autonomy = {
+      unattended_execution: true,
+      authorization: "upfront",
+      mid_run_human_input: "not-required",
+      user_stop_signal: "required",
+      hard_deadline: "required",
+      durable_checkpoints: "required",
+      resume: "required",
+      failure_policy: "defer-and-continue",
+    };
+
+    const result = recipeSchema.parse(recipe);
+    expect(result.agent_requirements.capabilities).toContain("distributed-coordination");
+  });
+
+  it("rejects autonomous execution without persistent runtime capability", () => {
+    const recipe = recipeFixture();
+    recipe.execution_mode = "autonomous";
+    recipe.autonomy = {
+      unattended_execution: true,
+      authorization: "upfront",
+      mid_run_human_input: "not-required",
+      user_stop_signal: "required",
+      hard_deadline: "required",
+      durable_checkpoints: "required",
+      resume: "required",
+      failure_policy: "fail-closed",
+    };
+
     expect(recipeSchema.safeParse(recipe).success).toBe(false);
   });
 });
