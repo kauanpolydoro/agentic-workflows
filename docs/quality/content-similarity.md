@@ -12,17 +12,17 @@ This command gates only whether every lexical warning has a human review tied to
 
 ## Result
 
-- Recipes compared: 20
-- Surface comparisons: 1140
+- Recipes compared: 21
+- Surface comparisons: 1260
 - Manual-review threshold: 0.200 Jaccard similarity
 - Review schema version: 1
 - Review digest version: `awf-content-similarity-review-v1`
-- Audited corpus SHA-256: `1895d96d5e95cb07b19e507f88750f3e8c87979a7f357f5ee5ddae4f9c367dd2`
+- Audited corpus SHA-256: `1c14fd486d6d37c80e442dd9d047b9c205b262efcb1fcdaf7dc241a27e4d8838`
 - Comparisons above the review threshold: 0
 - Stale retained reviews: 0
 - Unresolved current-content reviews: 0
 - Cross-recipe literal blocks of at least 120 normalized characters: 0
-- Five-token shingles shared by at least two recipes: 46
+- Five-token shingles shared by at least two recipes: 47
 
 The pair table contains every comparison at or above the review threshold plus the 30 closest comparisons below it.
 

@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const repository = path.resolve(import.meta.dirname, "..");
@@ -15,7 +15,9 @@ const packagedDocumentation = [
   "guide/output-contracts.md",
   "guide/verification.md",
   "guide/security.md",
+  "guide/autonomous-workflows.md",
   "decisions/0001-portable-core-and-data-only-recipes.md",
+  "decisions/0003-autonomy-as-execution-mode.md",
   "public/terminal-demo.svg",
 ] as const;
 await rm(target, { recursive: true, force: true });

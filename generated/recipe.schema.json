@@ -4,7 +4,7 @@
   "properties": {
     "schema_version": {
       "type": "number",
-      "const": 3
+      "const": 4
     },
     "id": {
       "type": "string",
@@ -42,6 +42,10 @@
         "security",
         "testing"
       ]
+    },
+    "execution_mode": {
+      "type": "string",
+      "enum": ["supervised", "autonomous"]
     },
     "difficulty": {
       "type": "string",
@@ -190,7 +194,10 @@
               "browser",
               "test-execution",
               "database",
-              "production-access"
+              "production-access",
+              "persistent-execution",
+              "subagent-orchestration",
+              "distributed-coordination"
             ]
           }
         },
@@ -200,6 +207,54 @@
         }
       },
       "required": ["capabilities", "manual_invocation_required"],
+      "additionalProperties": false
+    },
+    "autonomy": {
+      "type": "object",
+      "properties": {
+        "unattended_execution": {
+          "type": "boolean",
+          "const": true
+        },
+        "authorization": {
+          "type": "string",
+          "const": "upfront"
+        },
+        "mid_run_human_input": {
+          "type": "string",
+          "const": "not-required"
+        },
+        "user_stop_signal": {
+          "type": "string",
+          "const": "required"
+        },
+        "hard_deadline": {
+          "type": "string",
+          "const": "required"
+        },
+        "durable_checkpoints": {
+          "type": "string",
+          "const": "required"
+        },
+        "resume": {
+          "type": "string",
+          "const": "required"
+        },
+        "failure_policy": {
+          "type": "string",
+          "enum": ["fail-closed", "defer-and-continue"]
+        }
+      },
+      "required": [
+        "unattended_execution",
+        "authorization",
+        "mid_run_human_input",
+        "user_stop_signal",
+        "hard_deadline",
+        "durable_checkpoints",
+        "resume",
+        "failure_policy"
+      ],
       "additionalProperties": false
     },
     "output_contract": {
@@ -458,6 +513,7 @@
     "summary",
     "version",
     "category",
+    "execution_mode",
     "difficulty",
     "risk_level",
     "estimated_duration",
@@ -476,5 +532,50 @@
     "license"
   ],
   "additionalProperties": false,
-  "$comment": "Field shape is portable JSON Schema. Cross-field recipe invariants are enforced by the Zod runtime validator and cannot be represented completely in JSON Schema."
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "execution_mode": {
+            "const": "autonomous"
+          }
+        },
+        "required": ["execution_mode"]
+      },
+      "then": {
+        "required": ["autonomy", "agent_requirements"],
+        "properties": {
+          "agent_requirements": {
+            "type": "object",
+            "required": ["capabilities"],
+            "properties": {
+              "capabilities": {
+                "type": "array",
+                "contains": {
+                  "const": "persistent-execution"
+                },
+                "minContains": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "execution_mode": {
+            "const": "supervised"
+          }
+        },
+        "required": ["execution_mode"]
+      },
+      "then": {
+        "not": {
+          "required": ["autonomy"]
+        }
+      }
+    }
+  ],
+  "$comment": "Field shape and the autonomous execution contract invariants are portable JSON Schema. Remaining cross-field recipe invariants require the Zod runtime validator."
 }

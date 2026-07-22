@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-workflows.dev/output-contracts/resolve-github-issues/1.1.0",
+  "title": "GitHub issue resolution ledger output contract",
+  "description": "Structurally validates the required sections, domain table headers, and evidence-reference presence for a GitHub issue resolution ledger; semantic derivability and outcome quality still require editorial review.",
+  "type": "string",
+  "contentMediaType": "text/markdown",
+  "x-awf-output-contract": {
+    "container": "document",
+    "artifacts": [
+      {
+        "path": "github-issue-resolution-ledger.md",
+        "audience": "Repository maintainers and protected-domain owners",
+        "requires_title": true,
+        "required_headings": [
+          "Campaign status and autonomous contract",
+          "Run status and scope",
+          "Runtime controls and checkpoints",
+          "Queue snapshot and priority",
+          "Issue disposition ledger",
+          "Mutation log",
+          "False-positive and duplicate closures",
+          "Worker and merge coordination",
+          "Delivery records",
+          "Adversarial review rounds",
+          "Merge and cleanup verification",
+          "Blockers and escalations",
+          "Terminal reconciliation",
+          "Approvals and residual risk",
+          "Traceability"
+        ],
+        "required_literals": [
+          "| Control | Authorized value | Observed result | Evidence |",
+          "| Checkpoint or control | Observed state | Evidence |",
+          "| Rank | Issue | Priority basis | Dependency state | Final state | Evidence |",
+          "| Issue | Final disposition | Policy rule | Mutation | Verification | Evidence |",
+          "| Issue | Delivery state | Delivery actor | Tracker state | Closure actor | Closure evidence | Work state | Cleanup state | Integration state | Resolution state | Evidence |",
+          "| Time | Actor role | Issue or PR | Operation | Record URL or commit | Result | Evidence |",
+          "| Issue | Branch | Pull request | Reviewed base | Approved PR head | Checks | Integrated result | Closure | Cleanup | Evidence |",
+          "| Worker or lane | Owned scope | Isolation or lock | Final state | Evidence |",
+          "| Issue | Round | Reviewer context | Reviewed base | Reviewed head | Findings | Disposition | Evidence |",
+          "| Terminal count | Value | Reconciliation basis | Evidence |",
+          "| Material conclusion | Evidence |"
+        ],
+        "evidence_references": "required",
+        "minimum_distinct_evidence_references": 3
+      }
+    ]
+  }
+}

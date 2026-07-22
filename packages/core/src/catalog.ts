@@ -8,6 +8,7 @@ import { AwfError } from "./errors.js";
 import { MAX_RECIPE_FILE_BYTES } from "./fs-security.js";
 import {
   type AgentId,
+  type ExecutionMode,
   type Recipe,
   type RecipeCompatibilityStatus,
   recipeSchema,
@@ -645,6 +646,7 @@ export async function loadCatalog(
 
 export interface RecipeFilters {
   category?: string;
+  executionMode?: ExecutionMode;
   agent?: AgentId;
   tag?: string;
   support?: SupportStatus;
@@ -654,6 +656,7 @@ export function filterRecipes(recipes: readonly Recipe[], filters: RecipeFilters
   return recipes.filter(
     (recipe) =>
       (!filters.category || recipe.category === filters.category) &&
+      (!filters.executionMode || recipe.execution_mode === filters.executionMode) &&
       (!filters.tag || recipe.tags.includes(filters.tag)) &&
       (!filters.compatibility ||
         (filters.agent !== undefined &&

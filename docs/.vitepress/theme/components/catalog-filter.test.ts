@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 import {
   type GeneratedCatalogRecipe,
-  type RecipeCompatibilityStatus,
   generatedCatalogRecipeSchema,
+  type RecipeCompatibilityStatus,
 } from "@kauanpolydoro/agentic-workflows-core";
 import {
   adapterRegistry,
@@ -62,12 +62,13 @@ describe("catalog filtering", () => {
     expect(recipes.length).toBeGreaterThan(0);
   });
 
-  it("combines text, category, adapter, compatibility, support, and verification with AND", () => {
+  it("combines text, category, execution mode, adapter, compatibility, support, and verification with AND", () => {
     const result = filterCatalog(
       recipes,
       filters({
         query: "public release",
         category: "release",
+        executionMode: "supervised",
         adapter: "codex",
         compatibility: "compatible",
         support: "supported",
@@ -78,6 +79,12 @@ describe("catalog filtering", () => {
     );
 
     expect(result.map((recipe) => recipe.id)).toEqual(["write-release-notes"]);
+  });
+
+  it("selects only workflows carrying the autonomous execution contract", () => {
+    const result = filterCatalog(recipes, filters({ executionMode: "autonomous" }));
+
+    expect(result.map((recipe) => recipe.id)).toEqual(["resolve-github-issues"]);
   });
 
   it.each(["unknown", "limited"] as const)(
@@ -149,6 +156,7 @@ describe("catalog filtering", () => {
     const current = filters({
       query: "security",
       category: "security",
+      executionMode: "autonomous",
       adapter: "cursor",
       compatibility: "unknown",
       support: "experimental",
@@ -172,6 +180,7 @@ describe("CatalogExplorer accessibility and no-JavaScript fallback", () => {
     const controlIds = [
       "catalog-query",
       "catalog-category",
+      "catalog-execution-mode",
       "catalog-adapter",
       "catalog-compatibility",
       "catalog-support",

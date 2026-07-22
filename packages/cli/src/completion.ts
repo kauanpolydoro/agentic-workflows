@@ -1,7 +1,8 @@
 import {
-  agentIds,
   AwfError,
+  agentIds,
   categoryIds,
+  executionModeIds,
   type GeneratedCatalogRecipe,
   recipeCompatibilityStatuses,
   supportStatuses,
@@ -58,6 +59,7 @@ export const completionCommandOptions = {
   context: ["--json"],
   list: [
     "--category",
+    "--execution-mode",
     "--agent",
     "--tag",
     "--adapter-status",
@@ -159,6 +161,8 @@ _awf_completion() {
       COMPREPLY=( $(compgen -W "${agentIds.join(" ")}" -- "$current") ); return ;;
     list:--category)
       COMPREPLY=( $(compgen -W "${data.categories.join(" ")}" -- "$current") ); return ;;
+    list:--execution-mode)
+      COMPREPLY=( $(compgen -W "${executionModeIds.join(" ")}" -- "$current") ); return ;;
     list:--tag)
       COMPREPLY=( $(compgen -W "${data.tags.join(" ")}" -- "$current") ); return ;;
     list:--adapter-status)
@@ -229,6 +233,9 @@ _awf() {
     list:--category)
       compadd -- $categories
       return ;;
+    list:--execution-mode)
+      compadd -- ${executionModeIds.join(" ")}
+      return ;;
     list:--tag)
       compadd -- $tags
       return ;;
@@ -284,15 +291,17 @@ function fishOption(
       ? agentIds
       : option === "--category"
         ? data.categories
-        : option === "--tag"
-          ? data.tags
-          : option === "--adapter-status"
-            ? supportStatuses
-            : option === "--compatibility"
-              ? recipeCompatibilityStatuses
-              : ["--installation", "--execution", "--outcome"].includes(option)
-                ? verificationStatuses
-                : null;
+        : option === "--execution-mode"
+          ? executionModeIds
+          : option === "--tag"
+            ? data.tags
+            : option === "--adapter-status"
+              ? supportStatuses
+              : option === "--compatibility"
+                ? recipeCompatibilityStatuses
+                : ["--installation", "--execution", "--outcome"].includes(option)
+                  ? verificationStatuses
+                  : null;
   if (choices) parts.push(`-xa '${choices.join(" ")}'`);
   else if (["--target", "--project-root"].includes(option)) {
     parts.push("-r", "-a '(__fish_complete_directories)'");
@@ -377,6 +386,7 @@ ${commandOptions}
   elseif (-not $command) { $candidates = $commands + $globalOptions }
   elseif ($previous -eq '--agent') { $candidates = $agents }
   elseif ($command -eq 'list' -and $previous -eq '--category') { $candidates = $categories }
+  elseif ($command -eq 'list' -and $previous -eq '--execution-mode') { $candidates = @('${executionModeIds.join("','")}') }
   elseif ($command -eq 'list' -and $previous -eq '--tag') { $candidates = $tags }
   elseif ($command -eq 'list' -and $previous -eq '--adapter-status') { $candidates = @('${supportStatuses.join("','")}') }
   elseif ($command -eq 'list' -and $previous -eq '--compatibility') { $candidates = @('${recipeCompatibilityStatuses.join("','")}') }

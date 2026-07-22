@@ -11,8 +11,11 @@ import catalog from '../../generated/catalog.json'
 
 # Workflow catalog
 
-All 20 workflows are listed below.
+All 21 workflows are listed below.
 Use the filters to narrow the list; they run entirely in your browser and send nothing anywhere.
+
+This page reflects the current Unreleased schema version 4 source catalog.
+The historical schema version 3 editorial dispositions do not promote these migrated bundles automatically; the migration and the autonomous addition remain pending the human gates recorded in the [recipe audit](../quality/recipe-audit.md).
 
 <CatalogExplorer :recipes="catalog" />
 
@@ -32,6 +35,7 @@ If JavaScript is disabled, you can still reach every workflow through the links 
 - [Measure and assess a performance change](./profile-performance) - Measure a performance change and produce a reproducible assessment when the evidence is complete, or an explicit blocked handoff when required measurement or profile records are missing.
 - [Refactor a large module through reversible slices](./refactor-large-module) - Split one change-coupled module into cohesive boundaries, one reversible checkpoint at a time, preserving its evidenced public contract and capturing the work in a Markdown refactor delivery record.
 - [Build a bounded bug reproduction](./reproduce-bug) - Turn a bug report into a sanitized repository-bound reproduction, a regression test that fails for the reported behavior, and a repeatability record, all without changing product behavior.
+- [Run an autonomous GitHub issue resolution campaign](./resolve-github-issues) - Define an autonomous campaign for resolving the maximum safe number of authorized GitHub issues without mid-run input; human editorial review remains required before publication.
 - [Review a pull request](./review-pull-request) - Review a pull request against a frozen diff and its stated intent, producing findings traceable to evidence, checks that actually ran, and a merge verdict you can defend.
 - [Perform a defensive security review](./security-review) - Review authorized source, configuration, routes, and tests at one immutable revision, then deliver a defensive security assessment, a prioritized finding register, and a remediation and residual-risk plan.
 - [Synchronize documentation with verified behavior](./synchronize-documentation) - Compare documentation claims with authoritative evidence at one immutable revision, then deliver a bounded patch, a claim-to-evidence drift register, and a verification report.

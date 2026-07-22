@@ -9,7 +9,8 @@ Show HN: Portable workflows for Claude Code, Codex, Cursor and other coding agen
 I built Agentic Workflows because reusable agent instructions tend to lose the engineering context that makes a procedure safe and reviewable.
 A saved prompt tells an agent what to do, but not what evidence to collect, when to stop, or who has to approve the risky parts.
 
-The project ships 20 original workflows written as strict YAML metadata plus canonical Markdown.
+The current Unreleased source tree contains 21 original workflows written as strict YAML metadata plus canonical Markdown.
+The schema version 4 metadata migration remains `blocked` until one cross-cutting human review is retained, the first autonomous workflow is separately `blocked` pending its human domain review, and the published npm package at version `0.2.2` predates both changes.
 Each one defines its inputs, preconditions, decision points, safety constraints, approval gates, outputs, and the evidence that counts as completion.
 
 There is an offline TypeScript CLI that inspects the catalog and installs workflows in several documented agent formats.

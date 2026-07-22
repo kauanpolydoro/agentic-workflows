@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { rmSync } from "node:fs";
-import { access, mkdir, mkdtemp, readFile, readdir, realpath, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readdir, readFile, realpath, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { headingAnchors } from "./check-links.js";
@@ -540,6 +540,16 @@ const listed = JSON.parse(runCli(entrypoint, ["list", "--json"], consumer)) as u
 if (listed.length !== expectedRecipeCount) {
   throw new Error(`Packaged catalog returned ${listed.length} recipes.`);
 }
+const autonomousListed = JSON.parse(
+  runCli(entrypoint, ["list", "--execution-mode", "autonomous", "--json"], consumer),
+) as Array<{ id?: string; execution_mode?: string }>;
+if (
+  autonomousListed.length !== 1 ||
+  autonomousListed[0]?.id !== "resolve-github-issues" ||
+  autonomousListed[0]?.execution_mode !== "autonomous"
+) {
+  throw new Error("Packaged execution-mode filtering returned an unexpected autonomous catalog.");
+}
 const shown = JSON.parse(
   runCli(entrypoint, ["show", "write-release-notes", "--json"], consumer),
 ) as {
@@ -971,6 +981,8 @@ await assertPackagedMarkdownLinks(packageRoot, [
   "docs/guide/installation.md",
   "docs/guide/cli-reference.md",
   "docs/guide/output-contracts.md",
+  "docs/guide/autonomous-workflows.md",
+  "docs/decisions/0003-autonomy-as-execution-mode.md",
   ...(await readdir(path.join(packageRoot, "docs", "catalog"))).map(
     (page) => `docs/catalog/${page}`,
   ),
@@ -1027,11 +1039,26 @@ for (const packagedFile of [
   "agentic-workflows/docs/guide/installation.md",
   "agentic-workflows/docs/guide/cli-reference.md",
   "agentic-workflows/docs/guide/output-contracts.md",
+  "agentic-workflows/docs/guide/autonomous-workflows.md",
+  "agentic-workflows/docs/decisions/0003-autonomy-as-execution-mode.md",
   "agentic-workflows/docs/catalog/write-release-notes.md",
   "agentic-workflows-core/README.md",
   "agentic-workflows-core/LICENSE",
 ]) {
   await access(path.join(consumer, "node_modules", "@kauanpolydoro", packagedFile));
+}
+const packagedCoreReadme = await readFile(
+  path.join(installedScope, "agentic-workflows-core", "README.md"),
+  "utf8",
+);
+for (const requiredCoreReadmeText of [
+  "current Unreleased source tree",
+  "Recipe schema version 4",
+  "execution_mode: supervised | autonomous",
+]) {
+  if (!packagedCoreReadme.includes(requiredCoreReadmeText)) {
+    throw new Error(`The packaged core README omitted ${requiredCoreReadmeText}.`);
+  }
 }
 const packagedCatalog = JSON.parse(
   await readFile(

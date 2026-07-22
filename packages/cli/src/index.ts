@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { constants, realpathSync, type Dirent, type Stats } from "node:fs";
+import { constants, type Dirent, realpathSync, type Stats } from "node:fs";
 import { access, link, lstat, mkdir, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,6 +13,8 @@ import {
   agentIds,
   assertNoSymlink,
   deriveAdapterSupport,
+  type ExecutionMode,
+  executionModeIds,
   type GeneratedCatalogRecipe,
   generatedCatalogRecipeSchema,
   hashContent,
@@ -36,10 +38,10 @@ import {
 import { Argument, Command, CommanderError, Option } from "commander";
 import { parse, stringify } from "yaml";
 import {
+  type CompletionShell,
   completionShells,
   renderCompletion,
   renderCompletionInstallInstructions,
-  type CompletionShell,
 } from "./completion.js";
 import {
   catalogRoot,
@@ -60,9 +62,9 @@ import {
 import { fail, output } from "./io.js";
 import { type DocumentationOpener, openDocumentationTarget } from "./platform.js";
 import {
-  inspectInstallations,
   type InstallationStatus,
   type InstallationStatusSummary,
+  inspectInstallations,
   summarizeInstallations,
 } from "./status.js";
 import { CLI_VERSION } from "./version.js";
@@ -80,6 +82,7 @@ type VerificationStatus =
 
 interface CatalogListFilters {
   category?: string;
+  executionMode?: ExecutionMode;
   agent?: AgentId;
   tag?: string;
   support?: SupportStatus;
@@ -1186,6 +1189,9 @@ function filterGeneratedCatalog(
 ): GeneratedCatalogRecipe[] {
   return recipes.filter((recipe) => {
     if (filters.category && recipe.category !== filters.category) return false;
+    if (filters.executionMode && recipe.execution_mode !== filters.executionMode) {
+      return false;
+    }
     if (filters.tag && !recipe.tags.includes(filters.tag)) return false;
     if (!filters.agent) return true;
 
@@ -1553,6 +1559,7 @@ function renderWorkflowDetails(
     `ID: ${recipe.id}`,
     `Version: ${recipe.version}`,
     `Category: ${recipe.category}`,
+    `Execution mode: ${recipe.execution_mode}`,
     `Difficulty: ${recipe.difficulty}`,
     `Risk: ${recipe.risk_level}`,
     `Estimated duration: ${recipe.estimated_duration}`,
@@ -1729,6 +1736,11 @@ export function createProgram(options: ProgramOptions = {}): Command {
     .description("List workflows in the catalog.")
     .option("--category <category>", "Match an exact workflow category")
     .addOption(
+      new Option("--execution-mode <mode>", "Match a workflow execution mode").choices(
+        executionModeIds,
+      ),
+    )
+    .addOption(
       new Option("--agent <agent>", "Match workflows compatible with an agent").choices(agentIds),
     )
     .option("--tag <tag>", "Match an exact workflow tag")
@@ -1777,6 +1789,7 @@ export function createProgram(options: ProgramOptions = {}): Command {
       }
       const filters: CatalogListFilters = {};
       if (options.category) filters.category = options.category;
+      if (options.executionMode) filters.executionMode = options.executionMode as ExecutionMode;
       if (options.agent) filters.agent = options.agent as AgentId;
       if (options.tag) filters.tag = options.tag;
       if (options.adapterStatus) filters.support = options.adapterStatus as SupportStatus;
@@ -1795,7 +1808,14 @@ export function createProgram(options: ProgramOptions = {}): Command {
           "No workflows match the selected filters. Try `awf list` without filters or run `awf list --help`.",
         );
       } else {
-        output(recipes.map((recipe) => `${recipe.id.padEnd(28)} ${recipe.summary}`).join("\n"));
+        output(
+          recipes
+            .map(
+              (recipe) =>
+                `${recipe.id.padEnd(28)} ${recipe.execution_mode.padEnd(10)} ${recipe.summary}`,
+            )
+            .join("\n"),
+        );
       }
     });
 

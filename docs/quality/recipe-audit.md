@@ -9,13 +9,36 @@ If you want the newcomer-friendly explanation of what these checks mean, start w
 This document is a maintainer-authored source review, not an independent external-agent execution or outcome review.
 It distinguishes the historical baseline at commit `cbe8c9dd7c48f945711f2cd52b9ef01748fccb1e` from the current editorial working tree.
 
-The assessed recipe corpus has SHA-256 `3d414fcc60481236b9002a22cbd5f036b1315fd68522e896fb488a12a476449a`.
-It was calculated from the ordered `sha256sum` records for every file under `recipes/` after the final editorial changes.
-The repository commit containing this report binds that exact corpus snapshot to an immutable source revision.
+The assessed original 20-recipe schema version 3 corpus has SHA-256 `3d414fcc60481236b9002a22cbd5f036b1315fd68522e896fb488a12a476449a`.
+It was calculated from the ordered `sha256sum` records for every file under that retained corpus after its final editorial changes.
+The repository commit containing this report binds that exact historical corpus snapshot to an immutable source revision.
 Repository publication still requires the complete quality pipeline to pass against the integrated revision.
 
 This assessment does not advance installation, external-agent execution, or outcome-review status.
 Those states require separate retained evidence and must not be inferred from a maintainer editorial review.
+
+## Working-tree addition after the retained assessment
+
+The retained corpus hash, matrices, and integrated verification below cover the original 20-recipe schema version 3 assessment snapshot.
+The current working tree migrates those 20 bundles to schema version 4 and adds `resolve-github-issues` as the twenty-first recipe bundle, with ordered source-record SHA-256 `63cd1e95f139f054fb4b54577e892673b3c385bcdee49c72633a1f3eb89ee79d`.
+
+Multiple independent agent reviews challenged the new bundle, but they do not satisfy the human editorial gate in the recipe quality standard.
+
+The frozen working tree passed the complete local automated pipeline on 2026-07-22.
+`pnpm build`, strict validation for all 21 recipes, content validation, deterministic generation check, lint, formatting, typecheck, link checking, documentation build, CLI automation, fixtures, acceptance, shell completion, and package smoke all completed successfully.
+The unit suite passed 471 tests in 30 files, coverage passed the same 471 tests with 91.94 percent statements, 85.61 percent branches, 95.07 percent functions, and 92.53 percent lines, and the integration suite passed 58 tests.
+Similarity review compared 1,260 recipe surfaces with no threshold crossing, stale review, or unresolved current-content review.
+The documentation build retained the known non-blocking VitePress chunk-size warning.
+These automated results establish structural and repository-level validation only, so they do not close either human review gate or advance installation, external-agent execution, or outcome evidence.
+
+| Recipe | Adversarial findings | Primary files changed | Current decision | Remaining limitation and status justification | Status |
+| --- | --- | --- | --- | --- | --- |
+| Original 20 recipes, current schema version 4 variants | The mechanical migration changes bundle identity and adds a semantic `supervised` classification that the retained schema version 3 review did not assess | The 20 `recipe.yml` files | Require schema version 4, bump each recipe patch version, and use the conservative `supervised` mode without an `autonomy` contract | One cross-cutting human reviewer must confirm that every migration diff is limited to version, schema, and the correct supervised classification before the current variants become publication-ready | blocked |
+| `resolve-github-issues` | The initial design needed finite intake, complete pagination, durable distributed ownership, bounded retries and deadlines, safe remote-content handling, exact review boundaries, UX-aware triage, post-merge outcome verification, and race-safe closure plus cleanup | All seven recipe source files | Freeze one explicitly authorized finite cohort; coordinate through shared fenced compare-and-swap leases; treat remote content as untrusted evidence; exhaust nested API records; separate delivery state, delivery actor, tracker, closure, work, cleanup, and integration state; support direct squash merge only; use non-closing issue references; run smoke before manual closure; isolate workers and fresh reviewers; and use exact-OID cleanup | No human domain reviewer has yet completed and retained the editorial review required for publication; installation, external-agent execution, and outcome review also remain untested, so automated review cannot justify `pass` | blocked |
+
+The historical schema version 3 dispositions remain `pass` for their retained digest only.
+The current schema version 4 variants remain `blocked` until the cross-cutting migration review is retained, and the autonomous bundle additionally requires its human domain review.
+If a recipe source file changes, this addendum's digest and review currency must be refreshed before that gate can close.
 
 ## Historical baseline at `cbe8c9d`
 
@@ -106,23 +129,23 @@ It does not retain enough execution provenance to serve as an independent global
 The honest baseline statement is therefore limited to the two bounded verification records above.
 No complete baseline quality-pipeline pass can be claimed from the retained tree alone.
 
-## Current review method and status semantics
+## Retained 20-recipe review method and status semantics
 
-The current review covers the seven source artifacts in each of the 20 recipe bundles.
+The retained review covers the seven source artifacts in each of the original 20 recipe bundles.
 It traces expected-output claims to input evidence, reviews workflow actions and decisions, checks failure and recovery pairing, challenges approvals and safety boundaries, and reconciles metadata effects with output contracts.
 
-Current adversarial remediation added output schemas, stronger evidence provenance, explicit effects, honest verification-state separation, complete or explicitly blocked examples, and domain-specific decision records.
+The retained adversarial remediation added output schemas, stronger evidence provenance, explicit effects, honest verification-state separation, complete or explicitly blocked examples, and domain-specific decision records.
 The similarity process now treats lexical overlap as triage and requires any threshold review to match the exact current pair content.
 
 The working tree changed after intermediate validation runs, so this report does not present those runs as final immutable verification.
 The final integrator must run the complete required command set after source generation and bind the results to the final revision.
 
-`pass` below means that the current recipe-source contract has no known unresolved editorial blocker after the recorded adversarial decision.
+`pass` below means that the assessed recipe-source contract had no known unresolved editorial blocker after the recorded adversarial decision.
 It does not mean the generated catalog is current, an adapter was installed, an external agent executed the workflow, or an outcome passed independent review.
 
-## Current quality matrix
+## Retained 20-recipe quality matrix
 
-| Recipe | Input complete | Output derivable | Workflow operational | Decisions explicit | Safety adequate | Checklist useful | README complete | Adapter metadata valid | Final status |
+| Recipe | Input complete | Output derivable | Workflow operational | Decisions explicit | Safety adequate | Checklist useful | README complete | Adapter metadata valid | Historical final status (schema version 3) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `api-contract-review` | pass | pass | pass | pass | pass | pass | pass | pass | pass |
 | `codebase-onboarding` | pass | pass | pass | pass | pass | pass | pass | pass | pass |
@@ -148,7 +171,7 @@ It does not mean the generated catalog is current, an adapter was installed, an 
 Each `pass` in this summary uses the source-level status semantics above.
 The detailed matrix below records the primary problem, reviewed files, decision, remaining limitation, and justification for each final status.
 
-## Current 20-recipe disposition matrix
+## Retained 20-recipe disposition matrix
 
 All seven source files were changed in every recipe during this remediation.
 The file column below identifies the primary changed files that carry each recorded decision.
@@ -176,12 +199,13 @@ The file column below identifies the primary changed files that carry each recor
 | `upgrade-dependencies` | Vendor compatibility claims and lifecycle-script safety lacked complete source records, and the baseline revision was abbreviated | `examples/input.md`; `examples/expected-output.md`; `workflow.md` | Bind the baseline to a full 40-character revision, record unchanged constructors in signed vendor evidence, and bind lifecycle inventories to complete package manifests and install event logs | No security benefit is claimed because no advisory is supplied, and supported-environment evidence remains Linux x64 only | pass |
 | `write-release-notes` | Public notes and internal evidence were mixed, allowing internal notation or unsupported claims to leak | `output.schema.json`; `examples/input.md`; `examples/expected-output.md`; `workflow.md` | Declare separate public release notes and internal evidence artifacts with opposite evidence-reference rules | Release-manager approval remains pending and the public artifact stays Draft | pass |
 
-All 20 recipe-source dispositions are `pass` under the definition above.
+All 20 retained schema version 3 recipe-source dispositions are `pass` under the definition above.
 The `profile-performance` example passes as a contracted blocked handoff rather than as a completed performance decision.
 
-## Current cross-cutting disposition
+## Retained 20-recipe cross-cutting disposition
 
-All 20 recipes now use schema version 3 and declare an `output_contract` backed by `output.schema.json`.
+At the retained 20-recipe assessment snapshot, all 20 recipes used schema version 3 and declared an `output_contract` backed by `output.schema.json`.
+The current Unreleased working tree migrates those recipes to schema version 4 and assigns an explicit execution mode, but that later migration is outside the retained historical pipeline below.
 Recipe effects, adapter serialization, capability assessment, installation, external execution, and outcome review are modeled as separate states.
 
 Structural status is derived from current source and validators rather than manually promoted to an outcome claim.

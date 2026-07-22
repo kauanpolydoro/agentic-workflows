@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, readFile, readdir } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -15,7 +15,7 @@ async function recipesRoot(): Promise<string> {
 }
 
 describe("recipe scaffolder", () => {
-  it("creates the complete v3 bundle only after validating staging", async () => {
+  it("creates the complete v4 bundle only after validating staging", async () => {
     const recipes = await recipesRoot();
     const directory = await scaffoldRecipe({ id: "bounded-example", recipesDirectory: recipes });
     const files = (await readdir(directory, { recursive: true, withFileTypes: true }))
@@ -33,14 +33,14 @@ describe("recipe scaffolder", () => {
       "recipe.yml",
       "workflow.md",
     ]);
-    expect(
-      recipeSchema.parse(
-        parse(await readFile(path.join(directory, "recipe.yml"), "utf8"), {
-          maxAliasCount: 0,
-          uniqueKeys: true,
-        }),
-      ).schema_version,
-    ).toBe(3);
+    const metadata = recipeSchema.parse(
+      parse(await readFile(path.join(directory, "recipe.yml"), "utf8"), {
+        maxAliasCount: 0,
+        uniqueKeys: true,
+      }),
+    );
+    expect(metadata.schema_version).toBe(4);
+    expect(metadata.execution_mode).toBe("supervised");
     expect(
       outputContractSchema.parse(
         JSON.parse(await readFile(path.join(directory, "output.schema.json"), "utf8")) as unknown,

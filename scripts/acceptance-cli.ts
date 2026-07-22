@@ -1,8 +1,8 @@
 import {
-  spawn,
-  spawnSync,
   type ChildProcessWithoutNullStreams,
   type SpawnSyncReturns,
+  spawn,
+  spawnSync,
 } from "node:child_process";
 import { rmSync } from "node:fs";
 import { access, chmod, mkdir, mkdtemp, readFile, realpath, writeFile } from "node:fs/promises";
@@ -628,6 +628,13 @@ failure(["install", "write-release-notes", "--target", "../outside", "--json"], 
 const human = success(["list", "--category", "release"], true);
 if (human.stdout.includes("\u001b")) {
   throw new Error("NO_COLOR human output contains terminal escapes.");
+}
+const autonomous = success(
+  ["list", "--category", "maintenance", "--execution-mode", "autonomous"],
+  true,
+);
+if (!autonomous.stdout.includes("resolve-github-issues")) {
+  throw new Error("Autonomous catalog filtering omitted resolve-github-issues.");
 }
 const empty = success(["list", "--category", "does-not-exist"], true);
 if (!empty.stdout.includes("No workflows match the selected filters")) {

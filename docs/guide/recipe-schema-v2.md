@@ -1,5 +1,8 @@
 # Recipe schema version 2
 
+This page is a historical reference.
+Current recipes use schema version 4, documented in [Authoring](authoring.md) and [Recipe anatomy](recipe-anatomy.md).
+
 Schema version 2 changed one thing: facts about adapters no longer live inside individual `recipe.yml` files.
 
 ## Why it changed

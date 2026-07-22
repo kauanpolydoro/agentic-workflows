@@ -40,6 +40,9 @@ export const capabilityIds = [
   "test-execution",
   "database",
   "production-access",
+  "persistent-execution",
+  "subagent-orchestration",
+  "distributed-coordination",
 ] as const;
 export const categoryIds = [
   "api",
@@ -57,6 +60,7 @@ export const categoryIds = [
   "security",
   "testing",
 ] as const;
+export const executionModeIds = ["supervised", "autonomous"] as const;
 export const maintainerIds = ["project-maintainers"] as const;
 export const effectIds = [
   "writes_code",
@@ -157,16 +161,30 @@ const effectsSchema = z
   })
   .strict();
 
+const autonomySchema = z
+  .object({
+    unattended_execution: z.literal(true),
+    authorization: z.literal("upfront"),
+    mid_run_human_input: z.literal("not-required"),
+    user_stop_signal: z.literal("required"),
+    hard_deadline: z.literal("required"),
+    durable_checkpoints: z.literal("required"),
+    resume: z.literal("required"),
+    failure_policy: z.enum(["fail-closed", "defer-and-continue"]),
+  })
+  .strict();
+
 const semverSchema = z.string().regex(semverPattern);
 
 export const recipeSchema = z
   .object({
-    schema_version: z.literal(3),
+    schema_version: z.literal(4),
     id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
     title: cleanText(4, 100),
     summary: cleanText(20, 240),
     version: semverSchema,
     category: z.enum(categoryIds),
+    execution_mode: z.enum(executionModeIds),
     difficulty: z.enum(["beginner", "intermediate", "advanced"]),
     risk_level: z.enum(["low", "medium", "high", "critical"]),
     estimated_duration: z.string().regex(/^[1-9]\d*(?:m|h)$/),
@@ -228,6 +246,7 @@ export const recipeSchema = z
         manual_invocation_required: z.literal(true),
       })
       .strict(),
+    autonomy: autonomySchema.optional(),
     output_contract: z.object({ schema: z.literal("output.schema.json") }).strict(),
     canonical: z.object({ file: z.literal("workflow.md") }).strict(),
     agents: recipeAgentsSchema,
@@ -259,6 +278,30 @@ export const recipeSchema = z
   })
   .strict()
   .superRefine((recipe, context) => {
+    if (recipe.execution_mode === "autonomous" && recipe.autonomy === undefined) {
+      context.addIssue({
+        code: "custom",
+        path: ["autonomy"],
+        message: "Autonomous recipes require the unattended execution contract.",
+      });
+    }
+    if (
+      recipe.execution_mode === "autonomous" &&
+      !recipe.agent_requirements.capabilities.includes("persistent-execution")
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["agent_requirements", "capabilities"],
+        message: "Autonomous recipes require the persistent-execution capability.",
+      });
+    }
+    if (recipe.execution_mode === "supervised" && recipe.autonomy !== undefined) {
+      context.addIssue({
+        code: "custom",
+        path: ["autonomy"],
+        message: "Supervised recipes cannot declare an unattended execution contract.",
+      });
+    }
     const mutableEffects = effectIds.filter((effect) => recipe.effects[effect]);
     if (mutableEffects.length > 0 && recipe.safety.requires_human_approval.length === 0) {
       context.addIssue({
@@ -885,6 +928,7 @@ export type BundleCompatibilityStatus = (typeof bundleCompatibilityStatuses)[num
 export type CapabilityId = (typeof capabilityIds)[number];
 export type CapabilityStatus = (typeof capabilityStatuses)[number];
 export type CategoryId = (typeof categoryIds)[number];
+export type ExecutionMode = (typeof executionModeIds)[number];
 export type EffectId = (typeof effectIds)[number];
 export type MaintainerId = (typeof maintainerIds)[number];
 export type Manifest = z.infer<typeof manifestSchema>;

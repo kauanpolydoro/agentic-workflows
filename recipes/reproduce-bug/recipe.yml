@@ -1,9 +1,10 @@
-schema_version: 3
+schema_version: 4
 id: reproduce-bug
 title: Build a bounded bug reproduction
 summary: Turn a bug report into a sanitized repository-bound reproduction, a regression test that fails for the reported behavior, and a repeatability record, all without changing product behavior.
-version: 1.2.0
+version: 1.2.1
 category: debugging
+execution_mode: supervised
 difficulty: intermediate
 risk_level: low
 estimated_duration: 45m

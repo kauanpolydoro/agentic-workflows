@@ -42,7 +42,8 @@ The original workflow is always readable Markdown; exporters package that same c
 
 ## Honest about what works where
 
-Every workflow works as plain Markdown with any tool that can read a file.
+Every workflow can be represented as plain Markdown for any tool that can read a file.
+That representation does not supply runtime capabilities such as persistent execution, stop-signal polling, distributed coordination, or subagent isolation.
 On top of that, dedicated exporters produce the project-local formats used by Claude Code, Codex, Cursor, Gemini CLI, and OpenCode.
 Exporters and real agent runs are tested separately, and the site never blurs the two: the [compatibility matrix](./compatibility) shows exactly which combinations have recorded evidence and which remain untested.
 

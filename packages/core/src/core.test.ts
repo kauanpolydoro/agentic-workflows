@@ -59,6 +59,8 @@ describe("recipe validation", () => {
   it("rejects malformed slugs and enums", () => {
     expect(() => recipeSchema.parse({ ...valid, id: "../bad" })).toThrow();
     expect(() => recipeSchema.parse({ ...valid, risk_level: "severe" })).toThrow();
+    expect(() => recipeSchema.parse({ ...valid, schema_version: 3 })).toThrow();
+    expect(() => recipeSchema.parse({ ...valid, execution_mode: "background" })).toThrow();
   });
   it("rejects duplicate, untrimmed, and impossible metadata states", () => {
     expect(() => recipeSchema.parse({ ...valid, tags: ["review", "review"] })).toThrow();
@@ -306,6 +308,8 @@ describe("catalog and adapters", () => {
       }),
     ).toHaveLength(1);
     expect(filterRecipes([recipe], { category: "other" })).toHaveLength(0);
+    expect(filterRecipes([recipe], { executionMode: "supervised" })).toHaveLength(1);
+    expect(filterRecipes([recipe], { executionMode: "autonomous" })).toHaveLength(0);
     expect(filterRecipes([recipe], { tag: "other" })).toHaveLength(0);
     expect(filterRecipes([recipe], { agent: "cursor" })).toHaveLength(1);
     expect(filterRecipes([recipe], { agent: "generic", support: "partial" })).toHaveLength(0);
@@ -315,6 +319,33 @@ describe("catalog and adapters", () => {
     expect(
       filterRecipes([recipe], { agent: "cursor", compatibility: "incompatible" }),
     ).toHaveLength(0);
+  });
+  it("filters autonomous execution independently from domain category", () => {
+    const autonomous = recipeSchema.parse({
+      ...valid,
+      execution_mode: "autonomous",
+      agent_requirements: {
+        ...valid.agent_requirements,
+        capabilities: [...valid.agent_requirements.capabilities, "persistent-execution"],
+      },
+      autonomy: {
+        unattended_execution: true,
+        authorization: "upfront",
+        mid_run_human_input: "not-required",
+        user_stop_signal: "required",
+        hard_deadline: "required",
+        durable_checkpoints: "required",
+        resume: "required",
+        failure_policy: "defer-and-continue",
+      },
+    });
+
+    expect(
+      filterRecipes([recipe, autonomous], {
+        category: "code-review",
+        executionMode: "autonomous",
+      }),
+    ).toEqual([autonomous]);
   });
   it.each(Object.keys(adapters))("generates the %s adapter", (agent) => {
     const adapter = adapters[agent as keyof typeof adapters];

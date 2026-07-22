@@ -20,6 +20,10 @@ const categories = computed(() =>
   [...new Set(props.recipes.map((recipe) => recipe.category))].sort(),
 );
 // biome-ignore lint/correctness/noUnusedVariables: Vue template binding.
+const executionModes = computed(() =>
+  [...new Set(props.recipes.map((recipe) => recipe.execution_mode))].sort(),
+);
+// biome-ignore lint/correctness/noUnusedVariables: Vue template binding.
 const compatibilityOptions = computed(() =>
   [
     ...new Set(
@@ -90,6 +94,14 @@ const resultMessage = computed(() => catalogResultMessage(filteredRecipes.value.
           </select>
         </label>
 
+        <label for="catalog-execution-mode">
+          Execution mode
+          <select id="catalog-execution-mode" v-model="filters.executionMode">
+            <option value="all">All execution modes</option>
+            <option v-for="item in executionModes" :key="item" :value="item">{{ item }}</option>
+          </select>
+        </label>
+
         <label for="catalog-adapter">
           Adapter
           <select id="catalog-adapter" v-model="filters.adapter">
@@ -119,7 +131,7 @@ const resultMessage = computed(() => catalogResultMessage(filteredRecipes.value.
         </label>
 
         <label for="catalog-installation">
-          Installation
+          Installation evidence
           <select id="catalog-installation" v-model="filters.installation">
             <option value="all">All installation states</option>
             <option v-for="item in installationOptions" :key="item" :value="item">
@@ -129,7 +141,7 @@ const resultMessage = computed(() => catalogResultMessage(filteredRecipes.value.
         </label>
 
         <label for="catalog-execution">
-          Execution
+          Execution evidence
           <select id="catalog-execution" v-model="filters.execution">
             <option value="all">All execution states</option>
             <option v-for="item in executionOptions" :key="item" :value="item">
@@ -139,7 +151,7 @@ const resultMessage = computed(() => catalogResultMessage(filteredRecipes.value.
         </label>
 
         <label for="catalog-outcome">
-          Outcome
+          Outcome review
           <select id="catalog-outcome" v-model="filters.outcome">
             <option value="all">All outcome states</option>
             <option v-for="item in outcomeOptions" :key="item" :value="item">
@@ -161,7 +173,9 @@ const resultMessage = computed(() => catalogResultMessage(filteredRecipes.value.
         class="workflow-card"
         :href="`./${recipe.id}`"
       >
-        <span class="card-index">{{ recipe.category }}</span>
+        <span class="card-index">
+          {{ recipe.category }}<template v-if="recipe.execution_mode === 'autonomous'"> · autonomous design</template>
+        </span>
         <h2>{{ recipe.title }}</h2>
         <p>{{ recipe.summary }}</p>
         <span class="card-link">Read the workflow <span aria-hidden="true">→</span></span>

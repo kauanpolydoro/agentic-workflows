@@ -1,11 +1,12 @@
-schema_version: 3
+schema_version: 4
 id: synchronize-documentation
 title: Synchronize documentation with verified behavior
 summary: Compare documentation claims with authoritative evidence at one immutable
   revision, then deliver a bounded patch, a claim-to-evidence drift register, and
   a verification report.
-version: 1.2.0
+version: 1.2.1
 category: documentation
+execution_mode: supervised
 difficulty: intermediate
 risk_level: medium
 estimated_duration: 45m

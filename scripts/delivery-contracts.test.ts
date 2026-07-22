@@ -55,6 +55,22 @@ async function packageMetadata(relative: string): Promise<PackageMetadata> {
 }
 
 describe("delivery contracts", () => {
+  it("keeps architecture decision numbers unique", async () => {
+    const files = (await readdir(path.join(repository, "docs/decisions"))).filter((file) =>
+      /^\d{4}-.+\.md$/u.test(file),
+    );
+    const byNumber = new Map<string, string[]>();
+    for (const file of files) {
+      const number = file.slice(0, 4);
+      byNumber.set(number, [...(byNumber.get(number) ?? []), file]);
+    }
+    const duplicates = [...byNumber.entries()]
+      .filter(([, names]) => names.length > 1)
+      .map(([number, names]) => `${number}: ${names.join(", ")}`);
+
+    expect(duplicates).toEqual([]);
+  });
+
   it("pins every external workflow action to an immutable commit", async () => {
     const directory = path.join(repository, ".github/workflows");
     for (const file of await readdir(directory)) {
@@ -308,8 +324,18 @@ describe("delivery contracts", () => {
     const recipeCount = (
       await readdir(path.join(repository, "recipes"), { withFileTypes: true })
     ).filter((entry) => entry.isDirectory()).length;
-    expect(english).toContain(`catalog of ${recipeCount} evidence-oriented workflow bundles`);
-    expect(portuguese).toContain(`catálogo com ${recipeCount} pacotes de fluxos`);
+    expect(english).toContain(
+      `current Unreleased source tree contains ${recipeCount} evidence-oriented workflow bundles`,
+    );
+    expect(portuguese).toContain(
+      `árvore-fonte atual em Unreleased contém ${recipeCount} pacotes de fluxos`,
+    );
+    expect(english).toContain(
+      `published \`${String(metadata.version)}\` package predates schema version 4`,
+    );
+    expect(portuguese).toContain(
+      `pacote \`${String(metadata.version)}\` publicado antecede o schema versão 4`,
+    );
   });
 
   it("keeps the English and Portuguese landing pages equivalent in scope", async () => {
@@ -381,7 +407,7 @@ describe("delivery contracts", () => {
     const installation = await text("docs/guide/installation.md");
     const cliMetadata = await packageMetadata("packages/cli/package.json");
     const exactPackage = `@kauanpolydoro/agentic-workflows@${String(cliMetadata.version)}`;
-    expect(authoring).toContain("schema version 3");
+    expect(authoring).toContain("schema version 4");
     expect(authoring).not.toContain("schema version 2");
     expect(installation).toContain(`npm install --save-dev --save-exact ${exactPackage}`);
     expect(installation).toContain(`pnpm add --save-dev --save-exact ${exactPackage}`);

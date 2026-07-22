@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "recipe_source_sha256": "5de5749321c3d8cb3f8a6011cd7ba5777afe087c2c03c6da0b36bbd19c661b60",
+  "recipe_source_sha256": "ed009beebea613b8852fd525e385fae0325576acd149fac5483535698a9046cc",
   "artifacts": [
     {
       "path": "docs/catalog/api-contract-review.md",
@@ -44,7 +44,7 @@
     },
     {
       "path": "docs/catalog/index.md",
-      "sha256": "cc14ff0e46844296ade6eb326e7e7c41d6809db14c9199728f294fe09d3b11ed"
+      "sha256": "fe20b1346b485e5135ef4dcbe07449595a27229c48c4831a04ada7b0b68716c7"
     },
     {
       "path": "docs/catalog/migrate-framework.md",
@@ -61,6 +61,10 @@
     {
       "path": "docs/catalog/reproduce-bug.md",
       "sha256": "338150d6759528c19b9bffd86b2424b9d423e893fe92c4bef62a15d460060346"
+    },
+    {
+      "path": "docs/catalog/resolve-github-issues.md",
+      "sha256": "ee305433c00969c4d3dcd861b24fc5284c0743f1ae9284709529b021f7bf2408"
     },
     {
       "path": "docs/catalog/review-pull-request.md",
@@ -88,7 +92,7 @@
     },
     {
       "path": "docs/compatibility.md",
-      "sha256": "068a06009c1db913b24e7d96edbc4cd96898fdf423378298b0230b66fa2bd3dc"
+      "sha256": "02ea3889faebffc2a31cf97c94ef59aa157d657b932f5533dfd4e83af474b5e0"
     },
     {
       "path": "generated/catalog.d.ts",
@@ -96,15 +100,15 @@
     },
     {
       "path": "generated/catalog.json",
-      "sha256": "5233bf51938259ab8fd52ad390648e8770616d0885b66531272b406490951da1"
+      "sha256": "02937833b536ac607ad9d0151d5cbaec098728a1440cd0c37842b7cdf5d773c5"
     },
     {
       "path": "generated/catalog.schema.json",
-      "sha256": "0a0a37ff7373fe2ba43117e0ba1da04b283a3e898f390166d0bbe9f0eed6c540"
+      "sha256": "3b0bcc62c063214da5d821515282c789b26b4d1b03520302b49257d9e21b8031"
     },
     {
       "path": "generated/recipe.schema.json",
-      "sha256": "b1edc00b84e178211544666985a800ea08e55d8cfecc6a2ae4f1f21a3ecff950"
+      "sha256": "817096b0a4c26ad15d5f4e03773a75f238b4dec9c79b74549b56977334163873"
     },
     {
       "path": "generated/verification.schema.json",

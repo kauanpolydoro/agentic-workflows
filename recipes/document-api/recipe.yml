@@ -1,11 +1,12 @@
-schema_version: 3
+schema_version: 4
 id: document-api
 title: Produce an evidence-backed API reference
 summary: Turn one approved public API contract revision and its matching
   handler, validator, and test evidence into a versioned reference, an example
   execution report, and a register of contract discrepancies.
-version: 1.2.0
+version: 1.2.1
 category: documentation
+execution_mode: supervised
 difficulty: intermediate
 risk_level: medium
 estimated_duration: 1h
