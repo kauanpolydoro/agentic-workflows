@@ -2,6 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { changelogContainsVersion, releaseVersionFromTag } from "./release-artifacts.js";
+import { renderSocialPreview } from "./render-social-preview.js";
 
 const repository = path.resolve(import.meta.dirname, "..");
 
@@ -496,6 +497,13 @@ describe("delivery contracts", () => {
     expect(preview.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
     expect(preview.readUInt32BE(16)).toBe(1200);
     expect(preview.readUInt32BE(20)).toBe(630);
+    expect(preview.equals(await renderSocialPreview())).toBe(true);
+
+    const recipeCount = (
+      await readdir(path.join(repository, "recipes"), { withFileTypes: true })
+    ).filter((entry) => entry.isDirectory()).length;
+    const source = await text("docs/public/social-preview.svg");
+    expect(source).toContain(`${recipeCount} structured workflows`);
 
     const config = await text("docs/.vitepress/config.ts");
     for (const requiredMetadata of [

@@ -44,6 +44,9 @@ Do not skip a failing command or lower a threshold to make the suite pass.
 
 `pnpm test:automation` validates the public JSON contract across command boundaries in real subprocesses.
 
+After changing `docs/public/social-preview.svg`, run `pnpm render:social-preview` to update the published PNG.
+The unit suite renders the SVG with the pinned Inter font and rejects a stale PNG or workflow count.
+
 Project-discovery fixtures must define their own discovery boundary instead of assuming the operating system's temporary directory has no Git or AWF marker.
 
 The package smoke test deliberately creates a hostile ancestor `.git` marker and must pass without a `TMPDIR` override.
