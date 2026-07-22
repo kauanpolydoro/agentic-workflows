@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "recipe_source_sha256": "b6dfa662b0f74db596f9d2044d97f0c14e845735609f33df34585e1eb8d87a69",
+  "recipe_source_sha256": "c952878f1773d906cb12ea13fde8e81e6318de3787705ee5a36c544929f2ac4b",
   "artifacts": [
     {
       "path": "docs/catalog/api-contract-review.md",
@@ -44,7 +44,7 @@
     },
     {
       "path": "docs/catalog/index.md",
-      "sha256": "acbab5b4d5d7dc6d2d1a0e7816b7d15224fd93e141ff249cdb55d810af4d63de"
+      "sha256": "4a3aad2bec174467567a3a3c6353faf3d9cd2a7f3e5ceeb31dc64606908de555"
     },
     {
       "path": "docs/catalog/migrate-framework.md",
@@ -64,7 +64,7 @@
     },
     {
       "path": "docs/catalog/resolve-github-issues.md",
-      "sha256": "ee305433c00969c4d3dcd861b24fc5284c0743f1ae9284709529b021f7bf2408"
+      "sha256": "9fc31b97b123d1a987186dfd6b0e7045680fd0d426fedf809f43e1ba473cf2f2"
     },
     {
       "path": "docs/catalog/review-pull-request.md",
@@ -100,7 +100,7 @@
     },
     {
       "path": "generated/catalog.json",
-      "sha256": "19c5dabd7f9629a18ad349f31ad69632bc37db0e297211bcdec0a6b2e6f8583f"
+      "sha256": "07f0a17f4b59f151f26c3590bf33e77363b2bccc03be2bccc1d96ce6c3879df6"
     },
     {
       "path": "generated/catalog.schema.json",

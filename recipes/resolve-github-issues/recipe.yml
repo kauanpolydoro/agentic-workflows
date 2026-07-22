@@ -1,7 +1,7 @@
 schema_version: 4
 id: resolve-github-issues
 title: Run an autonomous GitHub issue resolution campaign
-summary: Define an autonomous campaign for resolving the maximum safe number of authorized GitHub issues without mid-run input; human editorial review remains required before publication.
+summary: Define a finite autonomous campaign that resolves the maximum safe number of authorized GitHub issues without mid-run input and retains evidence for every terminal outcome.
 version: 1.1.0
 category: maintenance
 execution_mode: autonomous

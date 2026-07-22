@@ -1,6 +1,6 @@
 ---
 title: "Run an autonomous GitHub issue resolution campaign"
-description: "Define an autonomous campaign for resolving the maximum safe number of authorized GitHub issues without mid-run input; human editorial review remains required before publication."
+description: "Define a finite autonomous campaign that resolves the maximum safe number of authorized GitHub issues without mid-run input and retains evidence for every terminal outcome."
 ---
 
 # Run an autonomous GitHub issue resolution campaign

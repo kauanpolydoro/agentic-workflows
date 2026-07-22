@@ -3224,7 +3224,7 @@
     "schema_version": 4,
     "id": "resolve-github-issues",
     "title": "Run an autonomous GitHub issue resolution campaign",
-    "summary": "Define an autonomous campaign for resolving the maximum safe number of authorized GitHub issues without mid-run input; human editorial review remains required before publication.",
+    "summary": "Define a finite autonomous campaign that resolves the maximum safe number of authorized GitHub issues without mid-run input and retains evidence for every terminal outcome.",
     "version": "1.1.0",
     "category": "maintenance",
     "execution_mode": "autonomous",
@@ -3501,7 +3501,7 @@
           "relative-links",
           "output-contract"
         ],
-        "recipe_content_sha256": "12bc6f565e3a6332a3c16981b6ef996d290add6c90709dc0c090f10447cc53e2"
+        "recipe_content_sha256": "08937a53ed476ca574a716b62832872f8ddd65466da30125c17348db9396fb09"
       }
     },
     "maintainers": ["project-maintainers"],

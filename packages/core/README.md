@@ -19,7 +19,7 @@ Consumers migrating a recipe must choose its execution mode explicitly, add the 
 
 ## Public API
 
-The root export includes `recipeSchema`, `catalogSchema`, `manifestSchema`, `executionModeIds`, `capabilityIds`, and their inferred TypeScript types such as `Recipe` and `ExecutionMode`.
+The root export includes `recipeSchema`, `generatedCatalogRecipeSchema`, `manifestSchema`, `executionModeIds`, `capabilityIds`, and their inferred TypeScript types such as `Recipe` and `ExecutionMode`.
 The `./adapter-registry` export exposes adapter registry contracts separately.
 
 Execution mode describes workflow design only.

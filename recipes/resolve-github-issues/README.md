@@ -3,8 +3,8 @@
 Use this recipe to let a capable agent runtime work through a finite GitHub backlog after one upfront authorization, without asking the user for decisions during the normal run.
 It prioritizes the backlog, handles independent issues concurrently, requires a fresh adversarial subagent for every correction, serializes merges, checkpoints every mutation, and leaves blocked work open rather than hiding it.
 
-> Editorial status: `blocked`.
-> The v0.3.0 candidate remains available for inspection and validation, but it is not publication-ready until the required human domain review is retained against its final digest.
+> Editorial readiness for this exact bundle digest is recorded separately in `docs/quality/recipe-audit.md`.
+> External-agent execution and outcome evidence remain untested unless a retained record says otherwise.
 
 ## Primary use cases
 
